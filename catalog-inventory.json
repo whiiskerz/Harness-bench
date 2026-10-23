@@ -1,0 +1,78 @@
+{
+  "source": "Extracted from the current Harness Bench HTML source; this is an inventory, not an independently verified manufacturer database.",
+  "catalog_groups": [
+    "MaxxECU LS harness",
+    "Engine side (LS)",
+    "Deutsch DT",
+    "Molex",
+    "Fuse boxes & relays",
+    "Terminals & power",
+    "Fuel & nitrous",
+    "Maven bulkheads (single)",
+    "Maven bulkheads (dual)",
+    "Power & starting",
+    "CAN & data",
+    "Sensors & loads"
+  ],
+  "important_limitations": [
+    "Some catalog entries are generic connectors or placeholders rather than exact manufacturer part numbers.",
+    "Most generic connector pins are numbered sequentially and have no verified function labels.",
+    "The app source itself says engine-side plugs are left blank where its source page gives no pinout.",
+    "This inventory does not validate any pinout against manufacturer documentation.",
+    "Saved designs are stored in browser localStorage under key harness-bench-v2 unless the user exports a backup from the app."
+  ],
+  "notable_catalog_entries": [
+    {
+      "id": "mx12",
+      "name": "MaxxECU 12-pin",
+      "note": "Built-in labeled pins; verify against the correct ECU documentation."
+    },
+    {
+      "id": "mx16",
+      "name": "MaxxECU 16-pin",
+      "note": "Built-in labeled pins; verify against the correct ECU documentation."
+    },
+    {
+      "id": "mxpedal",
+      "name": "MaxxECU e-pedal 6-pin",
+      "note": "Built-in labeled pins; verify against the correct ECU documentation."
+    },
+    {
+      "id": "mxwbo",
+      "name": "MaxxECU WBO 4-pin",
+      "note": "Built-in labeled pins; verify against the correct ECU documentation."
+    },
+    {
+      "id": "etb6",
+      "name": "E-throttle 6-pin",
+      "note": "Built-in labeled pins; verify exact throttle-body application and pinout."
+    },
+    {
+      "id": "tps3",
+      "name": "LS TPS 3-pin (cable throttle)",
+      "note": "Built-in labeled pins; verify exact sensor/application."
+    },
+    {
+      "id": "dt2/dt3/dt4/dt6/dt8/dt12",
+      "name": "Deutsch DT series",
+      "note": "Generic cavity-count entries; no exact shell/terminal part numbers in these entries."
+    },
+    {
+      "id": "mol48",
+      "name": "Molex 48-pin",
+      "part_number": "643203311",
+      "note": "Part number is embedded in source; verify connector family and mating parts."
+    },
+    {
+      "id": "mol32",
+      "name": "Molex 32-pin",
+      "part_number": "0643193211",
+      "note": "Part number is embedded in source; verify connector family and mating parts."
+    },
+    {
+      "id": "Maven bulkheads",
+      "name": "Single and dual bulkhead entries",
+      "note": "Catalog includes cavity counts and wire-size descriptions, but the source has no specific shell part numbers populated."
+    }
+  ]
+}
