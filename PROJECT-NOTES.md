@@ -49,3 +49,11 @@ A Connector Studio tab was added for image references and generated cavity index
 - Leash Street/Strip wiring board: https://www.leashelectronics.com/products/street-strip-wiring-board
 
 These are external online reference images. They do not establish that the pictured Leash product is the user's exact single board, nor do they establish connector face orientation or pin assignment. Confirm exact model and terminal labels before using a photo to fabricate wiring.
+
+
+## Update 4 — Build tracker and direct photo upload
+
+- Added a **Build tracker** tab with staged planning, electrical review, assembly, and bench-test checklists. Progress is saved in the browser and included in the full JSON backup. This is a workflow aid, not a safety certification.
+- Connector Studio now accepts a photo directly from an iPad/computer. The app resizes it to a maximum 1100 px edge and compresses it to JPEG before saving it in browser storage. Keep original photos in the GitHub repository as a separate backup; browser storage limits vary.
+- Backup now exports the full app state, including connector photos/status and build checklist progress. Older partial backups remain loadable, but cannot restore data they never contained.
+- Existing vendor-gallery images are still external URLs and require internet. The new upload option lets you use your own photo without hosting it first, on the same browser/device.

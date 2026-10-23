@@ -43,3 +43,11 @@ Known component names may auto-populate a vendor reference image in the preview.
 - Cavity grids are still generated from the app's current pin data, not verified physical face diagrams
 
 For a more reliable/offline image library, upload images you have permission to use into `assets/` and set each part's image path to a repository-relative path, such as `assets/dt12-front.jpg`.
+
+
+## Update 4 — Build tracker and direct photo upload
+
+- Added a **Build tracker** tab with staged planning, electrical review, assembly, and bench-test checklists. Progress is saved in the browser and included in the full JSON backup. This is a workflow aid, not a safety certification.
+- Connector Studio now accepts a photo directly from an iPad/computer. The app resizes it to a maximum 1100 px edge and compresses it to JPEG before saving it in browser storage. Keep original photos in the GitHub repository as a separate backup; browser storage limits vary.
+- Backup now exports the full app state, including connector photos/status and build checklist progress. Older partial backups remain loadable, but cannot restore data they never contained.
+- Existing vendor-gallery images are still external URLs and require internet. The new upload option lets you use your own photo without hosting it first, on the same browser/device.
