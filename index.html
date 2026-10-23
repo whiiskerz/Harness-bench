@@ -124,6 +124,7 @@ a{color:var(--accent)}
 </header>
 <nav id="tabs"></nav>
 
+<section id="t-project" hidden></section>
 <section id="t-draw">
   <div class="bar">
     <button class="btn primary" data-act="lib" id="libBtn" aria-pressed="false">+ Add part</button>
@@ -248,6 +249,29 @@ group('Sensors & loads',[
 ]);
 
 ['fuse6','fuse12','fusegnd'].forEach(id=>{T[id].fz=Array.from({length:id==='fuse6'?6:12},(_,k)=>k+1)});
+/* ---------- E90 LS / MaxxECU project-specific interfaces ---------- */
+group('E90 LS project connectors',[
+ lab('e90dt12','DT12 power breakout — user pin map',[
+ ['1','Coils +12V'],['2','Engine ground'],['3','GPO2 fuel pump 1'],['4','GPO6 A/C clutch'],['5','GPO3 fuel pump 2'],['6','Starter input'],['7','ECU switched +12V'],['8','GPO8 tach (unused)'],['9','GPO15 +12V (unused)'],['10','H-bridge 2 + (unused)'],['11','H-bridge 2 − (unused)'],['12','Alternator excite (unused; self-exciting alt)']],'dt','User-defined terminated breakout'),
+ lab('e90analog8','DT8 analog sub — user pin map',[
+ ['1','Sensor +5V'],['2','MaxxECU sensor ground'],['3','Paddle resistor AIN1'],['4','AIN2 spare'],['5','Fuel pressure signal'],['6','A/C pressure signal'],['7','Spare DIN/GPO'],['8','Radiator fan PWM / GPO5']],'dt','User-defined terminated breakout'),
+ lab('e90can8','DT8 CAN/control sub — user pin map',[
+ ['1','CAN Low'],['2','CAN High'],['3','Brake DIN1'],['4','Shifter input 1'],['5','Shifter input 2'],['6','Flex fuel DIN5'],['7','Nitrous GPO4 → SSR'],['8','Spare']],'dt','User-defined terminated breakout'),
+ lab('e90dt4shifter','Shifter control DT4',[
+ ['1','Shifter input 1'],['2','Shifter input 2'],['3','Ground'],['4','Spare']],'dt','User-defined terminated sub-harness'),
+ lab('e90keypad','CAN keypad connector',[
+ ['1','CAN Low'],['2','CAN High'],['3','Switched +12V'],['4','Ground']],'dt','CAN keypad sub-harness'),
+ lab('e908hp','8HP harness — owner-supplied 6-position map',[
+ ['1','Constant +12V (fused feed; fuse/gauge TBD)'],['2','Switched +12V'],['3','Chassis ground'],['4','CAN Low'],['5','CAN High'],['6','Sealed / unused']],'dt','Owner-supplied functional map; verify connector face orientation'),
+ lab('bmwx60001if','BMW DME X60001 — interface pins only',[
+ ['7','Chassis CAN Low'],['8','Chassis CAN High'],['20','Fan PWM interface'],['38','Brake switch signal']],'mol','BMW E90 interface; only supplied pins shown'),
+ lab('e90leash1','Leash single board — user terminal map',[
+ ['1','INPUT'],['2','GND'],['3','C+ switched +12V'],['4','OUTPUT to load'],['5','Spare / confirm']],'pwr','User-described board terminal map'),
+ lab('speedwayalt','Speedway LS alternator — self-exciting',[
+ ['B+','Large output stud — high-current cable'],['REG','Regulator plug — not used per owner']],'pwr','Output cable sizing and protection strategy require verification'),
+ lab('ekptrig','EKP trigger signal endpoint',[['1','EKP trigger / switched control signal']],'sens','Signal only; confirm source voltage and polarity')
+]);
+
 /* ---------- colors / gauge ---------- */
 const COLORS={RED:'#d33a2c',BLK:'#0b0b0b',BLACK:'#0b0b0b',GRN:'#2a9d4a',GREEN:'#2a9d4a',YEL:'#e8c21a',YELLOW:'#e8c21a',BLU:'#2f6fe0',BLUE:'#2f6fe0',ORG:'#f07a1a',ORANGE:'#f07a1a',PUR:'#8a4fd0',PURPLE:'#8a4fd0',WHT:'#f2f2f2',WHITE:'#f2f2f2',BRN:'#7a4a25',BROWN:'#7a4a25',GRY:'#8b9099',GRAY:'#8b9099',GREY:'#8b9099',PNK:'#e87aa8',PINK:'#e87aa8',TAN:'#c9a77a'};
 const cpart=(s,i)=>COLORS[String(s||'').trim().toUpperCase().split(/[\s\/\-]/)[i||0]]||'';
@@ -262,6 +286,68 @@ function starter(){
   const mk=(id,t,x,y,name)=>({id,t,x,y,name,pl:{}});
   return {parts:[mk(1,'mx12',40,40,'MaxxECU 12-pin'),mk(2,'mx16',40,400,'MaxxECU 16-pin'),mk(3,'mxpedal',330,40,'E-pedal 6-pin'),mk(4,'mxwbo',330,240,'Secondary WBO 4-pin'),mk(5,'etb6',330,380,'E-throttle 6-pin')],wires:[],nid:20,examples:true,view:null,fw:null,tk:null,looms:[]};
 }
+function e90ProjectStarter(){
+  const mk=(id,t,x,y,name,pl={})=>({id,t,x,y,name,pl});
+  const parts=[
+   mk(101,'e90dt12',-560,-260,'DT12_POWER_BREAKOUT'),
+   mk(102,'e90analog8',-560,30,'DT8_ANALOG_SUB'),
+   mk(103,'e90can8',-560,310,'DT8_CAN_CONTROL'),
+   mk(104,'dual',-160,-300,'Leash dual fuel pump relay board'),
+   mk(105,'surge',180,-300,'Surge tank — Walbro 535 FP1 / 525 FP2'),
+   mk(106,'gbus12',200,-70,'Trunk ground bus'),
+   mk(107,'fuse6',-140,40,'Switched fuse box — ECU / coils / 8HP / flex / keypad / A/C',{1:'Coils',2:'ECU',3:'8HP',4:'Flex fuel',5:'CAN keypad',6:'A/C relay'}),
+   mk(108,'relay',-140,270,'A/C compressor relay'),
+   mk(109,'e90leash1',-140,470,'Leash single board — switched accessory / heater branch'),
+   mk(110,'ekptrig',-400,500,'EKP trigger (signal endpoint)'),
+   mk(111,'e90keypad',240,320,'CAN keypad sub-harness'),
+   mk(112,'e908hp',240,160,'8HP harness — 6-position map supplied'),
+   mk(113,'canhub4',-70,650,'MaxxECU / 8HP / keypad CAN hub (if required by topology)'),
+   mk(114,'bmwx60001if',600,20,'BMW DME box X60001 — interface pins only'),
+   mk(115,'flex',240,500,'Flex fuel sensor'),
+   mk(116,'e90dt4shifter',600,330,'Shifter control DT4'),
+   mk(117,'ssr',600,520,'Nitrous SSR — GPO4 trigger interface'),
+   mk(118,'speedwayalt',-800,-360,'Speedway self-exciting LS alternator'),
+   mk(119,'bmwbig',-1050,-360,'Unfused high-current junction / starter big stud'),
+   mk(120,'starter',-1050,-160,'Starter motor'),
+   mk(121,'bat',-1300,-360,'Trunk battery / main positive'),
+   mk(122,'gnd',-1050,100,'Engine ground point'),
+   mk(123,'gnd',-800,100,'Sensor ground reference — ECU only'),
+   mk(124,'gnd',-800,520,'Trunk accessory ground bus reference')
+  ];
+  const W=[];let wid=300;
+  const wire=(ap,ai,bp,bi,sig,awg,color,extra={})=>{const low=sig.toLowerCase();const loom=low.includes('can ')?992:((low.includes('pump')||low.includes('fp1')||low.includes('fp2')||low.includes('ekp')||low.includes('trunk'))?991:990);W.push(mkW({p:ap,i:ai},{p:bp,i:bi},{id:wid++,sig,awg,color,loom,...extra}));};
+  // Signal and relay control wiring from the supplied termination map.
+  wire(101,2,104,4,'GPO2 → FP1 relay low-side trigger',18,'GRN');
+  wire(101,4,104,6,'GPO3 → FP2 relay low-side trigger',18,'BLU');
+  wire(101,3,108,1,'GPO6 → A/C relay coil − (ground-switching output)',18,'PUR');
+  wire(107,6,108,2,'Fused switched +12V → A/C relay coil +',18,'RED');
+  wire(107,2,101,6,'Switched +12V → ECU power branch',14,'RED');
+  wire(107,1,101,0,'Switched +12V → ignition coils branch',14,'YEL');
+  wire(107,3,112,1,'Switched fuse-box output → 8HP pin 2 switched +12V',14,'RED');
+  wire(107,5,111,2,'Switched +12V → CAN keypad',20,'ORG');
+  wire(110,0,109,2,'EKP trigger → Leash C+ (confirm voltage / polarity / board terminal)',20,'ORG');
+  // CAN bus is kept separate from BMW chassis CAN. A hub is a drawing/topology aid, not a mandatory component.
+  wire(103,0,113,3,'MaxxECU CAN Low → CAN hub port 1',20,'PNK',{tw:900});
+  wire(103,1,113,2,'MaxxECU CAN High → CAN hub port 1',20,'GRY',{tw:900});
+  wire(111,0,113,5,'CAN keypad CAN Low → CAN hub port 2',20,'PNK',{tw:901});
+  wire(111,1,113,4,'CAN keypad CAN High → CAN hub port 2',20,'GRY',{tw:901});
+  wire(112,3,113,7,'8HP pin 4 CAN Low → CAN hub port 3 (verify CAN compatibility)',20,'PNK',{tw:902});
+  wire(112,4,113,6,'8HP pin 5 CAN High → CAN hub port 3 (verify CAN compatibility)',20,'GRY',{tw:902});
+  // BMW body interface: only the four owner-supplied X60001 pin identities are represented.
+  wire(114,3,103,2,'BMW X60001 pin 38 brake switch → MaxxECU Brake DIN1',20,'BLK');
+  wire(102,7,114,2,'Radiator fan PWM / GPO5 → BMW X60001 pin 20 (verify electrical compatibility)',20,'PUR');
+  // Pump output and ground topology; high-current cable sizing remains a separate design decision.
+  wire(104,1,105,0,'FP1 relay output → surge pump 1 + (Walbro 535)',10,'RED',{amps:20,fuse:'FP1',fa:30});
+  wire(104,2,105,2,'FP2 relay output → surge pump 2 + (Walbro 525)',10,'BLU',{amps:20,fuse:'FP2',fa:30});
+  wire(105,1,106,1,'Surge pump 1 ground → trunk ground bus',10,'BLK');
+  wire(105,3,106,2,'Surge pump 2 ground → trunk ground bus',10,'BLK');
+  // Sensor signal and sensor ground are intentionally not tied to chassis ground.
+  wire(102,0,115,0,'MaxxECU sensor +5V → flex fuel sensor supply (verify sensor spec)',20,'RED');
+  wire(102,1,115,2,'MaxxECU sensor ground → flex fuel sensor ground (sensor ground only)',20,'BLK');
+  wire(115,1,102,5,'Flex fuel signal → MaxxECU DIN5',20,'YEL');
+  return {parts,wires:W,nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
+}
+
 let S=Object.assign({scale:4,strip:.5,def:{awg:18,color:''},tab:'draw'},starter());
 try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&Array.isArray(o.parts))S=Object.assign(S,o)}}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
@@ -795,6 +881,27 @@ function rNotes(){
     <tr><td class="mono">A, B</td><td>Motor</td><td>Unused, or run a stock IAC</td></tr>
     <tr><td class="mono">F</td><td>TPS 2</td><td>Unused, or spare analog input</td></tr></tbody></table></div>`;
 }
+function rProject(){
+ document.getElementById('t-project').innerHTML=`<h2>E90 LS / MaxxECU Race Gen 1 project</h2>
+ <p class="muted">Project-specific build sheet based on the pin map supplied by the owner. The drawing preset is a visual planning layout, not a validated production harness or substitute for checking the actual controller, connector face, current draw and wiring diagrams.</p>
+ <div class="row"><button class="btn primary" data-act="loadE90">Load E90 harness mock-up</button><button class="btn" data-act="goMock">Open physical mock-up</button><button class="btn" data-act="goChecks">Run checks</button></div>
+ <div class="card"><div class="hd"><b>Confirmed from your notes</b><span class="pill ok">Owner supplied</span></div><ul class="tight">
+ <li>MaxxECU Race Gen 1.</li><li>DT12 power breakout: GPO2 fuel pump 1, GPO3 fuel pump 2, GPO6 A/C clutch; pin 7 ECU switched +12V; alternator excite unused because the Speedway alternator is self-exciting.</li>
+ <li>DT8 analog: +5V, MaxxECU sensor ground, paddle AIN1, fuel-pressure signal, A/C-pressure signal and radiator-fan PWM/GPO5 as listed.</li>
+ <li>DT8 CAN/control: CAN L/H, brake DIN1, shifter inputs, flex fuel DIN5, nitrous GPO4 → SSR.</li>
+ <li>BMW X60001: pin 20 fan-PWM interface, pin 38 brake-switch signal, pin 7 chassis CAN L, pin 8 chassis CAN H.</li>
+ <li>CAN keypad: CAN L/H, switched +12V, ground. 8HP six-position map supplied: pin 1 constant +12V, pin 2 switched +12V, pin 3 chassis ground, pin 4 CAN L, pin 5 CAN H, pin 6 sealed/unused.</li></ul></div>
+ <div class="card"><div class="hd"><b>Needs verification before fabrication</b><span class="pill wn">Do not guess</span></div><ul class="tight">
+ <li><b>8HP:</b> the six-position functional map is owner-supplied, not independently verified. Confirm connector face/orientation and terminal numbering. Pin 1 constant +12V must come from an appropriately fused battery feed; fuse rating, wire gauge and routing remain TBD. Pin 3 chassis ground needs a suitable ground point.</li>
+ <li><b>CAN:</b> keep the MaxxECU/8HP/keypad bus separate from BMW chassis CAN until the controller topology, bitrate, message compatibility and termination are confirmed. Do not bridge chassis CAN pins 7/8 into the standalone bus by assumption.</li>
+ <li><b>Radiator fan:</b> pin 20 is shown as the BMW fan-PWM interface from your notes; verify whether this is the correct signal wire and whether the MaxxECU output can drive that circuit. Never tie two active outputs together.</li>
+ <li><b>EKP trigger → Leash C+:</b> verify source voltage, polarity, and the exact Leash board terminal behavior before connecting.</li>
+ <li><b>Alternator/starter power:</b> draw the large-stud paths as a high-current circuit, but choose cable gauge, termination, protection and routing from actual alternator output, starter demand, cable length and vehicle requirements. This is not ordinary 8–22 AWG signal wiring.</li>
+ <li><b>Sensor ground:</b> dedicated MaxxECU sensor return only; do not connect it to chassis/engine ground.</li>
+ <li><b>Fuel pump power:</b> the ECU GPOs are low-side triggers; the relay board supplies pump current. Confirm relay board ratings, fuse sizes and wire gauge against measured/expected pump current.</li></ul></div>
+ <div class="card"><div class="hd"><b>Included in the mock-up</b></div><p>DT12, both DT8 breakouts, dual fuel-pump relay board, surge tank, trunk ground bus, switched fuse box, A/C relay, Leash single board, EKP trigger endpoint, CAN keypad, owner-mapped 6-position 8HP interface, CAN hub, BMW X60001 interface, flex-fuel sensor, shifter DT4, nitrous SSR, Speedway alternator, starter, battery, and high-current junction endpoints.</p><p class="muted">The mock-up deliberately leaves alternator/starter heavy-gauge paths unrouted until cable sizing is known. The BMW chassis CAN pins are displayed but not connected to the MaxxECU CAN hub.</p></div>`;
+}
+
 function rSave(){
   document.getElementById('t-save').innerHTML=`<h2>Backup</h2>
    <p class="muted">Your drawing saves in this browser only. Copy the backup text and keep it somewhere safe. To restore, paste it below and press Load.</p>
@@ -805,8 +912,8 @@ function rSave(){
 }
 
 /* ---------- tabs ---------- */
-const TABS=[['draw','Draw'],['mock','Mockup'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['bom','Parts list'],['checks','Checks'],['notes','Notes'],['save','Backup']];
-const RENDER={mock:rMock,wires:rWires,cut:rCut,pins:rPins,bom:rBom,checks:rChecks,notes:rNotes,save:rSave};
+const TABS=[['project','E90 Project'],['draw','Draw'],['mock','Mockup'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['bom','Parts list'],['checks','Checks'],['notes','Notes'],['save','Backup']];
+const RENDER={project:rProject,mock:rMock,wires:rWires,cut:rCut,pins:rPins,bom:rBom,checks:rChecks,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
 tabsEl.innerHTML=TABS.map(([k,l])=>`<button role="tab" data-tab="${k}">${l}</button>`).join('');
 function showTab(k){
@@ -848,6 +955,8 @@ document.addEventListener('click',e=>{
   if(d.copy)return copy(CSVS[d.copy](),b);
   if(d.edit){selection={type:'wire',id:+d.edit};showTab('draw');return}
   switch(d.act){
+   case'goMock':showTab('mock');break;case'goChecks':showTab('checks');break;
+   case'loadE90':{commit();S=e90ProjectStarter();selection=null;pending=null;canMode=false;canQ=[];save();showTab('draw');toast('E90 project mock-up loaded');break}
    case'lib':{const l=document.getElementById('lib');l.hidden=!l.hidden;b.setAttribute('aria-pressed',!l.hidden);if(!l.hidden&&!l.children.length)renderLib();break}
    case'zin':zoom(1.25);break;case'zout':zoom(1/1.25);break;case'fit':fit();break;
    case'undo':doUndo();break;case'redo':doRedo();break;
