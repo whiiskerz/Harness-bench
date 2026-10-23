@@ -37,3 +37,6 @@
 5. Confirm BMW X60001 pin 20 fan signal wiring and output compatibility; do not tie active outputs together.
 6. Alternator/starter cable gauge and protection strategy based on current, length, and vehicle requirements.
 7. Verify all connector face views and terminal/cavity part numbers against actual hardware before crimping.
+
+## Connector Studio update
+A Connector Studio tab was added for image references and generated cavity indexes. Component images are not automatically identified or verified; each component can be marked as verified manufacturer reference, owner photo with confirmed/unknown part number, needs verification, or illustration only. The generated pin grid is an index based on the current catalog and must not be treated as the physical mating-face orientation. Add local images to an `assets/` directory next to `index.html` and reference them by relative path.
