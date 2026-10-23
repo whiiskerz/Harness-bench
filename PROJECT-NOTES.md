@@ -40,3 +40,12 @@
 
 ## Connector Studio update
 A Connector Studio tab was added for image references and generated cavity indexes. Component images are not automatically identified or verified; each component can be marked as verified manufacturer reference, owner photo with confirmed/unknown part number, needs verification, or illustration only. The generated pin grid is an index based on the current catalog and must not be treated as the physical mating-face orientation. Add local images to an `assets/` directory next to `index.html` and reference them by relative path.
+
+## Connector photo references added in Update 3
+
+- Deutsch DT 12-way reference: https://www.deutschconnector.com/products/deutsch_connectors/deutsch_dt_series_connectors/deutsch_dt_12-way_connectors/ (visual image served from Custom Connector Kits; use the product family page to verify part numbers).
+- Leash dual 70A relay module: https://www.leashelectronics.com/products/dual-70-amp-relay-module
+- Leash OG4 relay module: https://www.leashelectronics.com/products/og4-relay-module
+- Leash Street/Strip wiring board: https://www.leashelectronics.com/products/street-strip-wiring-board
+
+These are external online reference images. They do not establish that the pictured Leash product is the user's exact single board, nor do they establish connector face orientation or pin assignment. Confirm exact model and terminal labels before using a photo to fabricate wiring.

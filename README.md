@@ -25,3 +25,21 @@ The mock-up's approximate placement and routing are for planning; actual branch 
 The Connector Studio tab lets you select a component in the current drawing, attach a publicly reachable image URL or a relative image path from your repository, and label the image/pinout verification status. It generates a cavity index from the app's current pin catalog. **That index is not a manufacturer connector-face drawing**; confirm the actual part number, viewing side and pin numbering before fabrication. Image URLs and status labels are saved in the browser project backup.
 
 For repository-hosted images, create `assets/` beside `index.html`, upload photos there, then enter paths such as `assets/dt12-front.jpg` in Connector Studio. Avoid hotlinking images from websites that may block embedding; prefer photos you own or manufacturer assets whose use is permitted.
+
+## Update 3 — reference photos in Connector Studio
+
+Connector Studio now includes a starter reference gallery for:
+- Deutsch DT 12-way connector kit
+- Leash Electronics dual 70A relay module
+- Leash Electronics OG4 relay module
+- Leash Electronics Street/Strip wiring board
+
+Known component names may auto-populate a vendor reference image in the preview. These are online image URLs, so they require internet access and may change if the vendor changes its image URLs. They are reference photos, not confirmation of the exact part installed in the vehicle. Use the product links in the gallery to confirm the board/connector model.
+
+### More useful current features
+- Default reference photo selection for parts whose names match DT12/DT8 or Leash relay terms
+- Gallery cards with source/product links
+- Existing image URL override and per-part status labels remain available
+- Cavity grids are still generated from the app's current pin data, not verified physical face diagrams
+
+For a more reliable/offline image library, upload images you have permission to use into `assets/` and set each part's image path to a repository-relative path, such as `assets/dt12-front.jpg`.
