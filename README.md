@@ -51,3 +51,10 @@ For a more reliable/offline image library, upload images you have permission to 
 - Connector Studio now accepts a photo directly from an iPad/computer. The app resizes it to a maximum 1100 px edge and compresses it to JPEG before saving it in browser storage. Keep original photos in the GitHub repository as a separate backup; browser storage limits vary.
 - Backup now exports the full app state, including connector photos/status and build checklist progress. Older partial backups remain loadable, but cannot restore data they never contained.
 - Existing vendor-gallery images are still external URLs and require internet. The new upload option lets you use your own photo without hosting it first, on the same browser/device.
+
+## Update 5 — Dashboard, diagram export, and interaction diagnostics
+- The app opens on a new E90 LS / MaxxECU project dashboard with a system-level wiring overview, live counts from the active drawing, workflow guidance, and direct navigation buttons.
+- A first-time install now starts with the E90 project mock-up; an existing browser project remains preserved. Use **Load E90 harness example** to intentionally reload the starter layout.
+- The Draw toolbar has **Export SVG** and **Print diagram**. SVG exports are vector graphics that can be zoomed and used in documentation. Print opens a simplified diagram page; browser pop-ups may need to be allowed.
+- Runtime JavaScript errors are surfaced as an on-screen toast to make broken actions easier to diagnose. If a button still does nothing, report the exact tab and button name and check the browser console; keep a JSON backup before replacing your deployed app.
+- The dashboard overview is a system-level guide, not a cavity-accurate production schematic. Always verify physical connector orientation, manufacturer pinouts, current capacity, wire gauge, fuse protection, and the specific Leash board terminal behavior before fabrication.

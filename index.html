@@ -2,6 +2,8 @@
 .studio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;margin:12px 0}.studio-photo{min-height:180px;display:flex;align-items:center;justify-content:center;background:#0b111b;border:1px dashed var(--line);border-radius:8px;overflow:hidden}.studio-photo img{display:block;width:100%;max-height:340px;object-fit:contain}.photo-fallback{padding:22px;display:flex;flex-direction:column;gap:8px;text-align:center;color:var(--mute)}.face-grid{display:grid;gap:7px;margin-top:12px}.face-pin{min-height:56px;border:1px solid var(--line);border-radius:7px;padding:7px;display:flex;flex-direction:column;gap:3px;background:var(--bg);overflow-wrap:anywhere}.face-pin b{font:700 13px var(--mono);color:var(--accent)}.face-pin span{font-size:11px;color:var(--mute)}.face-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.face-head span{color:var(--mute);font-size:12px}.studio-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:12px 0}.studio-part{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;text-align:left;padding:11px;display:flex;flex-direction:column;gap:6px;min-width:0}.studio-part.active{border-color:var(--accent)}.studio-part img{display:block}.studio-part[href]{text-decoration:none;color:var(--text)}.studio-part[href]:hover{border-color:var(--accent)}.studio-part span,.studio-part small{font-size:12px;color:var(--mute)}
 .build-progress{height:9px;background:var(--panel2);border:1px solid var(--line);border-radius:99px;overflow:hidden}.build-progress>div{height:100%;background:var(--good);width:0;transition:width .2s}.build-task{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}.build-task:last-child{border-bottom:0}.build-task input{width:18px;height:18px;flex:0 0 18px;margin-top:2px;accent-color:var(--good)}.build-task>span{font:inherit;letter-spacing:0;text-transform:none;color:var(--fg)}.build-task b{display:block}.build-task small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
 
+
+.dashboard-hero{padding:18px;background:linear-gradient(120deg,var(--panel),var(--panel2));border-left:4px solid var(--accent)}.eyebrow{font:500 11px var(--mono);letter-spacing:.14em;color:var(--accent);margin-bottom:8px}.dashboard-hero h2{font-size:clamp(24px,4vw,36px);margin-bottom:8px}.dashboard-hero p{max-width:780px;margin-bottom:12px}.dash-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.stat{padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}.stat>span{font:500 10px var(--mono);color:var(--mute);letter-spacing:.08em}.stat>b{font:700 clamp(18px,3vw,28px) var(--display);overflow-wrap:anywhere}.stat small{font-size:11px;color:var(--mute)}.status-warn{color:var(--warn)!important;font-size:17px!important}.system-map{padding:16px;display:flex;flex-direction:column;align-items:center;gap:7px}.sys-node{display:flex;flex-direction:column;gap:3px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:12px;min-width:0;width:100%;max-width:310px}.sys-node b{font:700 14px var(--display);letter-spacing:.06em;color:var(--accent)}.sys-node span{font-size:12px;color:var(--mute)}.sys-node.power{border-color:#d69a31}.sys-node.ecu{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel2))}.sys-arrow{font-size:23px;color:var(--accent);line-height:1}.sys-split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;align-items:start}.sys-branch{display:flex;align-items:center;flex-direction:column;gap:7px;min-width:0}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid2 .card{min-width:0}@media(max-width:700px){.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.sys-split{grid-template-columns:1fr}.sys-branch{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center}.sys-branch .sys-node{max-width:none}.sys-arrow{transform:none}}
 </style></head><body>
 <title>Harness Bench</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -124,7 +126,7 @@ a{color:var(--accent)}
 <div class="wrap">
 <header>
   <h1>Harness <span>Bench</span></h1>
-  <p class="sub">Place connectors, run wires pin to pin, set a firewall line. Wire list, cut list and parts list come from the drawing.</p>
+  <p class="sub">Motorsport harness design · linked pinouts · wire schedules · build documentation</p>
 </header>
 <nav id="tabs"></nav>
 
@@ -136,6 +138,7 @@ a{color:var(--accent)}
     <button class="btn" data-act="zout" aria-label="Zoom out">−</button>
     <button class="btn" data-act="zin" aria-label="Zoom in">+</button>
     <button class="btn" data-act="fit">Fit</button>
+    <button class="btn" data-act="exportDiagram">Export SVG</button><button class="btn" data-act="printDiagram">Print diagram</button>
     <button class="btn" data-act="undo" id="undoBtn">Undo</button><button class="btn" data-act="redo" id="redoBtn">Redo</button>
     <button class="btn" data-act="fw" id="fwBtn" aria-pressed="false">Firewall line</button>
     <button class="btn" data-act="tk" id="tkBtn" aria-pressed="false">Trunk line</button>
@@ -353,7 +356,7 @@ function e90ProjectStarter(){
   return {parts,wires:W,nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
 }
 
-let S=Object.assign({scale:4,strip:.5,def:{awg:18,color:''},tab:'draw'},starter());
+let S=Object.assign({scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'project'},e90ProjectStarter());
 try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&Array.isArray(o.parts))S=Object.assign(S,o)}}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const nid=()=>S.nid++;
@@ -887,24 +890,17 @@ function rNotes(){
     <tr><td class="mono">F</td><td>TPS 2</td><td>Unused, or spare analog input</td></tr></tbody></table></div>`;
 }
 function rProject(){
- document.getElementById('t-project').innerHTML=`<h2>E90 LS / MaxxECU Race Gen 1 project</h2>
- <p class="muted">Project-specific build sheet based on the pin map supplied by the owner. The drawing preset is a visual planning layout, not a validated production harness or substitute for checking the actual controller, connector face, current draw and wiring diagrams.</p>
- <div class="row"><button class="btn primary" data-act="loadE90">Load E90 harness mock-up</button><button class="btn" data-act="goMock">Open physical mock-up</button><button class="btn" data-act="goChecks">Run checks</button></div>
- <div class="card"><div class="hd"><b>Confirmed from your notes</b><span class="pill ok">Owner supplied</span></div><ul class="tight">
- <li>MaxxECU Race Gen 1.</li><li>DT12 power breakout: GPO2 fuel pump 1, GPO3 fuel pump 2, GPO6 A/C clutch; pin 7 ECU switched +12V; alternator excite unused because the Speedway alternator is self-exciting.</li>
- <li>DT8 analog: +5V, MaxxECU sensor ground, paddle AIN1, fuel-pressure signal, A/C-pressure signal and radiator-fan PWM/GPO5 as listed.</li>
- <li>DT8 CAN/control: CAN L/H, brake DIN1, shifter inputs, flex fuel DIN5, nitrous GPO4 → SSR.</li>
- <li>BMW X60001: pin 20 fan-PWM interface, pin 38 brake-switch signal, pin 7 chassis CAN L, pin 8 chassis CAN H.</li>
- <li>CAN keypad: CAN L/H, switched +12V, ground. 8HP six-position map supplied: pin 1 constant +12V, pin 2 switched +12V, pin 3 chassis ground, pin 4 CAN L, pin 5 CAN H, pin 6 sealed/unused.</li></ul></div>
- <div class="card"><div class="hd"><b>Needs verification before fabrication</b><span class="pill wn">Do not guess</span></div><ul class="tight">
- <li><b>8HP:</b> the six-position functional map is owner-supplied, not independently verified. Confirm connector face/orientation and terminal numbering. Pin 1 constant +12V must come from an appropriately fused battery feed; fuse rating, wire gauge and routing remain TBD. Pin 3 chassis ground needs a suitable ground point.</li>
- <li><b>CAN:</b> keep the MaxxECU/8HP/keypad bus separate from BMW chassis CAN until the controller topology, bitrate, message compatibility and termination are confirmed. Do not bridge chassis CAN pins 7/8 into the standalone bus by assumption.</li>
- <li><b>Radiator fan:</b> pin 20 is shown as the BMW fan-PWM interface from your notes; verify whether this is the correct signal wire and whether the MaxxECU output can drive that circuit. Never tie two active outputs together.</li>
- <li><b>EKP trigger → Leash C+:</b> verify source voltage, polarity, and the exact Leash board terminal behavior before connecting.</li>
- <li><b>Alternator/starter power:</b> draw the large-stud paths as a high-current circuit, but choose cable gauge, termination, protection and routing from actual alternator output, starter demand, cable length and vehicle requirements. This is not ordinary 8–22 AWG signal wiring.</li>
- <li><b>Sensor ground:</b> dedicated MaxxECU sensor return only; do not connect it to chassis/engine ground.</li>
- <li><b>Fuel pump power:</b> the ECU GPOs are low-side triggers; the relay board supplies pump current. Confirm relay board ratings, fuse sizes and wire gauge against measured/expected pump current.</li></ul></div>
- <div class="card"><div class="hd"><b>Included in the mock-up</b></div><p>DT12, both DT8 breakouts, dual fuel-pump relay board, surge tank, trunk ground bus, switched fuse box, A/C relay, Leash single board, EKP trigger endpoint, CAN keypad, owner-mapped 6-position 8HP interface, CAN hub, BMW X60001 interface, flex-fuel sensor, shifter DT4, nitrous SSR, Speedway alternator, starter, battery, and high-current junction endpoints.</p><p class="muted">The mock-up deliberately leaves alternator/starter heavy-gauge paths unrouted until cable sizing is known. The BMW chassis CAN pins are displayed but not connected to the MaxxECU CAN hub.</p></div>`;
+ const partCount=(S.parts||[]).length,wireCount=(S.wires||[]).length,connected=new Set((S.wires||[]).flatMap(w=>[w.a.p,w.b.p])).size;
+ const hasE90=(S.parts||[]).some(p=>p.t==='e90dt12'||/DT12_POWER_BREAKOUT/.test(p.name||''));
+ document.getElementById('t-project').innerHTML=`
+ <div class="dashboard-hero card"><div class="eyebrow">PROJECT DASHBOARD / 01</div><h2>E90 LS SWAP · MAXXECU RACE GEN 1</h2><p class="muted">Your BMW E90 is the starter project. Use it as a living example, then adapt the same workflow to future harnesses. Owner-supplied assignments are identified separately from verified manufacturer data.</p>
+ <div class="row"><button class="btn primary" data-act="loadE90">${hasE90?'Reload E90 example':'Load E90 harness example'}</button><button class="btn" data-act="goMock">Open physical mock-up</button><button class="btn" data-act="goChecks">Run electrical checks</button><button class="btn" data-act="goDraw">Open wiring diagram</button></div></div>
+ <div class="dash-stats"><div class="card stat"><span>COMPONENTS</span><b>${partCount}</b><small>in active drawing</small></div><div class="card stat"><span>WIRE RUNS</span><b>${wireCount}</b><small>drawn connections</small></div><div class="card stat"><span>CONNECTED PARTS</span><b>${connected}</b><small>touching a wire</small></div><div class="card stat"><span>DESIGN STATUS</span><b class="status-warn">IN PROGRESS</b><small>verify before fabrication</small></div></div>
+ <h3>Example harness architecture</h3><p class="muted">A quick visual orientation for the build. This is a system overview, not a pin-accurate schematic. Use Draw, Pinouts and Checks for detailed work.</p>
+ <div class="system-map card"><div class="sys-node power"><b>TRUNK POWER</b><span>Battery · main protection</span><span>Switched fuse distribution</span></div><div class="sys-arrow">↓</div><div class="sys-node ecu"><b>MAXXECU RACE</b><span>DT12 power / GPOs</span><span>DT8 analog + control</span></div><div class="sys-split"><div class="sys-branch"><div class="sys-arrow">↙</div><div class="sys-node"><b>FUEL SYSTEM</b><span>Leash dual relay board</span><span>535 lift / 525 staged pump</span></div></div><div class="sys-branch"><div class="sys-arrow">↓</div><div class="sys-node"><b>DRIVER / TRANS</b><span>CAN keypad · 8HP</span><span>Keep chassis CAN separate</span></div></div><div class="sys-branch"><div class="sys-arrow">↘</div><div class="sys-node"><b>ENGINE / BODY</b><span>Coils · A/C · fan interface</span><span>Flex fuel · nitrous SSR</span></div></div></div></div>
+ <div class="grid2"><div class="card"><div class="hd"><b>Confirmed from your notes</b><span class="pill ok">Owner supplied</span></div><ul class="tight"><li>MaxxECU Race Gen 1.</li><li>DT12: GPO2 fuel pump 1, GPO3 fuel pump 2, GPO6 A/C clutch, ECU switched +12V; alternator excite unused for the self-exciting Speedway alternator.</li><li>DT8 analog: +5V, dedicated sensor ground, paddle AIN1, fuel-pressure signal, A/C-pressure signal and fan PWM/GPO5.</li><li>DT8 CAN/control: CAN L/H, brake DIN1, shifter inputs, flex-fuel DIN5, nitrous GPO4 to SSR.</li><li>BMW X60001 interface: pin 20 fan-PWM interface, pin 38 brake switch, pins 7/8 chassis CAN L/H.</li><li>CAN keypad and owner-mapped six-position 8HP interface.</li></ul></div>
+ <div class="card"><div class="hd"><b>Critical design rules</b><span class="pill wn">Verify first</span></div><ul class="tight"><li>ECU GPOs are low-side triggers; they do not power pumps or other loads directly.</li><li>Keep MaxxECU sensor ground isolated from chassis/engine ground.</li><li>Do not bridge BMW chassis CAN into the standalone CAN bus without verified topology and compatibility.</li><li>8HP cavity orientation, Leash terminal behavior, fuse sizes, wire gauges and high-current paths remain to be verified.</li><li>Do not treat the drawing as a production-ready harness until every pinout, current load, protection device and endpoint has been checked.</li></ul></div></div>
+ <div class="card"><div class="hd"><b>Recommended workflow</b><span class="pill">Design → verify → build</span></div><ol class="tight"><li><b>Draw:</b> place components and connect actual cavities.</li><li><b>Pinouts:</b> inspect every endpoint, signal, color and gauge.</li><li><b>Checks:</b> resolve duplicate pins, missing details and fuse-sizing warnings.</li><li><b>Wire list / Cut list / Parts list:</b> export shop paperwork from the same design.</li><li><b>Backup:</b> save a JSON snapshot before major changes.</li></ol><div class="row"><button class="btn primary" data-act="goDraw">Start drawing</button><button class="btn" data-act="exportDiagram">Export current SVG</button><button class="btn" data-act="bkQuick">Copy project backup</button></div></div>`;
 }
 
 function defaultPartPhoto(p){
@@ -958,7 +954,7 @@ function rSave(){
 }
 
 /* ---------- tabs ---------- */
-const TABS=[['project','E90 Project'],['studio','Connector Studio'],['draw','Draw'],['mock','Mockup'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['bom','Parts list'],['checks','Checks'],['build','Build tracker'],['notes','Notes'],['save','Backup']];
+const TABS=[['project','Dashboard · E90 Example'],['studio','Connector Studio'],['draw','Draw'],['mock','Mockup'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['bom','Parts list'],['checks','Checks'],['build','Build tracker'],['notes','Notes'],['save','Backup']];
 const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,bom:rBom,checks:rChecks,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
 tabsEl.innerHTML=TABS.map(([k,l])=>`<button role="tab" data-tab="${k}">${l}</button>`).join('');
@@ -979,6 +975,7 @@ function syncBar(){
 
 /* ---------- copy ---------- */
 let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,1800)}
+window.addEventListener('error',e=>{try{toast('App error: '+(e.message||'unknown error')+' — refresh or restore your backup')}catch(_){}});window.addEventListener('unhandledrejection',e=>{try{toast('Action failed: '+String(e.reason||'unknown error'))}catch(_){}});
 async function copy(text,anchor){
   try{await navigator.clipboard.writeText(text);toast('Copied')}
   catch(e){let ta=document.getElementById('fb');if(!ta){ta=document.createElement('textarea');ta.id='fb';ta.readOnly=true;anchor.after(ta)}ta.value=text;ta.select();toast('Select and copy the text')}
@@ -989,6 +986,19 @@ const CSVS={
  pins:()=>csv([['Part','Pin','Function','Signal','Color','AWG','Goes to']].concat(S.parts.flatMap(p=>{const t=T[p.t];return(t.node?[0]:t.pins.map((_,i)=>i)).flatMap(i=>{const ws=usedOn(p.id,i);return ws.length?ws.map(w=>[p.name,t.pins[i].p,t.node?'':plabel(p,i),w.sig,w.color,w.awg,endName((w.a.p===p.id&&w.a.i===i)?w.b:w.a)]):[[p.name,t.pins[i].p,t.node?'':plabel(p,i),'','','','']]})}))),
  bom:()=>csv([['Item','Qty','Unit','Note']].concat(bomRows()))
 };
+
+function exportDiagram(){
+ const svg=document.getElementById('cv');if(!svg){toast('Drawing stage not found');return}
+ const clone=svg.cloneNode(true);const r=svg.getBoundingClientRect();clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width',Math.max(1000,Math.round(r.width*2)));clone.setAttribute('height',Math.max(700,Math.round(r.height*2)));clone.setAttribute('viewBox',svg.getAttribute('viewBox')||`0 0 ${r.width} ${r.height}`);
+ const css=document.createElementNS('http://www.w3.org/2000/svg','style');css.textContent=':root{--bg:#13161a;--panel:#1b1f25;--panel2:#222831;--line:#303743;--grid:#262c35;--fg:#e9e7e1;--mute:#9aa3af;--accent:#f0a81c;--good:#4cc38a;--warn:#f0a81c;--bad:#ef6a5b} text{font-family:Arial,sans-serif}';clone.insertBefore(css,clone.firstChild);
+ const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='harness-bench-wiring-diagram.svg';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('SVG diagram exported');
+}
+function printDiagram(){
+ const svg=document.getElementById('cv');if(!svg)return toast('Drawing stage not found');
+ const clone=svg.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width','1400');clone.setAttribute('height','900');clone.style.width='100%';clone.style.height='auto';
+ const css=document.createElementNS('http://www.w3.org/2000/svg','style');css.textContent=':root{--bg:#fff;--panel:#f5f5f5;--panel2:#eee;--line:#777;--grid:#ddd;--fg:#111;--mute:#444;--accent:#a86900;--good:#13804f;--warn:#a86900;--bad:#c23a2b} text{font-family:Arial,sans-serif}';clone.insertBefore(css,clone.firstChild);
+ const w=window.open('','_blank');if(!w){toast('Allow pop-ups to print the diagram');return}w.document.write('<!doctype html><html><head><title>Harness Bench diagram</title><style>body{font:14px Arial;margin:18px}h1{font-size:18px}p{color:#444;font-size:12px}svg{max-width:100%;height:auto}</style></head><body><h1>Harness Bench — Wiring Diagram</h1><p>Design draft. Verify connector orientation, current capacity, fuse protection and all circuit endpoints before fabrication.</p>'+new XMLSerializer().serializeToString(clone)+'</body></html>');w.document.close();setTimeout(()=>{w.focus();w.print()},500);
+}
 
 /* ---------- events ---------- */
 function delPart(id){S.wires=S.wires.filter(w=>w.a.p!==id&&w.b.p!==id);S.parts=S.parts.filter(p=>p.id!==id)}
@@ -1008,7 +1018,8 @@ document.addEventListener('click',e=>{
   if(d.copy)return copy(CSVS[d.copy](),b);
   if(d.edit){selection={type:'wire',id:+d.edit};showTab('draw');return}
   switch(d.act){
-   case'goMock':showTab('mock');break;case'goChecks':showTab('checks');break;
+   case'goMock':showTab('mock');break;case'goChecks':showTab('checks');break;case'goDraw':showTab('draw');break;
+   case'exportDiagram':exportDiagram();break;case'printDiagram':printDiagram();break;case'bkQuick':copy(JSON.stringify(S),b);break;
    case'studioSave':{S.studioPics=S.studioPics||{};S.studioStatus=S.studioStatus||{};const id=+(document.getElementById('studioPart')?.value||S.studioSelected);const pic=document.getElementById('studioPic')?.value.trim()||'';if(pic)S.studioPics[id]=pic;else delete S.studioPics[id];S.studioStatus[id]=document.getElementById('studioStatus')?.value||'Needs photo / verification';S.studioSelected=id;save();rStudio();toast('Component details saved');break;}
    case'studioFlip':toast('Confirm mating-face vs wire-side orientation from manufacturer documentation before termination');break;
    case'buildReset':if(confirm('Reset all Build Tracker checkboxes?')){S.buildChecks={};save();rBuild()}break;
@@ -1084,7 +1095,7 @@ document.addEventListener('keydown',e=>{
 /* ---------- start ---------- */
 renderLib();
 syncUndo();
-showTab(TABS.some(t=>t[0]===S.tab)?S.tab:'draw');
+showTab('project');
 if(S.tab==='draw'&&!S.view)requestAnimationFrame(fit);
 </script>
 

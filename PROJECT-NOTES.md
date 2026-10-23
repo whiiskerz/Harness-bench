@@ -57,3 +57,9 @@ These are external online reference images. They do not establish that the pictu
 - Connector Studio now accepts a photo directly from an iPad/computer. The app resizes it to a maximum 1100 px edge and compresses it to JPEG before saving it in browser storage. Keep original photos in the GitHub repository as a separate backup; browser storage limits vary.
 - Backup now exports the full app state, including connector photos/status and build checklist progress. Older partial backups remain loadable, but cannot restore data they never contained.
 - Existing vendor-gallery images are still external URLs and require internet. The new upload option lets you use your own photo without hosting it first, on the same browser/device.
+
+## Update 5 features
+- New first-page E90 project dashboard with live active-project counts, system-level architecture map, safety/verification reminders, and launch buttons.
+- First-time startup defaults to the owner-specific E90 mock-up. Existing localStorage project state is preserved; use the explicit reload button to load the example again.
+- Draw tab now supports SVG vector export and a print view. Browser pop-up permissions may affect print.
+- Runtime errors now surface in an on-screen toast to help diagnose interactions.
