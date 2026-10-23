@@ -1,0 +1,39 @@
+# E90 LS harness map — source notes
+
+## DT12 power breakout
+1 Yellow — ignition coils +12V
+2 Engine ground — wire color not specified
+3 Green — GPO2 fuel pump 1 (surge 535)
+4 Purple — GPO6 A/C compressor clutch
+5 Blue — GPO3 fuel pump 2 (surge 525)
+6 Black — starter input
+7 Red — ECU switched +12V
+8 blank — GPO8 tach output
+9 blank — GPO15 +12V output
+10 blank — H-bridge motor 2 +
+11 blank — H-bridge motor 2 −
+12 blank — alternator excite (not used; self-exciting alternator)
+
+## DT8 analog sub (DT16 pins 1–8)
+1 Red +5V sensors; 2 Black MaxxECU sensor ground; 3 Green paddle resistor AIN1; 4 blank AIN2 spare; 5 Yellow fuel-pressure signal; 6 Blue A/C-pressure signal; 7 blank spare DIN/GPO; 8 Purple radiator fan PWM / GPO5.
+
+## DT8 CAN/control sub (DT16 pins 9–16)
+1 Pink/Purple CAN Low; 2 Grey/Blue CAN High; 3 Black brake DIN1; 4 Blue shifter input 1; 5 Black shifter input 2; 6 Yellow flex-fuel DIN5; 7 Purple nitrous GPO4 to SSR; 8 blank spare.
+
+## Sub-harnesses and vehicle interface
+- Flex fuel: yellow signal wire.
+- Shifter DT4: pin 1 blue input, pin 2 black input, pin 3 brown/green ground, pin 4 spare.
+- CAN keypad: CAN Low, CAN High, switched +12V, ground.
+- 8HP six-position functional map (owner supplied): pin 1 constant +12V; pin 2 switched +12V; pin 3 chassis ground; pin 4 CAN Low; pin 5 CAN High; pin 6 sealed/unused. Confirm connector face/orientation before assigning physical cavity numbers.
+- Nitrous: GPO4 trigger to SSR then solenoid; future purge, bottle heater/opener and pressure sensor.
+- BMW DME X60001 as supplied: pin 20 radiator fan PWM interface, pin 38 brake switch, pin 7 chassis CAN Low, pin 8 chassis CAN High.
+- Trunk: battery distribution, dual fuel pump relay board, surge 535/525, ground bus, future accessory loads.
+
+## Open verification items
+1. Verify the 8HP six-position map against the actual connector drawing and connector face orientation.
+2. Choose 8HP constant-feed fuse rating, wire gauge and distribution path based on controller requirements; do not run pin 1 directly from the battery unfused.
+3. Confirm whether the standalone CAN bus is compatible with the MaxxECU, 8HP controller and keypad, including bitrate and termination.
+4. Exact electrical behavior of the EKP trigger and Leash C+ input.
+5. Confirm BMW X60001 pin 20 fan signal wiring and output compatibility; do not tie active outputs together.
+6. Alternator/starter cable gauge and protection strategy based on current, length, and vehicle requirements.
+7. Verify all connector face views and terminal/cavity part numbers against actual hardware before crimping.

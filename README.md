@@ -1,28 +1,22 @@
-# Harness Bench
+# Harness Bench — E90 LS / MaxxECU Race Gen 1 update
 
-A standalone browser-based wiring harness design tool exported from a Claude Artifact.
+A standalone browser harness-planning app. Open `index.html` in a modern browser or publish the folder with GitHub Pages.
 
-## Files
+## Start here
+1. Open the **E90 Project** tab.
+2. Choose **Load E90 harness mock-up**. This replaces the current drawing, so use **Backup → Copy backup** first if you need to preserve an existing design.
+3. Open **Mockup** to inspect the physical-style branch layout, **Pinouts** to see connector assignments, **Wire list** and **Cut list** for planning, **Parts list** for a preliminary BOM, and **Checks** for basic drawing checks.
+4. Use **Backup → Copy backup** regularly. The app stores data in browser local storage; it does not automatically sync between devices.
 
-- `index.html` — complete standalone app source, including its built-in parts catalog and application logic.
-- `claude-artifact-notes.md` — the Markdown export received from Claude. It contains only a brief app description.
-- `catalog-inventory.json` — a transparent inventory of notable built-in catalog entries and known limitations. It is not a verified pinout database.
+## Included project-specific parts
+- User-mapped DT12 power breakout, DT8 analog sub-harness and DT8 CAN/control sub-harness.
+- Shifter DT4 and CAN keypad connectors.
+- Owner-supplied six-position 8HP functional map: constant +12V, switched +12V, chassis ground, CAN Low, CAN High, sealed/unused. Physical cavity orientation and feed sizing still require verification.
+- BMW DME X60001 interface view containing only the owner-supplied pins 7, 8, 20 and 38.
+- Dual pump relay board, surge tank, switched fuse box, A/C relay, Leash single board, EKP trigger endpoint, CAN hub, flex-fuel sensor, nitrous SSR, Speedway self-exciting alternator, starter, battery and high-current junction.
+- Project notes distinguishing owner-supplied mappings from items requiring verification.
 
-## Run locally
+## Important limits
+This is a visual planning tool, not an electrical design approval. The 8HP six-position functional map is owner-supplied and not independently verified against a connector drawing; confirm connector face/orientation before crimping. The 8HP constant +12V feed is intentionally not routed until fuse rating, gauge and distribution path are selected. The MaxxECU/8HP/keypad CAN network is shown separately from BMW chassis CAN; do not bridge the buses without confirming protocol, bitrate, termination and controller requirements. The radiator fan interface and EKP-to-Leash trigger require electrical verification. High-current alternator/starter paths are deliberately not routed until cable sizing and protection strategy are confirmed. Sensor ground remains separate from chassis ground. Check connector mating-face orientation, terminal part numbers, wire gauge, current, fusing and OEM diagrams before building.
 
-Open `index.html` in a modern browser. The app uses browser `localStorage` for saved designs. Browser data does not automatically sync between devices or browsers.
-
-## Publish with GitHub Pages
-
-1. Create a GitHub repository (for example, `harness-bench`).
-2. Upload these files to the repository root.
-3. In repository **Settings → Pages**, choose deployment from the `main` branch and the root (`/`) folder.
-4. Open the published Pages URL and test the app.
-
-## Important safety / accuracy note
-
-The catalog is embedded in `index.html`. Some items are generic templates, and many do not contain exact manufacturer part numbers, terminal/seal information, or verified function labels. The existing MaxxECU labels and other pin definitions must be checked against the exact ECU/harness documentation and connector orientation before using this tool to build or energize a real harness. Do not assume a catalog entry is a verified manufacturer pinout.
-
-## Saved design backup
-
-The app has a backup-copy feature that copies a JSON snapshot of the current drawing. Use it periodically and save the copied JSON somewhere safe. The app stores data in local browser storage under `harness-bench-v2`; clearing browser website data may erase those saved designs.
+The mock-up's approximate placement and routing are for planning; actual branch lengths should be measured on the vehicle or fixture before cutting wire.
