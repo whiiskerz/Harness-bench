@@ -158,6 +158,7 @@ a{color:var(--accent)}
 <section id="t-wires" hidden></section>
 <section id="t-cut" hidden></section>
 <section id="t-pins" hidden></section>
+<section id="t-book" hidden></section>
 <section id="t-bom" hidden></section>
 <section id="t-build" hidden></section>
 <section id="t-checks" hidden></section>
@@ -954,9 +955,34 @@ function rSave(){
    <div class="row"><button class="btn" data-act="loadEx">Load the MaxxECU starter</button><button class="btn danger" data-act="clearAll">Clear drawing</button></div>`;
 }
 
+/* ---------- linked harness book: owner-confirmed records, editable and exportable ---------- */
+const BOOK_SEED=[
+ {id:'DT6-TRUNK-CABIN',kind:'Connector',name:'DT6 trunk-to-cabin',from:'Trunk',to:'Cabin / ECU area',cavity:'1–6',wire:'6 circuits',status:'Owner confirmed; cavity order verify',notes:'Splits in cabin into three DT2 connectors.'},
+ {id:'DT2-A',kind:'Connector',name:'DT2-A pump outputs',from:'DT6 cavities 1–2',to:'MaxxECU Race 12-pin',cavity:'1=GPO2; 2=GPO3',wire:'1 green 14 AWG; 2 yellow 14 AWG',status:'Owner confirmed',notes:'DT2-A cavity assignments confirmed by owner.'},
+ {id:'DT2-B',kind:'Connector',name:'DT2-B nitrous control / pressure',from:'DT6 cavities 3–4',to:'MaxxECU Race 16-pin',cavity:'1=GPO7; 2=AIN2',wire:'1 orange 14 AWG; 2 purple 20 AWG',status:'Owner confirmed',notes:'GPO7 ground-triggers a relay; AIN2 is nitrous pressure signal.'},
+ {id:'DT2-C',kind:'Connector',name:'DT2-C sensor supply',from:'DT6 cavities 5–6',to:'MaxxECU Race 16-pin + shared sensors',cavity:'1=+5V; 2=sensor ground',wire:'1 red 20 AWG; 2 black 20 AWG',status:'Owner confirmed; splice details pending',notes:'Both circuits splice to other sensors. Sensor ground must remain ECU sensor ground, not chassis.'},
+ {id:'ECU-12-3',kind:'ECU cavity',name:'GPO2',from:'MaxxECU 12-pin pin 3',to:'DT2-A cavity 1',cavity:'12-pin / 3',wire:'Green / 14 AWG',status:'Owner confirmed',notes:'Low-side output; relay trigger, not pump power.'},
+ {id:'ECU-12-5',kind:'ECU cavity',name:'GPO3',from:'MaxxECU 12-pin pin 5',to:'DT2-A cavity 2',cavity:'12-pin / 5',wire:'Yellow / 14 AWG',status:'Owner confirmed',notes:'Low-side output; relay trigger, not pump power.'},
+ {id:'ECU-16-7',kind:'ECU cavity',name:'GPO7',from:'MaxxECU 16-pin pin 7',to:'DT2-B cavity 1',cavity:'16-pin / 7',wire:'Orange / 14 AWG',status:'Owner confirmed',notes:'Ground trigger for relay circuit. Confirm relay coil and output-side protection.'},
+ {id:'ECU-16-4',kind:'ECU cavity',name:'AIN2 nitrous pressure',from:'MaxxECU 16-pin pin 4',to:'DT2-B cavity 2',cavity:'16-pin / 4',wire:'Purple / 20 AWG',status:'Owner confirmed',notes:'Signal input.'},
+ {id:'ECU-16-1',kind:'ECU cavity',name:'Sensor +5V',from:'MaxxECU 16-pin pin 1',to:'DT2-C cavity 1 + sensor splice',cavity:'16-pin / 1',wire:'Red / 20 AWG',status:'Owner confirmed; splice detail pending',notes:'Shared sensor supply; document each branch separately when known.'},
+ {id:'ECU-16-2',kind:'ECU cavity',name:'Sensor ground',from:'MaxxECU 16-pin pin 2',to:'DT2-C cavity 2 + sensor splice',cavity:'16-pin / 2',wire:'Black / 20 AWG',status:'Owner confirmed; splice detail pending',notes:'Dedicated ECU sensor ground; do not tie to chassis.'},
+ {id:'EXH-VALVE-PAIR',kind:'Load / branch',name:'Valved mufflers — motors paired',from:'MaxxECU Motor 2 + / −',to:'Muffler 1 + Muffler 2',cavity:'Motor 2 + / −',wire:'Joined positive pair + joined negative pair; outgoing gauge unknown',status:'Owner confirmed topology; protection / gauge / route unverified',notes:'Original control box bypassed. User joined both muffler positives and both negatives; one outgoing wire for each polarity. User says Motor 2 handles direction and CAN keypad controls it. Confirm max Motor 2 current, fuse protection, wire gauge and route before powering.'}
+];
+function ensureBook(){if(!Array.isArray(S.circuitBook)||!S.circuitBook.length)S.circuitBook=JSON.parse(JSON.stringify(BOOK_SEED));}
+function rBook(){
+ ensureBook();
+ const q=(document.getElementById('bookQ')?.value||'').toLowerCase();
+ const rows=S.circuitBook.filter(x=>Object.values(x).join(' ').toLowerCase().includes(q));
+ const fields=[['id','ID'],['kind','Type'],['name','Circuit / connector'],['from','From'],['to','To'],['cavity','Cavities / pins'],['wire','Wire details'],['status','Status'],['notes','Notes']];
+ document.getElementById('t-book').innerHTML=`<h2>Harness book · linked circuit register</h2><p class="muted">Editable documentation for the E90 LS example. These records are a project register; they do not automatically rewire the drawing yet. Owner-provided data is kept distinct from details still needing verification.</p><div class="card"><div class="row"><label style="flex:1;min-width:180px"><span>Search every field</span><input id="bookQ" value="${esc(document.getElementById('bookQ')?.value||'')}" placeholder="Search GPO2, muffler, DT2…"></label><button class="btn primary" data-act="bookAdd">+ Add record</button><button class="btn" data-act="bookCSV">Export CSV</button><button class="btn" data-act="bookPrint">Print register</button><button class="btn" data-act="bookReset">Restore starter records</button></div><div class="hd"><b>${rows.length} records</b><span class="pill wn">Verify before fabrication</span></div></div><div class="tw"><table><thead><tr>${fields.map(f=>`<th>${f[1]}</th>`).join('')}<th>Action</th></tr></thead><tbody>${rows.map(x=>`<tr>${fields.map(([k,label])=>`<td><input aria-label="${label} ${esc(x.id)}" data-book="${esc(x.id)}" data-field="${k}" value="${esc(x[k]||'')}" ${k==='id'?'readonly':''} style="min-width:${['notes','status','wire','to','from'].includes(k)?'190px':'110px'}"></td>`).join('')}<td><button class="btn danger" data-act="bookDelete" data-id="${esc(x.id)}">Delete</button></td></tr>`).join('')}</tbody></table></div><div class="grid2"><div class="card"><h3>Current example topology</h3><div class="sys-node"><b>DT6 · TRUNK → CABIN</b><span>Six owner-described circuits</span></div><div class="sys-arrow">↓</div><div class="sys-split"><div class="sys-node"><b>DT2-A</b><span>GPO2 / GPO3</span><span>Green 14 / Yellow 14</span></div><div class="sys-node"><b>DT2-B</b><span>GPO7 / AIN2</span><span>Orange 14 / Purple 20</span></div><div class="sys-node"><b>DT2-C</b><span>+5V / sensor ground</span><span>Red 20 / Black 20</span></div></div></div><div class="card"><h3>Valved muffler circuit</h3><p>Two motor positives joined; two motor negatives joined; one outgoing wire per polarity. Original control box bypassed.</p><p><b>Control:</b> MaxxECU Motor 2 via CAN keypad, per owner.</p><p class="wn"><b>Still unverified:</b> motor current, output rating, fuse/protection, wire gauge and routing. Confirm these before energizing.</p></div></div><p class="muted">Records are saved with the project in this browser and included in the JSON backup. CSV exports the currently documented register.</p>`;
+}
+function bookCSV(){ensureBook();const cols=['id','kind','name','from','to','cavity','wire','status','notes'];return csv([cols].concat(S.circuitBook.map(x=>cols.map(k=>x[k]||''))));}
+function bookPrint(){ensureBook();const w=window.open('','_blank');if(!w){toast('Allow pop-ups to print');return}const rows=S.circuitBook.map(x=>`<tr>${['id','kind','name','from','to','cavity','wire','status','notes'].map(k=>`<td>${esc(x[k]||'')}</td>`).join('')}</tr>`).join('');w.document.write(`<!doctype html><html><head><title>Harness Bench Circuit Register</title><style>body{font:11px Arial;margin:18px}h1{font-size:20px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #aaa;padding:5px;text-align:left;vertical-align:top}th{background:#eee}p{font-size:11px}</style></head><body><h1>Harness Bench — E90 LS Circuit Register</h1><p>Owner-supplied design notes. Verify all pinouts, current ratings and protection before fabrication or energizing.</p><table><thead><tr>${['ID','Type','Circuit','From','To','Cavities / pins','Wire details','Status','Notes'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></body></html>`);w.document.close();setTimeout(()=>{w.focus();w.print()},300)}
+
 /* ---------- tabs ---------- */
-const TABS=[['project','Dashboard · E90 Example'],['studio','Connector Studio'],['draw','Draw'],['mock','Mockup'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['bom','Parts list'],['checks','Checks'],['build','Build tracker'],['notes','Notes'],['save','Backup']];
-const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,bom:rBom,checks:rChecks,build:rBuild,notes:rNotes,save:rSave};
+const TABS=[['project','Dashboard · E90 Example'],['studio','Connector Studio'],['draw','Draw'],['mock','Mockup'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts list'],['checks','Checks'],['build','Build tracker'],['notes','Notes'],['save','Backup']];
+const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
 tabsEl.innerHTML=TABS.map(([k,l])=>`<button role="tab" data-tab="${k}">${l}</button>`).join('');
 function showTab(k){
@@ -1047,6 +1073,11 @@ document.addEventListener('click',e=>{
    case'useAsDefault':{const w=S.wires.find(x=>x.id===selection.id);S.def={awg:w.awg,color:w.color};save();syncBar();toast('New wires will use this');break}
    case'clearAll':{commit();S.parts=[];S.wires=[];S.examples=false;selection=null;pending=null;S.view=null;save();showTab(S.tab);break}
    case'loadEx':{commit();Object.assign(S,starter());selection=null;pending=null;save();showTab('draw');break}
+   case'bookAdd':{ensureBook();let id='NEW-'+(Date.now().toString().slice(-6));while(S.circuitBook.some(x=>x.id===id))id+='X';S.circuitBook.push({id,kind:'Circuit',name:'New circuit',from:'',to:'',cavity:'',wire:'',status:'Planned / unverified',notes:''});save();showTab('book');toast('Record added');break;}
+   case'bookDelete':{ensureBook();S.circuitBook=S.circuitBook.filter(x=>x.id!==d.id);save();showTab('book');break;}
+   case'bookCSV':copy(bookCSV(),b);break;
+   case'bookPrint':bookPrint();break;
+   case'bookReset':if(confirm('Restore the starter harness records? This replaces the current Harness Book records only.')){S.circuitBook=JSON.parse(JSON.stringify(BOOK_SEED));save();showTab('book');}break;
    case'bkCopy':copy(JSON.stringify(S),b);break;
    case'bkLoad':{try{const o=JSON.parse(document.getElementById('bk').value);if(!o||!Array.isArray(o.parts)||!Array.isArray(o.wires))throw 0;
      o.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});
@@ -1055,6 +1086,9 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target,d=t.dataset;
+  if(t.id==='bookQ'){const pos=t.selectionStart;rBook();const nq=document.getElementById('bookQ');if(nq){nq.focus();try{nq.setSelectionRange(pos,pos)}catch(_){}}return}
+  if(d.book&&d.field){ensureBook();const rec=S.circuitBook.find(x=>x.id===d.book);if(rec&&d.field!=='id'){rec[d.field]=t.value;save()}return} 
+
   if(t.id==='lq'){const q=t.value.toLowerCase();document.querySelectorAll('#lib [data-add]').forEach(x=>{if(x.dataset.name!==undefined)x.hidden=!!q&&!x.dataset.name.includes(q)});return}
   if(t.id==='defAwg'){S.def.awg=+t.value;return save()}
   if(t.id==='defColor'){S.def.color=t.value;return save()}
@@ -1094,6 +1128,8 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ---------- start ---------- */
+ensureBook();
+save();
 renderLib();
 syncUndo();
 showTab('project');

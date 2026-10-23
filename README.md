@@ -1,60 +1,19 @@
-# Harness Bench — E90 LS / MaxxECU Race Gen 1 update
+# Harness Bench — E90 LS Example
 
-A standalone browser harness-planning app. Open `index.html` in a modern browser or publish the folder with GitHub Pages.
+Standalone browser-based wiring harness planner. Open `index.html` locally or publish the folder with GitHub Pages.
 
-## Start here
-1. Open the **E90 Project** tab.
-2. Choose **Load E90 harness mock-up**. This replaces the current drawing, so use **Backup → Copy backup** first if you need to preserve an existing design.
-3. Open **Mockup** to inspect the physical-style branch layout, **Pinouts** to see connector assignments, **Wire list** and **Cut list** for planning, **Parts list** for a preliminary BOM, and **Checks** for basic drawing checks.
-4. Use **Backup → Copy backup** regularly. The app stores data in browser local storage; it does not automatically sync between devices.
+## Update 7 additions
+- **Harness Book** tab with editable circuit/connector records seeded from owner-confirmed DT6 → three DT2 → MaxxECU details.
+- Records for the six DT6 circuits, DT2 cavity assignments, ECU termination cavities, shared sensor +5V/ground splice notes, and paired valved muffler motors.
+- Search across records, add/delete records, CSV copy/export, print register, and restore starter records.
+- Records are stored in browser project state and included in JSON backups.
+- Valved muffler topology documented as joined positives and joined negatives, one outgoing wire per polarity, original controller bypassed, Motor 2 controlled from CAN keypad per owner. Output current, protection, wire gauge and route remain explicitly unverified.
 
-## Included project-specific parts
-- User-mapped DT12 power breakout, DT8 analog sub-harness and DT8 CAN/control sub-harness.
-- Shifter DT4 and CAN keypad connectors.
-- Owner-supplied six-position 8HP functional map: constant +12V, switched +12V, chassis ground, CAN Low, CAN High, sealed/unused. Physical cavity orientation and feed sizing still require verification.
-- BMW DME X60001 interface view containing only the owner-supplied pins 7, 8, 20 and 38.
-- Dual pump relay board, surge tank, switched fuse box, A/C relay, Leash single board, EKP trigger endpoint, CAN hub, flex-fuel sensor, nitrous SSR, Speedway self-exciting alternator, starter, battery and high-current junction.
-- Project notes distinguishing owner-supplied mappings from items requiring verification.
+## Use
+1. Back up your current project from the Backup tab before replacing the deployed file.
+2. Replace `index.html` in the GitHub repository with this version and commit.
+3. Refresh the GitHub Pages site. If an old version remains cached, try a private tab or hard refresh.
+4. Open **Harness Book** to inspect/edit the new records. Use Backup to export the whole project as JSON.
 
-## Important limits
-This is a visual planning tool, not an electrical design approval. The 8HP six-position functional map is owner-supplied and not independently verified against a connector drawing; confirm connector face/orientation before crimping. The 8HP constant +12V feed is intentionally not routed until fuse rating, gauge and distribution path are selected. The MaxxECU/8HP/keypad CAN network is shown separately from BMW chassis CAN; do not bridge the buses without confirming protocol, bitrate, termination and controller requirements. The radiator fan interface and EKP-to-Leash trigger require electrical verification. High-current alternator/starter paths are deliberately not routed until cable sizing and protection strategy are confirmed. Sensor ground remains separate from chassis ground. Check connector mating-face orientation, terminal part numbers, wire gauge, current, fusing and OEM diagrams before building.
-
-The mock-up's approximate placement and routing are for planning; actual branch lengths should be measured on the vehicle or fixture before cutting wire.
-
-## Connector Studio (new)
-The Connector Studio tab lets you select a component in the current drawing, attach a publicly reachable image URL or a relative image path from your repository, and label the image/pinout verification status. It generates a cavity index from the app's current pin catalog. **That index is not a manufacturer connector-face drawing**; confirm the actual part number, viewing side and pin numbering before fabrication. Image URLs and status labels are saved in the browser project backup.
-
-For repository-hosted images, create `assets/` beside `index.html`, upload photos there, then enter paths such as `assets/dt12-front.jpg` in Connector Studio. Avoid hotlinking images from websites that may block embedding; prefer photos you own or manufacturer assets whose use is permitted.
-
-## Update 3 — reference photos in Connector Studio
-
-Connector Studio now includes a starter reference gallery for:
-- Deutsch DT 12-way connector kit
-- Leash Electronics dual 70A relay module
-- Leash Electronics OG4 relay module
-- Leash Electronics Street/Strip wiring board
-
-Known component names may auto-populate a vendor reference image in the preview. These are online image URLs, so they require internet access and may change if the vendor changes its image URLs. They are reference photos, not confirmation of the exact part installed in the vehicle. Use the product links in the gallery to confirm the board/connector model.
-
-### More useful current features
-- Default reference photo selection for parts whose names match DT12/DT8 or Leash relay terms
-- Gallery cards with source/product links
-- Existing image URL override and per-part status labels remain available
-- Cavity grids are still generated from the app's current pin data, not verified physical face diagrams
-
-For a more reliable/offline image library, upload images you have permission to use into `assets/` and set each part's image path to a repository-relative path, such as `assets/dt12-front.jpg`.
-
-
-## Update 4 — Build tracker and direct photo upload
-
-- Added a **Build tracker** tab with staged planning, electrical review, assembly, and bench-test checklists. Progress is saved in the browser and included in the full JSON backup. This is a workflow aid, not a safety certification.
-- Connector Studio now accepts a photo directly from an iPad/computer. The app resizes it to a maximum 1100 px edge and compresses it to JPEG before saving it in browser storage. Keep original photos in the GitHub repository as a separate backup; browser storage limits vary.
-- Backup now exports the full app state, including connector photos/status and build checklist progress. Older partial backups remain loadable, but cannot restore data they never contained.
-- Existing vendor-gallery images are still external URLs and require internet. The new upload option lets you use your own photo without hosting it first, on the same browser/device.
-
-## Update 5 — Dashboard, diagram export, and interaction diagnostics
-- The app opens on a new E90 LS / MaxxECU project dashboard with a system-level wiring overview, live counts from the active drawing, workflow guidance, and direct navigation buttons.
-- A first-time install now starts with the E90 project mock-up; an existing browser project remains preserved. Use **Load E90 harness example** to intentionally reload the starter layout.
-- The Draw toolbar has **Export SVG** and **Print diagram**. SVG exports are vector graphics that can be zoomed and used in documentation. Print opens a simplified diagram page; browser pop-ups may need to be allowed.
-- Runtime JavaScript errors are surfaced as an on-screen toast to make broken actions easier to diagnose. If a button still does nothing, report the exact tab and button name and check the browser console; keep a JSON backup before replacing your deployed app.
-- The dashboard overview is a system-level guide, not a cavity-accurate production schematic. Always verify physical connector orientation, manufacturer pinouts, current capacity, wire gauge, fuse protection, and the specific Leash board terminal behavior before fabrication.
+## Important
+This is documentation and design software, not a certified electrical design. Confirm connector face/orientation, cavity numbers, manufacturer specifications, output ratings, fuse placement, wire sizing and circuit behavior before fabrication or energizing. MaxxECU low-side outputs are control signals, not load power supplies. Keep ECU sensor ground separate from chassis ground.
