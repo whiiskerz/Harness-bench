@@ -27,6 +27,7 @@ test('E90 starter topology has stable expected shape and connected endpoints', (
   const project = new Function('mkW', source + '; return e90ProjectStarter();')(mkW);
   assert.equal(project.parts.length, 60);
   assert.equal(project.wires.length, 119);
+  assert.ok(project.wires.every(w => w.autoRoute === true), 'E90 example wires use the cleaner orthogonal routing mode');
   const partIds = new Set(project.parts.map(p => String(p.id)));
   assert.equal(partIds.size, project.parts.length, 'part IDs must be unique');
   assert.equal(new Set(project.wires.map(w => String(w.id))).size, project.wires.length, 'wire IDs must be unique');
@@ -78,4 +79,35 @@ test('safety and backup affordances are present', () => {
     'output assignment conflict',
     'not an electrical safety certification'
   ]) assert.ok(script.toLowerCase().includes(token.toLowerCase()), 'expected source token: ' + token);
+});
+
+test('Power Budget and filtered wire schedule features are wired into the app', () => {
+  for (const token of [
+    "['power','Power Budget']",
+    'function rPower()',
+    'function downloadPowerBudget()',
+    'function downloadProjectReport()',
+    "case'savePowerVoltage'",
+    "case'downloadPower'",
+    "case'powerReport'",
+    'id="wireSearch"',
+    'id="wireFilter"',
+    "filter==='missing'",
+    "filter==='powered'",
+    'drawing-estimate',
+    'may double-count loads'
+  ]) assert.ok(script.includes(token), 'expected feature token: ' + token);
+});
+
+test('Power budget groups are described as segment-level estimates, not safety certification', () => {
+  const start = script.indexOf('function rPower()');
+  const end = script.indexOf('function downloadPowerBudget()', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const power = script.slice(start, end);
+  assert.ok(power.includes('new Map()'));
+  assert.ok(power.includes('unknownCurrent'));
+  assert.ok(power.includes('unknownFuse'));
+  assert.ok(power.includes('wire segments'));
+  assert.ok(power.includes('safety certification'));
 });
