@@ -87,7 +87,14 @@ textarea{font:12px var(--mono);min-height:110px}
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
 .bar label{width:96px}
 .lib{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;max-height:340px;overflow:auto}
-.lib .grp{display:flex;flex-direction:column;gap:6px}
+.lib  .grp{display:flex;flex-direction:column;gap:6px}
+.lib details.catalog-group{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--panel);margin:8px 0}
+.lib details.catalog-group>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;font:700 13px var(--display);letter-spacing:.04em;text-transform:uppercase}
+.lib details.catalog-group>summary::-webkit-details-marker{display:none}
+.lib details.catalog-group>summary:after{content:'+';color:var(--accent);font-size:18px}
+.lib details.catalog-group[open]>summary:after{content:'−'}
+.lib details.catalog-group>summary small{margin-left:auto;color:var(--mute);font:10px var(--mono);text-transform:none;letter-spacing:0}
+.lib details.catalog-group[open]>summary{padding-bottom:8px;border-bottom:1px solid var(--line)}
 .lib .grp>b{font:600 12px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
 .lib .items{display:flex;gap:6px;flex-wrap:wrap}
 .main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}
@@ -195,10 +202,10 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.9.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.10.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.9.0';
+const APP_VERSION='0.10.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -274,10 +281,10 @@ group('Fuel & nitrous',[
 const MV={8:'8x12ga',20:'18x20ga, 2x16ga',21:'21x20ga',16:'16x12ga',29:'4x12ga, 19x16ga, 6x20ga',35:'3x16ga, 32x20ga',47:'5x16ga, 42x20ga'};
 function maven(id,name,shell,ns){
   const pins=[];ns.forEach((n,bi)=>{for(let i=1;i<=n;i++)pins.push({p:(ns.length>1?'AB'[bi]:'')+i,l:'',blk:bi})});
-  return {id,name,seal:true,fam:'bulk',bulk:true,sub:'Maven · shell '+shell,pn:'',desc:ns.map(n=>n+'-pin: '+MV[n]).join('  +  '),pins};
+  return {id,name,seal:true,fam:'maven',bulk:true,sub:ns.length>1?'Maven · dual insert configuration':'Maven · shell '+shell,pn:'',desc:ns.map(n=>n+'-way: '+MV[n]).join('  +  '),pins};
 }
-group('Maven bulkheads (single)',[[18,8],[18,20],[18,21],[24,16],[24,29],[24,35],[24,47]].map(([sh,n])=>maven('mv'+sh+'_'+n,'Maven '+n+'-pin (shell '+sh+')',sh,[n])));
-group('Maven bulkheads (dual)',[[29,29],[35,29],[47,29],[35,35],[35,47],[47,47],[16,16],[47,16],[35,16],[29,16]].map(([a,b])=>maven('mvd_'+a+'_'+b,'Maven dual '+a+' + '+b,24,[a,b])));
+group('Maven connectors · single',[[18,8],[18,20],[18,21],[24,16],[24,29],[24,35],[24,47]].map(([sh,n])=>maven('mv'+sh+'_'+n,'Maven '+n+'-way · shell '+sh,sh,[n])));
+group('Maven connectors · dual',[[29,29],[35,29],[47,29],[35,35],[35,47],[47,47],[16,16],[47,16],[35,16],[29,16]].map(([a,b])=>maven('mvd_'+a+'_'+b,'Maven dual '+a+' + '+b+' way',null,[a,b])));
 group('Power & starting',[
  lab('starter','Starter motor',[['B+','Battery + (big stud, constant)'],['S','Ignition + (small stud)']],'pwr','Starter'),
  lab('bmwbig','BMW big stud (unfused 12V)',[['B+','Unfused 12V (starter, alternator, main feed)']],'pwr','OEM BMW'),
@@ -614,6 +621,7 @@ function dims(p){
   const t=T[p.t];if(t.node)return{w:24,h:24};
   const n=t.pins.length,rh=rowH(t),mb=Math.max(0,...t.pins.map(x=>x.blk||0));
   if(t.bulk){const b=bgeo(p);return{w:b.w,h:b.h}}
+  if(t.pinGridCols){const cols=t.pinGridCols,cw=t.gridCellW||78,grh=t.gridRowH||22,rows=Math.ceil(n/cols);return{w:24+cols*cw,h:HDR+rows*grh+16,grid:true,cols,cw,grh,rows}}
   const a=mockArt(p),sc=Math.min(1,(IW-14)/a.w);
   return{w:IW+pcol(p),h:HDR+Math.max(n*rh,a.h*sc+14)+16,a,sc};
 }
@@ -743,7 +751,15 @@ function partSVG(p){
   s.push(`<text class="t" x="${p.x+14}" y="${p.y+16}">${esc(p.name.length>28?p.name.slice(0,27)+'…':p.name)}</text>`);
   if(sub)s.push(`<text class="ps" x="${p.x+14}" y="${p.y+29}">${esc(sub.length>34?sub.slice(0,33)+'…':sub)}</text>`);
   const dot=(cx,y,ref,used)=>`<circle class="pd${pending===ref?' pend':used?' used':''}" cx="${cx}" cy="${y}" r="5"/><circle data-pin="${ref}" class="hit" cx="${cx}" cy="${y}" r="11"/>`;
-  if(t.bulk){
+  if(t.pinGridCols){
+    const cols=t.pinGridCols,cw=t.gridCellW||78,grh=t.gridRowH||22,x0=p.x+12,y0=p.y+HDR+7;
+    t.pins.forEach((pin,i)=>{const col=i%cols,row=Math.floor(i/cols),x=x0+col*cw,y=y0+row*grh,ref=p.id+':'+i,used=usedOn(p.id,i).length>0,pd=pending===ref,fn=plabel(p,i)||'Unassigned';
+      s.push(`<rect x="${x}" y="${y}" width="${cw-4}" height="${grh-3}" rx="3" fill="var(--panel2)" stroke="var(--line)" stroke-width="1"/>`);
+      s.push(`<text x="${x+5}" y="${y+8}" font-size="7.5" font-family="monospace" fill="var(--mute)">${esc(pin.p)}</text>`);
+      s.push(`<text x="${x+5}" y="${y+17}" font-size="8.5" fill="var(--fg)">${esc(fn.length>14?fn.slice(0,13)+'…':fn)}</text>`);
+      s.push(`<circle class="pd${pd?' pend':used?' used':''}" cx="${x+cw-13}" cy="${y+grh/2-1}" r="4.5"/><rect data-pin="${ref}" x="${x}" y="${y}" width="${cw-4}" height="${grh-3}" fill="transparent" style="cursor:pointer"/>`);
+    });
+  }else if(t.bulk){
     const bg=bgeo(p);
     bg.blocks.forEach(b=>{const cx=p.x+b.cx,cy=p.y+b.cy;
       s.push(`<circle cx="${cx}" cy="${cy}" r="${b.R+8}" fill="#3a4047" stroke="#8a919b" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="${b.R}" fill="#1b1e23" stroke="#9aa1ab" stroke-width="1.5"/>`);
@@ -891,9 +907,23 @@ function connectorCard(id){
 }
 function renderLib(){
  const el=document.getElementById('lib');
- const groups=GROUPS.map(g=>'<section class="grp"><b>'+esc(g.name)+'</b><div class="connector-catalog">'+g.ids.map(connectorCard).join('')+'</div></section>').join('');
- const families=[...new Set(Object.values(T).map(t=>t.fam||'other'))].sort().map(f=>'<option value="'+esc(f)+'">'+esc(f.toUpperCase())+'</option>').join('');
- el.innerHTML='<div class="catalog-tools"><label><span>Find a connector / part</span><input id="lq" placeholder="Search DT, HD30, MaxxECU, relay, sensor…"></label><label><span>Family</span><select id="libFamily"><option value="">All families</option>'+families+'</select></label></div><p class="muted">Previews are schematic, not manufacturer-approved cavity drawings. Open View pinout for the ordered pin/function list.</p>'+groups+'<section class="grp"><b>Custom firewall bulkhead</b><div class="row"><label style="width:110px"><span>Number of pins</span><input id="bn" type="number" min="1" max="60" value="24"></label><button class="btn" data-add="bulkc">Add bulkhead</button></div></section><section class="grp"><b>Custom connector</b><div class="row"><label style="width:110px"><span>Number of pins</span><input id="cn" type="number" min="1" max="60" value="6"></label><button class="btn" data-add="custom">Add custom connector</button></div></section>';
+ const ids=name=>(GROUPS.find(g=>g.name===name)||{ids:[]}).ids;
+ const uniq=a=>[...new Set(a)];
+ const catalog=[
+  {name:'MaxxECU Gen1 RACE · ECU connectors',ids:ids('MaxxECU Gen1 RACE connectors'),open:true},
+  {name:'Deutsch HD30 · shell 24 insert configurations',ids:ids('DEUTSCH HD30 · shell size 24'),open:true},
+  {name:'Maven circular connectors',ids:uniq([...ids('Maven connectors · single'),...ids('Maven connectors · dual')]),open:true},
+  {name:'Deutsch DT sealed connectors',ids:ids('Deutsch DT'),open:true},
+  {name:'LS engine-side connectors',ids:ids('Engine side (LS)'),open:false},
+  {name:'MaxxECU peripherals',ids:ids('MaxxECU LS harness').filter(id=>['mxpedal','mxwbo'].includes(id)),open:false},
+  {name:'Power, relays & protection',ids:uniq([...ids('Fuse boxes & relays'),...ids('Terminals & power'),...ids('Power & starting')]),open:false},
+  {name:'Fuel, nitrous, sensors & CAN',ids:uniq([...ids('Fuel & nitrous'),...ids('Sensors & loads'),...ids('CAN & data')]),open:false},
+  {name:'E90 LS interfaces',ids:ids('E90 LS project connectors'),open:false}
+ ].filter(g=>g.ids.length);
+ const groups=catalog.map((g,i)=>'<details class="grp catalog-group" '+(g.open?'open':'')+' data-group="'+i+'"><summary><span>'+esc(g.name)+'</span><small>'+g.ids.length+' parts</small></summary><div class="connector-catalog">'+g.ids.map(connectorCard).join('')+'</div></details>').join('');
+ const visibleIds=uniq(catalog.flatMap(g=>g.ids));
+ const families=[...new Set(visibleIds.map(id=>T[id]?.fam||'other'))].sort().map(f=>'<option value="'+esc(f)+'">'+esc(f.toUpperCase())+'</option>').join('');
+ el.innerHTML='<div class="catalog-tools"><label><span>Find a connector / part</span><input id="lq" placeholder="Search Gen1 RACE, DT, Maven, HD30, relay…"></label><label><span>Family</span><select id="libFamily"><option value="">All families</option>'+families+'</select></label></div><p class="muted">Compact catalog · expand a category to browse. ECU cavities and HD30 insert contact counts are pinout-backed from the supplied reference data; drawings are schematic, not manufacturer face-orientation drawings.</p>'+groups;
 }
 function addPart(id){
   let tid=id;
@@ -1156,6 +1186,12 @@ function rPins(){
 /* MaxxECU pin reference transcribed from user-provided notes. Verify exact model and official documentation before wiring. */
 const MAXXECU_MAIN=[["A1","GPO 5","-","GPO 4"],["A2","IGN 1","IGN 1","IGN 1"],["A3","IGN 2","IGN 2","IGN 2"],["A4","GPO 8/TACHO","GPO 8/TACHO","GPO 8/TACHO"],["B1","GPO 6","-","GPO 5"],["B2","IGN 3","IGN 3","IGN 3"],["B3","IGN 4","IGN 4","IGN 4"],["B4","GPO 1","GPO 1","GPO 1"],["C1","GPO 7","-","AIN 5 (0–5 V)"],["C2","IGN 5","IGN 5","IGN 5"],["C3","IGN 6","IGN 6","IGN 6"],["C4","GPO 2","GPO 2","GPO 2"],["D1","WBO2 Heater−","WBO2 Heater−","WBO2 Heater−"],["D2","IGN 7","-","AIN 6 (0–5 V)"],["D3","IGN 8","-","AIN 7 (0–5 V)"],["D4","GPO 3","GPO 3","GPO 3"],["E1","CAN H","CAN H","CAN H"],["E2","CAN L","CAN L","CAN L"],["E3","GND Shield","GND Shield","GND Shield"],["E4","GPO 4","-","AIN 8 (0–5 V)"],["F1","CLT","CLT","CLT"],["F2","IAT","IAT","IAT"],["F3","WBO2 VREF","WBO2 VREF","WBO2 VREF"],["F4","WBO2 VS","WBO2 VS","WBO2 VS"],["G1","+5V sensor supply (peak 0.5 A, max 150 mA)","+5V sensor supply (peak 0.5 A, max 150 mA)","+5V sensor supply (peak 0.5 A, max 150 mA)"],["G2","TPS/AIN","TPS/AIN","TPS/AIN"],["G3","WBO2 IP","WBO2 IP","WBO2 IP"],["G4","WBO2 RCAL","WBO2 RCAL","WBO2 RCAL"],["H1","Sensor GND","Sensor GND","Sensor GND"],["H2","Trigger GND","Trigger GND","Trigger GND"],["H3","TRIGGER","TRIGGER","TRIGGER"],["H4","HOME","HOME","HOME"],["J1","AIN 1 (Temperature)","AIN 1 (Temperature)","AIN 1 (Temperature)"],["J2","AIN 2 (Temperature)","AIN 2 (Temperature)","AIN 2 (Temperature)"],["J3","AIN 3 (0–5 V)","AIN 3 (0–5 V)","AIN 3 (0–5 V)"],["J4","AIN 4 (0–5 V)","AIN 4 (0–5 V)","AIN 4 (0–5 V)"],["K1","INJ 1","INJ 1","INJ 1"],["K2","INJ 2","INJ 2","INJ 2"],["K3","DIN/VR 1","DIN 1","DIN 1"],["K4","DIN/VR 2","DIN 2","DIN 2"],["L1","INJ 8","-","GPO 11/Motor 1−"],["L2","INJ 7","-","GPO 12/Motor 1+"],["L3","INJ 6","INJ 6","INJ 6"],["L4","Engine GND","Engine GND","Engine GND"],["M1","INJ 3","INJ 3","INJ 3"],["M2","INJ 4","INJ 4","INJ 4"],["M3","INJ 5","INJ 5","INJ 5"],["M4","+12V ECU power supply","+12V ECU power supply","+12V ECU power supply"]];
 const MAXXECU_AUX=[["A1","EGT 5+"],["A2","EGT 6+"],["A3","EGT 7+"],["A4","EGT 8+"],["B1","EGT 5−"],["B2","EGT 6−"],["B3","EGT 7−"],["B4","EGT 8−"],["C1","EGT 1+"],["C2","EGT 2+"],["C3","EGT 3+"],["C4","EGT 4+"],["D1","EGT 1−"],["D2","EGT 2−"],["D3","EGT 3−"],["D4","EGT 4−"],["E1","Knock GND"],["E2","Knock 1"],["E3","Knock 2"],["E4","AIN 6 (0–5 V)"],["F1","AIN 7 (0–5 V)"],["F2","AIN 8 (0–5 V)"],["F3","DIN/VR 4"],["F4","DIN/VR 5"],["G1","GPO 15 (+12 V)"],["G2","GPO 16 (+12 V)"],["G3","AIN 5 (0–5 V)"],["G4","Engine Ground"],["H1","Motor 2+"],["H2","Motor 1−"],["H3","Motor 2−"],["H4","Motor 1+"]];
+/* Pinout-backed physical connectors for the user's Gen1 RACE ECU.
+   Main connector functions use the V1/RACE/PRO column of the existing reference table. */
+group('MaxxECU Gen1 RACE connectors',[
+ {id:'mxrace48',name:'MaxxECU Gen1 RACE · 48-pin main Molex',fam:'mxecu',sub:'V1 / RACE / PRO · main connector',pn:'48 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_MAIN.map(r=>({p:r[0],l:r[1]}))},
+ {id:'mxrace32',name:'MaxxECU Gen1 RACE · 32-pin black Connector 2',fam:'mxecu',sub:'Connector 2 · EGT / knock / I/O',pn:'32 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_AUX.map(r=>({p:r[0],l:r[1]}))}
+]);
 function ecuVariant(){return S.ecuVariant||'race'}
 function setEcuVariant(v){S.ecuVariant=v;save();rEcu()}
 function setEcuSearch(v){const a=document.activeElement,pos=a&&typeof a.selectionStart==='number'?a.selectionStart:String(v||'').length;S.ecuSearch=v;rEcu();const i=document.querySelector('#t-ecu input[oninput]');if(i){i.focus();try{i.setSelectionRange(pos,pos)}catch(_){}}}
@@ -1688,7 +1724,7 @@ document.addEventListener('input',e=>{
   if(t.id==='bookQ'){const pos=t.selectionStart;rBook();const nq=document.getElementById('bookQ');if(nq){nq.focus();try{nq.setSelectionRange(pos,pos)}catch(_){}}return}
   if(d.book&&d.field){ensureBook();const rec=S.circuitBook.find(x=>x.id===d.book);if(rec&&d.field!=='id'){rec[d.field]=t.value;save()}return} 
 
-  if(t.id==='lq'||t.id==='libFamily'){const q=(document.getElementById('lq')?.value||'').toLowerCase(),fam=document.getElementById('libFamily')?.value||'';document.querySelectorAll('#lib .connector-card').forEach(x=>{x.hidden=(!!q&&!x.dataset.cardName.includes(q))||(!!fam&&x.dataset.family!==fam)});return}
+  if(t.id==='lq'||t.id==='libFamily'){const q=(document.getElementById('lq')?.value||'').toLowerCase(),fam=document.getElementById('libFamily')?.value||'';document.querySelectorAll('#lib .connector-card').forEach(x=>{x.hidden=(!!q&&!x.dataset.cardName.includes(q))||(!!fam&&x.dataset.family!==fam)});document.querySelectorAll('#lib .catalog-group').forEach(g=>{const cards=[...g.querySelectorAll('.connector-card')],shown=cards.some(x=>!x.hidden);g.hidden=!shown;if(q&&shown)g.open=true});return}
   if(t.id==='defAwg'){S.def.awg=+t.value;return save()}
   if(t.id==='defColor'){S.def.color=t.value;return save()}
   if(t.id==='scale'){S.scale=Math.max(.5,+t.value||4);save();return draw()}
