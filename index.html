@@ -434,7 +434,7 @@ function e90ProjectStarter(){
    mk(168,'splice',0,0,'Cabin sensor-ground branch splice')
   ];
   const W=[];let wid=300;
-  const wire=(ap,ai,bp,bi,sig,awg,color,extra={})=>{const low=sig.toLowerCase();const loom=low.includes('can ')?992:((low.includes('pump')||low.includes('fp1')||low.includes('fp2')||low.includes('ekp')||low.includes('trunk'))?991:990);W.push(mkW({p:ap,i:ai},{p:bp,i:bi},{id:wid++,sig,awg,color,loom,...extra}));};
+  const wire=(ap,ai,bp,bi,sig,awg,color,extra={})=>{const low=sig.toLowerCase();const loom=low.includes('can ')?992:((low.includes('pump')||low.includes('fp1')||low.includes('fp2')||low.includes('ekp')||low.includes('trunk'))?991:990);W.push(mkW({p:ap,i:ai},{p:bp,i:bi},{id:wid++,sig,awg,color,loom,autoRoute:true,...extra}));};
   // Signal and relay control wiring from the supplied termination map.
   // Fuel-pump low-side triggers are routed through the trunk-to-cabin DT6 sub-harness below.
   wire(101,3,108,1,'GPO6 → A/C relay coil − (ground-switching output)',18,'PUR');
@@ -676,10 +676,25 @@ function geo(w){
   const ca=ctr(pa),cb=ctr(pb),A=anc(pa,w.a.i,cb.x,w.a.s),B=anc(pb,w.b.i,ca.x,w.b.s);
   const d0=Math.hypot(A.x-B.x,A.y-B.y),off=Math.max(30,Math.min(120,d0*.4));
   const c1={x:A.x+A.dir*off,y:A.y},c2={x:B.x+B.dir*off,y:B.y};
-  let segs,d,mid;
+  let segs,d,mid,path;
   if(w.v){const V=w.v,tx=44*(B.x>=A.x?1:-1);segs=[[A,c1,{x:V.x-tx,y:V.y},V],[V,{x:V.x+tx,y:V.y},c2,B]];d=Math.hypot(A.x-V.x,A.y-V.y)+Math.hypot(V.x-B.x,V.y-B.y);mid=V}
-  else{segs=[[A,c1,c2,B]];d=d0;mid={x:(A.x+3*c1.x+3*c2.x+B.x)/8,y:(A.y+3*c1.y+3*c2.y+B.y)/8}}
-  const path='M'+A.x+' '+A.y+segs.map(q=>' C'+q[1].x+' '+q[1].y+' '+q[2].x+' '+q[2].y+' '+q[3].x+' '+q[3].y).join('');
+  else if(w.autoRoute){
+    // E90 starter routes use shared orthogonal channels instead of uncontrolled
+    // pin-to-pin Beziers. A stable lane offset separates neighboring circuits.
+    const lane=((Number(w.id)||0)%9-4)*9;
+    let pts;
+    if(Math.abs(B.x-A.x)>=Math.abs(B.y-A.y)){
+      const x=(A.x+B.x)/2+lane;pts=[A,{x,y:A.y},{x,y:B.y},B];
+    }else{
+      const y=(A.y+B.y)/2+lane;pts=[A,{x:A.x,y},{x:B.x,y},B];
+    }
+    const lineSeg=(P,Q)=>[{x:P.x,y:P.y},{x:P.x+(Q.x-P.x)/3,y:P.y+(Q.y-P.y)/3},{x:P.x+2*(Q.x-P.x)/3,y:P.y+2*(Q.y-P.y)/3},{x:Q.x,y:Q.y}];
+    segs=pts.slice(1).map((q,i)=>lineSeg(pts[i],q));
+    d=pts.slice(1).reduce((sum,q,i)=>sum+Math.hypot(q.x-pts[i].x,q.y-pts[i].y),0);
+    mid=pts[1];
+    path='M'+pts.map(q=>q.x+' '+q.y).join(' L');
+  }else{segs=[[A,c1,c2,B]];d=d0;mid={x:(A.x+3*c1.x+3*c2.x+B.x)/8,y:(A.y+3*c1.y+3*c2.y+B.y)/8}}
+  if(!path)path='M'+A.x+' '+A.y+segs.map(q=>' C'+q[1].x+' '+q[1].y+' '+q[2].x+' '+q[2].y+' '+q[3].x+' '+q[3].y).join('');
   return{A,B,d,mid,segs,path};
 }
 function sampleSegs(segs,step){
