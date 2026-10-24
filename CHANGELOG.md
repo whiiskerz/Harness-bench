@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — E90 wiring accuracy corrections
+- Corrected each 4-port and 6-port CAN hub port to pin 1 CAN H, pin 2 CAN L, pin 3 switched 12V VDD, pin 4 GND.
+- Kept the CAN hub as a planned library option and represented the installed 1-in / 3-out CAN1 DT twisted splitter in the E90 example.
+- Removed separate MaxxECU 12-pin / 16-pin connector instances and their example pin-for-pin loops so the diagram centers on the terminated breakout side.
+- Corrected BMW X126 A/C pressure to a signal-only tap on the black/white OEM wire feeding AIN7; removed extra power and ground branches from that signal tap.
+- Split the trunk layout into left and right zones: surge tank and wiring/electronics on the left; OEM battery and nitrous bottle on the right plate/cubby.
+
+
 ## v0.16.0 — 2026-10-24
 - Added a Power Budget workspace grouping wire segments by entered fuse/circuit label, reporting recorded current sums, known fuse ratings, and missing load/fuse data.
 - Improved the E90 example's default wire paths with orthogonal, lane-separated routes to reduce diagonal crossings and make circuits easier to follow.
