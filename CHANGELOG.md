@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.14.0 — 2026-10-24
+- Added a Project Readiness audit for duplicate part IDs, missing wire endpoints, invalid pin indices, incomplete wire documentation, and unresolved Harness Book records.
+- Flagged the valved-muffler output assignment conflict instead of treating GPO13/GPO14 as verified: the supplied Race LS wiring reference maps Motor 2 +/− to 12-pin K/L and does not establish GPO13/GPO14 as the reversing pair.
+- Added printable connector pinout sheets and direct CSV downloads for the wire list, cut list, pinouts, and Harness Book.
+- Kept unknown physical cavity numbers, ECU output availability, fuse hardware, current ratings, and wire routing explicitly unresolved.
+
 ## v0.13.0 — 2026-10-24
 - Reworked the E90 trunk starter topology around one trunk-side DT6 feeding three cabin DT2 branches; removed the assumed cabin-side DT6.
 - Updated the starter wire map for the owner-confirmed Leash dual-board pump assignments, 10 AWG red pump feeds, 40A board fuses, A+ to B+ control-power jumper, and separate ECU-side DT2 runs.
