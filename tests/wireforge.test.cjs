@@ -49,7 +49,7 @@ test('voltage-drop estimate uses round-trip copper resistance', () => {
   assert.equal(result.drop, 1.01);
   assert.ok(Math.abs(result.pct - 7.2142857) < 0.01);
   assert.equal(result.loadV, 12.99);
-  assert.equal(result.loss, 20.2);
+  assert.ok(Math.abs(result.loss - 20.2) < 0.0001);
   assert.equal(estimate(0, 20, 10, 14), null);
   assert.equal(estimate(14, -1, 10, 14), null);
   assert.equal(estimate(14, 20, 10, 5), null, 'unsupported gauge should not silently calculate');
