@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.12.0 — 2026-10-24
+- Added direct wire routing by dragging a wire segment: dragging the visible wire creates or repositions a bend/waypoint; normal clicks still select the wire.
+- Reuses the existing selected-wire waypoint handle and preserves the wire's endpoints and electrical properties while routing.
+
 ## v0.11.0 — 2026-10-24
 - Added a dedicated Delete all wires button in the drawing toolbar. It asks for confirmation and removes wires only, preserving parts, connector pinouts, zones, and loom definitions.
 - Cleans up active wire selection and CAN wire-pair mode after clearing.
