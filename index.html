@@ -875,7 +875,7 @@ function wireAuditHTML(w){
 }
 function refreshWireAudit(){const el=document.getElementById('wireLiveAudit');if(selection&&selection.type==='wire'&&el){const w=wireById(selection.id);if(w)el.innerHTML=wireAuditHTML(w)}}
 
-function renderInsp(){
+function renderInspBase(){
   const el=document.getElementById('insp');
   if(selection&&selection.type==='part'){
     const p=part(selection.id);if(!p){selection=null;return renderInsp()}
@@ -1308,7 +1308,7 @@ function defaultPartPhoto(p){
  if(n.includes('leash')||n.includes('relay board')) return 'https://www.leashelectronics.com/cdn/shop/files/20240119_090319.jpg?v=1705678079';
  return '';
 }
-function rStudio(){
+function rStudioBase(){
  const parts=S.parts||[];const selected=+(S.studioSelected||parts[0]?.id||0);const p=parts.find(x=>x.id===selected)||parts[0];
  if(!p){document.getElementById('t-studio').innerHTML='<h2>Connector Studio</h2><p class="muted">Load the E90 project mock-up or add a part first.</p><button class="btn primary" data-act="loadE90">Load E90 harness mock-up</button>';return}
  S.studioSelected=p.id;S.studioPics=S.studioPics||{};S.studioStatus=S.studioStatus||{};
@@ -1484,7 +1484,7 @@ document.addEventListener('click',e=>{
    case'auditExport':copy(csv([['Wire ID','Signal','From','To','Gauge AWG','Color','Length in','Current A','Fuse group','Fuse A','Review status','Review notes','Findings']].concat(auditRows().map(r=>[r.id,r.name,r.from,r.to,r.wire.awg,r.wire.color,r.wire.len,r.wire.amps,r.wire.fuse,r.wire.fa,r.status,r.wire.reviewNotes||'',r.flags.join('; ')]))),b);break;
    case'exportDiagram':exportDiagram();break;case'printDiagram':printDiagram();break;case'bkQuick':copy(JSON.stringify(S),b);break;
    case'studioSave':{S.studioPics=S.studioPics||{};S.studioStatus=S.studioStatus||{};const id=+(document.getElementById('studioPart')?.value||S.studioSelected);const pic=document.getElementById('studioPic')?.value.trim()||'';if(pic)S.studioPics[id]=pic;else delete S.studioPics[id];S.studioStatus[id]=document.getElementById('studioStatus')?.value||'Needs photo / verification';S.studioSelected=id;save();rStudio();toast('Component details saved');break;}
-   case'studioFlip':toast('Confirm mating-face vs wire-side orientation from manufacturer documentation before termination');break;
+   case'studioFlip':{const p=part(+(S.studioSelected||0));if(p&&T[p.t]?.bulk){p.bulkFace=p.bulkFace==='wire'?'mating':'wire';save();rStudio();draw();toast('Bulkhead view: '+(p.bulkFace==='wire'?'wire side (mirrored)':'mating face'))}else toast('Confirm mating-face vs wire-side orientation from manufacturer documentation before termination');break;}
    case'buildReset':if(confirm('Reset all Build Tracker checkboxes?')){S.buildChecks={};save();rBuild()}break;
    case'buildCopy':copy(buildReport(),b);break;
    case'loadE90':{commit();S=e90ProjectStarter();e90Layout();selection=null;pending=null;canMode=false;canQ=[];save();showTab('draw');toast('E90 project mock-up loaded');break}
@@ -1629,9 +1629,8 @@ function bgeo(p){
  });
  return {w,h,blocks:outBlocks,pos,legend};
 }
-const _renderInspHD30=renderInsp;
-renderInsp=function(){
- _renderInspHD30();
+function renderInsp(){
+ renderInspBase();
  if(!selection||selection.type!=='part')return;
  const p=part(selection.id),t=p&&T[p.t];if(!p||!t||!t.bulk)return;
  const el=document.getElementById('insp');
@@ -1642,9 +1641,8 @@ renderInsp=function(){
  <label><span>View orientation</span><select data-bulkcfg="bulkFace"><option value="mating" ${face==='mating'?'selected':''}>Mating face</option><option value="wire" ${face==='wire'?'selected':''}>Wire side (mirrored)</option></select></label>
  <p class="muted">HD30 shell 24 · cavity sizes shown schematically. Verify cavity numbers and orientation against the exact TE insert drawing before building.</p>`);
 };
-const _rStudioHD30=rStudio;
-rStudio=function(){
- _rStudioHD30();
+function rStudio(){
+ rStudioBase();
  const p=part(+(S.studioSelected||0)),t=p&&T[p.t];if(!p||!t||!t.bulk)return;
  const bg=bgeo(p),pins=t.pins,svg=[];
  svg.push(`<svg viewBox="0 0 ${bg.w} ${bg.h}" role="img" aria-label="Schematic circular bulkhead cavity layout" style="width:100%;max-height:480px;background:var(--panel2);border:1px solid var(--line);border-radius:8px">`);
