@@ -2,7 +2,8 @@
 
 ## v0.9.0 — 2026-10-24
 - Reworked Loom Studio into an editing workspace: drag parts, manage loom covers/colours, assign wires to sleeves, and edit gauge/current/fuse inputs.
-- Added a trunk-to-cabin DT6 six-core example linking GPO2, GPO3, GPO7, AIN2, +5 V and sensor ground, with three cabin DT2 pigtails.
+- Added a trunk-to-cabin DT6 six-core example: pins 1–6 carry GPO2, GPO3, GPO7 heater-relay trigger, AIN2 pressure signal, +5 V and sensor ground, with three cabin DT2 pigtails.
+- Kept the Leash dual board dedicated to fuel-pump A−/B− triggers; GPO7 now drives a separate heater relay terminal 85. The heater contact fuse rating and load-wire gauge remain explicitly TBD.
 - Reorganized the E90 example into vehicle zones and added a re-layout control.
 - Expanded Test Sim / wire audit checks for fuse-to-wire ampacity mismatch, load-vs-fuse mismatch, missing current data, and voltage drop. These remain rough design-screening checks, not certification.
 
