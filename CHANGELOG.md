@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.16.0 — 2026-10-24
+- Added a Power Budget workspace grouping wire segments by entered fuse/circuit label, reporting recorded current sums, known fuse ratings, and missing load/fuse data.
+- Added downloadable Power Budget CSV and consolidated JSON project report with readiness findings, self-test results, project counts, circuit-book records, and documented limitations.
+- Added live Wire List search across signal, endpoint, color, gauge and fuse metadata, plus filters for incomplete documentation and wires with entered current values.
+- Preserved the distinction between an entered route length and a drawing-derived estimate when loading a wire into the Electrical Checker; applying current/gauge/fuse data no longer silently converts an estimated length into a measured one.
+- Added explicit cautions that per-segment current sums may double-count loads and are not a substitute for fuse coordination, wire ampacity or safety validation.
+
 ## v0.15.0 — 2026-10-24
 - Linked the Electrical Checker to the active drawing: load a selected wire's current, length, gauge and fuse values, then explicitly apply reviewed values back to that wire.
 - Added reusable voltage-drop calculation logic, support for large copper gauges in the calculator, and an explicit warning when a loaded circuit has no fuse rating entered.
