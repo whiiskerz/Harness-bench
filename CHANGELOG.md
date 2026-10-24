@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.8.0 — 2026-10-24
+- Added a dedicated MaxxECU RACE pinout reference workspace for the supplied 48-pin main connector and 32-pin black Connector 2.
+- Added V1/RACE/PRO, STREET and SPORT variant selection, searchable cavity maps/tables, cavity selection, and CSV export.
+- Pin data is transcribed from user-provided notes; connector maps are schematic and require verification against official documentation before wiring.
+
 ## v0.7.0 — 2026-10-24
 - Rebranded the app UI to **WireForge** while retaining the Harness-bench repository and creator credit.
 - Replaced the wide horizontal tab strip with grouped workspace navigation on desktop and compact horizontal navigation on small screens.
