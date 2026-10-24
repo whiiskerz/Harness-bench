@@ -2,6 +2,7 @@
 
 ## v0.16.0 — 2026-10-24
 - Added a Power Budget workspace grouping wire segments by entered fuse/circuit label, reporting recorded current sums, known fuse ratings, and missing load/fuse data.
+- Improved the E90 example's default wire paths with orthogonal, lane-separated routes to reduce diagonal crossings and make circuits easier to follow.
 - Added downloadable Power Budget CSV and consolidated JSON project report with readiness findings, self-test results, project counts, circuit-book records, and documented limitations.
 - Added live Wire List search across signal, endpoint, color, gauge and fuse metadata, plus filters for incomplete documentation and wires with entered current values.
 - Preserved the distinction between an entered route length and a drawing-derived estimate when loading a wire into the Electrical Checker; applying current/gauge/fuse data no longer silently converts an estimated length into a measured one.
