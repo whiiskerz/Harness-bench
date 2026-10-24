@@ -639,7 +639,7 @@ function dims(p){
 }
 const pw=p=>dims(p).w,ph=p=>dims(p).h;
 const ctr=p=>({x:p.x+pw(p)/2,y:p.y+ph(p)/2});
-const plabel=(p,i)=>(p.pl&&p.pl[i]!==undefined&&p.pl[i]!=='')?p.pl[i]:T[p.t].pins[i].l;
+const plabel=(p,i)=>(p.pl&&p.pl[i]!==undefined&&p.pl[i]!=='')?p.pl[i]:(T[p.t]?.pins?.[i]?.l||'');
 const fzTxt=(p,i)=>p.fa&&p.fa[i]?' · '+p.fa[i]+'A':'';
 const BG={};
 function bgeo(p){
@@ -696,7 +696,7 @@ const twPhase=w=>{const f=S.wires.find(x=>x.tw===w.tw);return f===w?0:Math.PI};
 const autoLen=w=>{const g=geo(w);return g?Math.round(g.d/(S.scale||4)*1.15*2)/2:0};
 const wlen=w=>(+w.len>0?+w.len:autoLen(w));
 const cutLen=w=>wlen(w)+2*(+S.strip||0);
-const pinId=(p,i)=>T[p.t].pins[i].p;
+const pinId=(p,i)=>T[p.t]?.pins?.[i]?.p??'?';
 function endName(r){
   const p=part(r.p);if(!p)return'?';const t=T[p.t];if(t.node)return p.name;
   const l=plabel(p,r.i);
