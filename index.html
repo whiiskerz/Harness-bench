@@ -930,7 +930,7 @@ function wireAuditHTML(w){
  const g=+w.awg, amps=+w.amps||0, inches=+w.len>0?+w.len:autoLen(w), ft=Math.max(0,inches/12);
  const r={4:.2485,6:.3951,8:.6282,10:.9989,12:1.588,14:2.525,16:4.016,18:6.385,20:10.15,22:16.14,24:25.67}[g];
  const v=14,ohm=(r||0)*2*ft/1000,drop=ohm*amps,pct=drop/v*100,fuse=+w.fa||0,rule=AMPS[g]||0;
- const notes=[],signalOnly=['signal','sensor-ground'].includes(w.circuitType)||/\b(GPO\\d*|AIN\\d*|DIN\\d*|CAN|trigger|signal)\\b/i.test(w.sig||''),sensorPower=w.circuitType==='sensor-power';
+ const notes=[],signalOnly=['signal','sensor-ground'].includes(w.circuitType)||/\b(GPO\d*|AIN\d*|DIN\d*|CAN|trigger|signal)\b/i.test(w.sig||''),sensorPower=w.circuitType==='sensor-power';
  if(!w.amps&&!signalOnly)notes.push('<span class="wn">Current not entered — gauge and voltage-drop suitability cannot be confirmed.</span>');
  if(!w.len)notes.push('<span class="muted">Length uses the drawing estimate; confirm routed length and service loops.</span>');
  if(fuse&&amps&&fuse<amps)notes.push('<span class="wn">Fuse rating is below entered load current; investigate before build.</span>');
@@ -1525,7 +1525,7 @@ function simState(){S.sim=S.sim||{power:false,engine:false,voltage:12.6};return 
 function simMetrics(){
  const q=simState(),v=q.engine?14.2:(+q.voltage||12.6),rows=(S.wires||[]).map((w,i)=>{
   const a=Math.max(0,+((w.simAmps!==undefined)?w.simAmps:w.amps)||0),f=+w.fa||0,g=+w.awg||0,len=Math.max(0,+w.len>0?+w.len:autoLen(w)),cap=AMPS[g]||0,ohm=AWG_OHM_1000FT[g]||0,drop=a*ohm*(len/12)/1000*2,pct=v?drop/v*100:0,fp=f?a/f*100:0,flags=[];
-  const signalOnly=['signal','sensor-ground'].includes(w.circuitType)||/\b(GPO\\d*|AIN\\d*|DIN\\d*|CAN|trigger|signal)\\b/i.test(w.sig||''),sensorPower=w.circuitType==='sensor-power',fuseExpected=!signalOnly&&!sensorPower;
+  const signalOnly=['signal','sensor-ground'].includes(w.circuitType)||/\b(GPO\d*|AIN\d*|DIN\d*|CAN|trigger|signal)\b/i.test(w.sig||''),sensorPower=w.circuitType==='sensor-power',fuseExpected=!signalOnly&&!sensorPower;
   if(a&&!f&&fuseExpected)flags.push('No fuse rating');
   if(f&&a>f)flags.push('Load exceeds fuse rating');
   if(f&&cap&&f>cap)flags.push('Fuse exceeds rough wire ampacity');
