@@ -27,6 +27,7 @@ test('E90 starter topology has stable expected shape and connected endpoints', (
   const project = new Function('mkW', source + '; return e90ProjectStarter();')(mkW);
   assert.equal(project.parts.length, 60);
   assert.equal(project.wires.length, 119);
+  assert.ok(project.wires.every(w => w.autoRoute === true), 'E90 example wires use the cleaner orthogonal routing mode');
   const partIds = new Set(project.parts.map(p => String(p.id)));
   assert.equal(partIds.size, project.parts.length, 'part IDs must be unique');
   assert.equal(new Set(project.wires.map(w => String(w.id))).size, project.wires.length, 'wire IDs must be unique');
