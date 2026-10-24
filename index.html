@@ -195,10 +195,10 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.8.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.9.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.8.0';
+const APP_VERSION='0.9.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -416,13 +416,19 @@ function e90ProjectStarter(){
    mk(159,'load2',0,0,'Starlights'),
    mk(160,'pdb',0,0,'Trunk 12V distribution block'),
    mk(133,'ssr',950,820,'Nitrous SSR interface — verify model / load circuit'),
-   mk(134,'fuse6',900,1020,'Auxiliary switched fuse box — nitrous SSR signal feed (upstream feed / fuse TBD)')
+   mk(134,'fuse6',900,1020,'Auxiliary switched fuse box — nitrous SSR signal feed (upstream feed / fuse TBD)'),
+   mk(161,'dt6',0,0,'DT6 — TRUNK SIDE · fuel / nitrous / sensor',{0:'GPO2 → Leash A−',1:'GPO3 → Leash B−',2:'GPO7 → heater trigger',3:'AIN2 → pressure signal',4:'+5V sensor supply',5:'Sensor ground'}),
+   mk(162,'dt6',0,0,'DT6 — CABIN SIDE · 6-core pass-through',{0:'GPO2',1:'GPO3',2:'GPO7',3:'AIN2',4:'+5V',5:'Sensor ground'}),
+   mk(163,'dt2',0,0,'Cabin DT2 #1 · fuel-pump triggers',{0:'GPO2',1:'GPO3'}),
+   mk(164,'dt2',0,0,'Cabin DT2 #2 · heater trigger / pressure signal',{0:'GPO7',1:'AIN2'}),
+   mk(165,'dt2',0,0,'Cabin DT2 #3 · sensor power',{0:'+5V',1:'Sensor ground'}),
+   mk(167,'splice',0,0,'Cabin +5V branch splice'),
+   mk(168,'splice',0,0,'Cabin sensor-ground branch splice')
   ];
   const W=[];let wid=300;
   const wire=(ap,ai,bp,bi,sig,awg,color,extra={})=>{const low=sig.toLowerCase();const loom=low.includes('can ')?992:((low.includes('pump')||low.includes('fp1')||low.includes('fp2')||low.includes('ekp')||low.includes('trunk'))?991:990);W.push(mkW({p:ap,i:ai},{p:bp,i:bi},{id:wid++,sig,awg,color,loom,...extra}));};
   // Signal and relay control wiring from the supplied termination map.
-  wire(101,2,104,4,'GPO2 → FP1 relay low-side trigger',18,'GRN');
-  wire(101,4,104,6,'GPO3 → FP2 relay low-side trigger',18,'BLU');
+  // Fuel-pump low-side triggers are routed through the trunk-to-cabin DT6 sub-harness below.
   wire(101,3,108,1,'GPO6 → A/C relay coil − (ground-switching output)',18,'PUR');
   wire(107,6,108,2,'Fused switched +12V → A/C relay coil +',18,'RED');
   wire(107,2,101,6,'Switched +12V → ECU power branch',14,'RED');
@@ -469,9 +475,9 @@ function e90ProjectStarter(){
   wire(122,0,121,1,'Engine ground point → battery negative (ground strap; size/termination TBD)',0,'BLK',{amps:0,fuse:'GROUND_STRAP_TBD',fa:0});
   wire(106,0,121,1,'Trunk accessory ground bus → battery negative (ground cable; size/termination TBD)',0,'BLK',{amps:0,fuse:'TRUNK_GROUND_TBD',fa:0});
   const d12=['Coils +12V','Engine ground','GPO2 fuel pump 1','GPO6 A/C clutch','GPO3 fuel pump 2','Starter input','ECU switched +12V','GPO8','GPO15','Motor 2 +','Motor 2 −','Alternator'];
-  d12.forEach((n,i)=>wire(140,i,101,i,'ECU 12-pin '+'ABCDEFGHJKLM'[i]+' → DT12 pin '+(i+1)+' · '+n+' (pin-for-pin by function, verify)',0,''));
+  d12.forEach((n,i)=>{if(i===2||i===4)return;wire(140,i,101,i,'ECU 12-pin '+'ABCDEFGHJKLM'[i]+' → DT12 pin '+(i+1)+' · '+n+' (pin-for-pin by function, verify)',0,'')});
   const d8=['+5V sensors','Sensor ground','AIN1 paddles','AIN2 nitrous pressure','AIN6 fuel pressure','AIN7 A/C pressure','GPO7 / DIN3','GPO5 fan PWM'];
-  d8.forEach((n,i)=>wire(141,i,102,i,'ECU 16-pin '+(i+1)+' → DT8 analog pin '+(i+1)+' · '+n+' (verify)',0,''));
+  d8.forEach((n,i)=>{if([0,1,3,6].includes(i))return;wire(141,i,102,i,'ECU 16-pin '+(i+1)+' → DT8 analog pin '+(i+1)+' · '+n+' (verify)',0,'')});
   const c8=['CAN L','CAN H','DIN1 brake','DIN2 shifter 1','DIN4 shifter 2','DIN5 flex fuel','GPO4 nitrous SSR','Not used'];
   c8.forEach((n,i)=>{if(i<7)wire(141,8+i,103,i,'ECU 16-pin '+(9+i)+' → DT8 CAN/control pin '+(i+1)+' · '+n+' (verify)',0,i===0?'PNK':i===1?'GRY':'',i<2?{tw:7001}:{})});
   wire(133,0,145,0,'Nitrous SSR output → nitrous solenoid +',0,'RED');
@@ -486,17 +492,17 @@ function e90ProjectStarter(){
   wire(149,0,148,0,'Small stud fused 12V → purge relay pin 30',0,'RED');
   wire(149,0,133,3,'Small stud fused 12V → SSR battery pin',0,'RED');
   wire(150,2,147,0,'Leash board 2 output B (relay 87) → nitrous heater +',0,'RED');
-  wire(101,7,150,6,'GPO8 → Leash board 2 trigger B− (trunk line)',0,'');
+  wire(161,2,150,6,'DT6 trunk pin 3 → Leash board 2 trigger B− (GPO7 heater control)',20,'PUR',{loom:991,circuitType:'signal'});
   [['TPS 1 signal (to maxx pin 3)',2,'BLU'],['TPS 2 signal (to maxx pin 6)',5,'WHT/YEL'],['5V reference (maxx pin 5)',4,'YEL/GRN'],['5V reference (maxx pin 4)',3,'YEL'],['Ground (maxx pin 2)',1,'BRN/GRN'],['Ground (maxx pin 1)',0,'BRN']].forEach(([n,i,c])=>wire(152,i,142,i,'DBW pedal '+n,0,c));
   wire(154,10,156,0,'Paddles X6021 pin 11 → sensor ground splice',0,'BRN');
   wire(154,11,102,2,'Paddles X6021 pin 12 → AIN1',0,'');
-  wire(102,0,155,0,'MaxxECU +5V → 5V sensor splice',0,'RED');
-  wire(155,0,125,0,'5V splice → fuel pressure sensor 5V',0,'RED');
-  wire(155,0,151,0,'5V splice → nitrous pressure sensor 5V',0,'RED');
-  wire(102,1,156,0,'MaxxECU sensor ground → sensor ground splice',0,'BLK');
-  wire(156,0,125,1,'Sensor ground splice → fuel pressure sensor ground',0,'BLK');
-  wire(156,0,151,1,'Sensor ground splice → nitrous pressure sensor ground',0,'BLK');
-  wire(102,3,151,2,'AIN2 → nitrous pressure signal',0,'');
+  wire(161,4,155,0,'DT6 trunk pin 5 → trunk +5V sensor splice',20,'RED',{loom:991,circuitType:'sensor-power'});
+  wire(155,0,125,0,'5V splice → fuel pressure sensor 5V',20,'RED',{circuitType:'sensor-power'});
+  wire(155,0,151,0,'5V splice → nitrous pressure sensor 5V',20,'RED',{circuitType:'sensor-power'});
+  wire(161,5,156,0,'DT6 trunk pin 6 → trunk sensor-ground splice',20,'BLK',{loom:991,circuitType:'sensor-ground'});
+  wire(156,0,125,1,'Sensor ground splice → fuel pressure sensor ground',20,'BLK',{circuitType:'sensor-ground'});
+  wire(156,0,151,1,'Sensor ground splice → nitrous pressure sensor ground',20,'BLK',{circuitType:'sensor-ground'});
+  wire(161,3,151,2,'DT6 trunk pin 4 → nitrous pressure sensor signal (AIN2)',20,'WHT',{loom:991,circuitType:'signal'});
   wire(116,1,103,3,'Shifter DT4 pin 2 (black) → DIN2 shifter 1',0,'BLK');
   wire(116,0,103,4,'Shifter DT4 pin 1 (blue) → DIN4 shifter 2',0,'BLU');
   wire(116,2,156,0,'Shifter DT4 pin 3 (brown) → sensor ground splice',0,'BRN');
@@ -517,6 +523,26 @@ function e90ProjectStarter(){
   wire(159,1,106,4,'Starlights − → trunk ground bus',0,'BLK');
   wire(157,3,131,0,'Fuse box slot → valved mufflers control +',0,'RED');
   wire(131,1,106,5,'Valved mufflers control − → trunk ground bus',0,'BLK');
+  // Cabin-side DT2 pigtails route the six loose ECU conductors to the DT6 pass-through.
+  wire(140,2,163,0,'MaxxECU GPO2 → cabin DT2 #1 pin 1',20,'GRN',{circuitType:'signal'});
+  wire(140,4,163,1,'MaxxECU GPO3 → cabin DT2 #1 pin 2',20,'BLU',{circuitType:'signal'});
+  wire(141,6,164,0,'MaxxECU GPO7 / DIN3 → cabin DT2 #2 pin 1',20,'PUR',{circuitType:'signal'});
+  wire(141,3,164,1,'MaxxECU AIN2 → cabin DT2 #2 pin 2',20,'WHT',{circuitType:'signal'});
+  wire(141,0,167,0,'MaxxECU +5V sensor supply → cabin +5V branch splice',20,'RED',{circuitType:'sensor-power'});
+  wire(167,0,102,0,'Cabin +5V splice → DT8 analog harness +5V',20,'RED',{circuitType:'sensor-power'});
+  wire(167,0,165,0,'Cabin +5V splice → cabin DT2 #3 pin 1',20,'RED',{circuitType:'sensor-power'});
+  wire(141,1,168,0,'MaxxECU sensor ground → cabin ground branch splice',20,'BLK',{circuitType:'sensor-ground'});
+  wire(168,0,102,1,'Cabin ground splice → DT8 analog harness sensor ground',20,'BLK',{circuitType:'sensor-ground'});
+  wire(168,0,165,1,'Cabin ground splice → cabin DT2 #3 pin 2',20,'BLK',{circuitType:'sensor-ground'});
+  wire(163,0,162,0,'Cabin DT2 #1 pin 1 → cabin DT6 pin 1 (GPO2)',20,'GRN',{circuitType:'signal'});
+  wire(163,1,162,1,'Cabin DT2 #1 pin 2 → cabin DT6 pin 2 (GPO3)',20,'BLU',{circuitType:'signal'});
+  wire(164,0,162,2,'Cabin DT2 #2 pin 1 → cabin DT6 pin 3 (GPO7)',20,'PUR',{circuitType:'signal'});
+  wire(164,1,162,3,'Cabin DT2 #2 pin 2 → cabin DT6 pin 4 (AIN2)',20,'WHT',{circuitType:'signal'});
+  wire(165,0,162,4,'Cabin DT2 #3 pin 1 → cabin DT6 pin 5 (+5V)',20,'RED',{circuitType:'sensor-power'});
+  wire(165,1,162,5,'Cabin DT2 #3 pin 2 → cabin DT6 pin 6 (sensor ground)',20,'BLK',{circuitType:'sensor-ground'});
+  wire(104,4,161,0,'Leash dual A− → trunk DT6 pin 1 (GPO2)',20,'GRN',{circuitType:'signal'});
+  wire(104,6,161,1,'Leash dual B− → trunk DT6 pin 2 (GPO3)',20,'BLU',{circuitType:'signal'});
+  [['GPO2 trigger','GRN','signal'],['GPO3 trigger','BLU','signal'],['GPO7 heater trigger','PUR','signal'],['AIN2 pressure signal','WHT','signal'],['+5V sensor supply','RED','sensor-power'],['Sensor ground','BLK','sensor-ground']].forEach((q,i)=>wire(162,i,161,i,'DT6 cabin pin '+(i+1)+' ↔ trunk pin '+(i+1)+' · '+q[0],20,q[1],{loom:993,circuitType:q[2]}));
   W.forEach(w=>{if(/^ECU 16-pin/.test(w.sig))return;if(/CAN L(ow)?\b/i.test(w.sig))w.color='PUR';else if(/CAN H(igh)?\b/i.test(w.sig))w.color='BLU'});
   return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'},{id:993,name:'Trunk-to-cabin DT6 · 6-core',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
 }
@@ -874,11 +900,11 @@ S.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});
 /* ---------- E90 example layout by zone ---------- */
 const E90ZONES=[
  ['Engine bay','#ff8a1f',[112,118,119,120,122,125,126,127,128,129,133,144,149]],
- ['DME box','#e0b13a',[101,102,103,107,158,108,110,114,115,117,145,146,148,154,155,156]],
- ['Cabin','#4a86e8',[140,141,142,143,152,111,116,113,123,130]],
- ['Trunk','#3fae6a',[104,105,106,109,121,124,131,134,147,150,151,157,159,160]]];
-function e90Layout(){
-  if(!S.lay)return;S.lay=0;S.zones=[];const GAP=36,PAD=30,TOP=70,MAXH=1500;let x=0;
+ ['DME box','#e0b13a',[101,102,103,107,158,108,110,114,115,117,145,146,148,154]],
+ ['Cabin','#4a86e8',[140,141,142,143,152,111,116,113,123,130,162,163,164,165,167,168]],
+ ['Trunk','#3fae6a',[104,105,106,109,121,124,131,134,147,150,151,155,156,157,159,160,161]]];
+function e90Layout(force=false){
+  if(!S.lay&&!force)return;S.lay=0;S.zones=[];const GAP=36,PAD=30,TOP=70,MAXH=1500;let x=0;
   E90ZONES.forEach(([name,col,ids])=>{
     const ps=ids.map(i=>part(i)).filter(Boolean);if(!ps.length)return;
     let cx=x+PAD,cy=TOP,colW=0,right=x;
