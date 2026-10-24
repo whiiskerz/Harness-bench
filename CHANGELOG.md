@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.0 — 2026-10-24
+- Rebuilt the Add Part library as a searchable visual catalog with connector-face previews, pin counts, family filters, and contact-size summaries where available.
+- Added expandable pinout tables showing order number, pin ID, function, and contact size for catalog parts.
+- Added schematic mating-face and mirrored wire-side previews in Connector Studio for regular connectors as well as circular bulkheads.
+- Updated the in-app version display and application version constant to v0.6.0.
+- Visuals remain schematic unless explicitly verified against the exact manufacturer drawing; generated layouts are not fabrication cavity maps.
+
+
 ## v0.5.1 — 2026-10-24
 - Replaced crowded circular pin labels with compact per-insert order numbers inside the cavity markers.
 - Added a readable pin-order table showing order number, pin ID, contact size, and function/label in the inspector and Connector Studio.
