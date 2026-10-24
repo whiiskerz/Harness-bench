@@ -338,6 +338,26 @@ function e90ProjectStarter(){
    mk(129,'sens2',-850,1000,'Intake air temp sensor — IAT (verify sensor type)'),
    mk(130,'e90dt4shifter',650,760,'BMW / 8HP shifter signal interface — verify exact mapping'),
    mk(131,'load2',950,450,'Valved mufflers — Motor 2 H-bridge (current TBD)'),
+   mk(140,'mx12',0,0,'MaxxECU 12-pin (cabin)'),
+   mk(141,'mx16',0,0,'MaxxECU 16-pin (cabin)'),
+   mk(142,'mxpedal',0,0,'E-pedal 6-pin'),
+   mk(143,'mxwbo',0,0,'Secondary WBO 4-pin'),
+   mk(144,'etb6',0,0,'E-throttle 6-pin'),
+   mk(145,'nsol',0,0,'Nitrous solenoid'),
+   mk(146,'psol',0,0,'Purge solenoid'),
+   mk(147,'heater',0,0,'Nitrous bottle heater'),
+   mk(148,'relay',0,0,'Nitrous purge relay (86 from GPO15)'),
+   mk(149,'bmwsmall',0,0,'Small stud — fused 12V (engine bay)'),
+   mk(150,'dual',0,0,'Leash dual board 2 — heater on B'),
+   mk(151,'sens3',0,0,'Nitrous pressure sensor — AIN2'),
+   mk(152,'dt6',0,0,'OEM BMW pedal (DBW) — pin numbers match MaxxECU pedal plug'),
+   mk(154,'dt12',0,0,'BMW X6021 — paddles'),
+   mk(155,'splice',0,0,'5V sensor splice'),
+   mk(156,'splice',0,0,'Sensor ground splice'),
+   mk(157,'fuse6',0,0,'Trunk 6-slot fuse box — switched 12V from board 2',{1:'Board 1 trigger feed',2:'Starlights',3:'Valved mufflers'}),
+   mk(158,'relay',0,0,'DME box ECU power relay'),
+   mk(159,'load2',0,0,'Starlights'),
+   mk(160,'pdb',0,0,'Trunk 12V distribution block'),
    mk(133,'ssr',950,820,'Nitrous SSR interface — verify model / load circuit'),
    mk(134,'fuse6',900,1020,'Auxiliary switched fuse box — nitrous SSR signal feed (upstream feed / fuse TBD)')
   ];
@@ -391,6 +411,56 @@ function e90ProjectStarter(){
   wire(118,0,119,0,'Alternator B+ → BMW big-stud junction (charge cable; size/protection TBD)',0,'RED',{amps:0,fuse:'ALT_FEED_TBD',fa:0});
   wire(122,0,121,1,'Engine ground point → battery negative (ground strap; size/termination TBD)',0,'BLK',{amps:0,fuse:'GROUND_STRAP_TBD',fa:0});
   wire(106,0,121,1,'Trunk accessory ground bus → battery negative (ground cable; size/termination TBD)',0,'BLK',{amps:0,fuse:'TRUNK_GROUND_TBD',fa:0});
+  const d12=['Coils +12V','Engine ground','GPO2 fuel pump 1','GPO6 A/C clutch','GPO3 fuel pump 2','Starter input','ECU switched +12V','GPO8','GPO15','Motor 2 +','Motor 2 −','Alternator'];
+  d12.forEach((n,i)=>wire(140,i,101,i,'ECU 12-pin '+'ABCDEFGHJKLM'[i]+' → DT12 pin '+(i+1)+' · '+n+' (pin-for-pin by function, verify)',0,''));
+  const d8=['+5V sensors','Sensor ground','AIN1 paddles','AIN2 nitrous pressure','AIN6 fuel pressure','AIN7 A/C pressure','GPO7 / DIN3','GPO5 fan PWM'];
+  d8.forEach((n,i)=>wire(141,i,102,i,'ECU 16-pin '+(i+1)+' → DT8 analog pin '+(i+1)+' · '+n+' (verify)',0,''));
+  const c8=['CAN L','CAN H','DIN1 brake','DIN2 shifter 1','DIN4 shifter 2','DIN5 flex fuel','GPO4 nitrous SSR','Not used'];
+  c8.forEach((n,i)=>{if(i<7)wire(141,8+i,103,i,'ECU 16-pin '+(9+i)+' → DT8 CAN/control pin '+(i+1)+' · '+n+' (verify)',0,i===0?'PNK':i===1?'GRY':'',i<2?{tw:7001}:{})});
+  wire(133,0,145,0,'Nitrous SSR output → nitrous solenoid +',0,'RED');
+  wire(145,1,122,0,'Nitrous solenoid − → engine ground',0,'BLK');
+  wire(101,8,148,2,'GPO15 → purge relay pin 86 (coil)',0,'');
+  wire(148,1,122,0,'Purge relay pin 85 → chassis ground',0,'BLK');
+  wire(148,3,146,0,'Purge relay pin 87 → purge solenoid +',0,'');
+  wire(146,1,122,0,'Purge solenoid − → engine ground',0,'BLK');
+  wire(147,1,106,3,'Nitrous heater − → trunk ground bus',0,'BLK');
+  const drop=(ap,ai,bp,bi)=>{const k=W.findIndex(w=>w.a.p===ap&&w.a.i===ai&&w.b.p===bp&&w.b.i===bi);if(k>=0)W.splice(k,1)};
+  drop(102,0,125,0);drop(102,1,125,1);
+  wire(149,0,148,0,'Small stud fused 12V → purge relay pin 30',0,'RED');
+  wire(149,0,133,3,'Small stud fused 12V → SSR battery pin',0,'RED');
+  wire(150,2,147,0,'Leash board 2 output B (relay 87) → nitrous heater +',0,'RED');
+  wire(101,7,150,6,'GPO8 → Leash board 2 trigger B− (trunk line)',0,'');
+  [['TPS 1 signal (to maxx pin 3)',2,'BLU'],['TPS 2 signal (to maxx pin 6)',5,'WHT/YEL'],['5V reference (maxx pin 5)',4,'YEL/GRN'],['5V reference (maxx pin 4)',3,'YEL'],['Ground (maxx pin 2)',1,'BRN/GRN'],['Ground (maxx pin 1)',0,'BRN']].forEach(([n,i,c])=>wire(152,i,142,i,'DBW pedal '+n,0,c));
+  wire(154,10,156,0,'Paddles X6021 pin 11 → sensor ground splice',0,'BRN');
+  wire(154,11,102,2,'Paddles X6021 pin 12 → AIN1',0,'');
+  wire(102,0,155,0,'MaxxECU +5V → 5V sensor splice',0,'RED');
+  wire(155,0,125,0,'5V splice → fuel pressure sensor 5V',0,'RED');
+  wire(155,0,151,0,'5V splice → nitrous pressure sensor 5V',0,'RED');
+  wire(102,1,156,0,'MaxxECU sensor ground → sensor ground splice',0,'BLK');
+  wire(156,0,125,1,'Sensor ground splice → fuel pressure sensor ground',0,'BLK');
+  wire(156,0,151,1,'Sensor ground splice → nitrous pressure sensor ground',0,'BLK');
+  wire(102,3,151,2,'AIN2 → nitrous pressure signal',0,'');
+  wire(116,1,103,3,'Shifter DT4 pin 2 (black) → DIN2 shifter 1',0,'BLK');
+  wire(116,0,103,4,'Shifter DT4 pin 1 (blue) → DIN4 shifter 2',0,'BLU');
+  wire(116,2,156,0,'Shifter DT4 pin 3 (brown) → sensor ground splice',0,'BRN');
+  parts.find(p=>p.id===107).fa={1:20,2:15,3:7.5};
+  wire(149,0,158,0,'Small stud fused 12V → ECU power relay pin 30',0,'RED');
+  wire(158,3,107,0,'ECU power relay pin 87 → DME fuse box input',0,'RED');
+  wire(122,0,158,1,'Chassis ground → ECU power relay pin 85',0,'BLK');
+  wire(121,0,160,0,'Battery + → trunk distribution block (ANL fuse in the cable)',0,'RED');
+  wire(160,1,104,0,'Distribution block → Leash board 1 battery in',0,'RED');
+  wire(160,2,150,0,'Distribution block → Leash board 2 battery in',0,'RED');
+  wire(110,0,150,3,'EKP wire (key-on 12V) → Leash board 2 trigger A+',0,'GRN');
+  wire(150,3,150,5,'Jumper A+ to B+ on board 2',0,'');
+  wire(150,4,106,6,'Leash board 2 trigger A− → chassis ground',0,'BLK');
+  wire(150,1,157,0,'Leash board 2 output A → trunk fuse box input',0,'RED');
+  wire(157,1,104,3,'Fuse box slot → Leash board 1 trigger A+',0,'RED');
+  wire(157,1,104,5,'Fuse box slot → Leash board 1 trigger B+ (jumpered with A+)',0,'RED');
+  wire(157,2,159,0,'Fuse box slot → starlights +',0,'RED');
+  wire(159,1,106,4,'Starlights − → trunk ground bus',0,'BLK');
+  wire(157,3,131,0,'Fuse box slot → valved mufflers control +',0,'RED');
+  wire(131,1,106,5,'Valved mufflers control − → trunk ground bus',0,'BLK');
+  W.forEach(w=>{if(/^ECU 16-pin/.test(w.sig))return;if(/CAN L(ow)?\b/i.test(w.sig))w.color='PUR';else if(/CAN H(igh)?\b/i.test(w.sig))w.color='BLU'});
   return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
 }
 
@@ -404,6 +474,45 @@ const wireById=id=>S.wires.find(w=>w.id===+id);
 const LCOL=['#ff8a1f','#4a86e8','#3fae6a','#e0584a','#b07cf0','#2fb5c9'];
 function newLoom(){S.looms=S.looms||[];const l={id:nid(),name:'Loom '+(S.looms.length+1),cover:'Split loom',color:LCOL[S.looms.length%LCOL.length]};S.looms.push(l);return l}
 let selection=null,pending=null,canMode=false,canQ=[];
+/* ---------- twisted pair + loom drawing ---------- */
+function resamp(pts,M){const T0=pts[pts.length-1].s||1,o=[];let k=0;for(let j=0;j<M;j++){const t=T0*j/(M-1);while(k<pts.length-2&&pts[k+1].s<t)k++;const a=pts[k],b=pts[k+1],u=b.s>a.s?(t-a.s)/(b.s-a.s):0;o.push({x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u,nx:a.nx+(b.nx-a.nx)*u,ny:a.ny+(b.ny-a.ny)*u})}return o}
+function pairSVG(pr){
+  const gs=pr.map(geo);if(!gs[0]||!gs[1])return'';
+  const P=gs.map(g=>sampleSegs(g.segs,3)),M=Math.max(20,Math.round(Math.max(P[0][P[0].length-1].s,P[1][P[1].length-1].s)/3)),R=P.map(p=>resamp(p,M));
+  const mid=R[0].map((a,j)=>({x:(a.x+R[1][j].x)/2,y:(a.y+R[1][j].y)/2,nx:a.nx,ny:a.ny}));
+  const sm=[0];for(let j=1;j<M;j++)sm.push(sm[j-1]+Math.hypot(mid[j].x-mid[j-1].x,mid[j].y-mid[j-1].y));
+  const TOT=sm[M-1],LEN=12,A=2.5,RAMP=22,st=u=>{u=Math.max(0,Math.min(1,u));return u*u*(3-2*u)};
+  const strand=k=>R[k].map((p,j)=>{const e=st(Math.min(sm[j],TOT-sm[j])/RAMP),bx=p.x+(mid[j].x-p.x)*e,by=p.y+(mid[j].y-p.y)*e,o=A*e*Math.sin(2*Math.PI*sm[j]/LEN+k*Math.PI);return{x:bx+mid[j].nx*o,y:by+mid[j].ny*o,h:Math.floor(sm[j]/(LEN/2))}});
+  const S2=[strand(0),strand(1)],out=[];
+  const col=k=>cpart(pr[k].color,0)||'#888',st2=k=>cpart(pr[k].color,1);
+  const seg=(k,a,b)=>'M'+S2[k].slice(a,b+1).map(q=>q.x.toFixed(1)+' '+q.y.toFixed(1)).join(' L');
+  const draw1=(k,a,b)=>{const d=seg(k,a,b);out.push(`<path d="${d}" fill="none" stroke="#050607" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col(k)}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`);if(st2(k))out.push(`<path d="${d}" fill="none" stroke="${st2(k)}" stroke-width="2.4" stroke-dasharray="4 5"/>`)};
+  let a=0;for(let j=1;j<=M;j++){if(j===M||S2[0][j].h!==S2[0][a].h){const b=Math.min(M-1,j),front=(S2[0][a].h%2===0)?0:1;draw1(1-front,a,b);draw1(front,a,b);a=j}}
+  return out.join('');
+}
+function loomPlan(){
+  const G={},LM={},tubes=[];
+  S.wires.forEach(w=>{if(!w.loom||w.v||w.tw)return;const k=w.loom+'|'+Math.min(w.a.p,w.b.p)+'|'+Math.max(w.a.p,w.b.p);(G[k]=G[k]||[]).push(w)});
+  Object.values(G).forEach(ws=>{
+    const lm=(S.looms||[]).find(l=>l.id===ws[0].loom);if(!lm||ws.length<2)return;
+    const p1=ws[0].a.p,gs=ws.map(w=>geo(w));if(gs.some(g=>!g))return;
+    const As=ws.map((w,i)=>w.a.p===p1?gs[i].A:gs[i].B),Bs=ws.map((w,i)=>w.a.p===p1?gs[i].B:gs[i].A),n=ws.length;
+    const cA={x:As.reduce((a,q)=>a+q.x,0)/n,y:As.reduce((a,q)=>a+q.y,0)/n},cB={x:Bs.reduce((a,q)=>a+q.x,0)/n,y:Bs.reduce((a,q)=>a+q.y,0)/n};
+    const E={x:cA.x+As[0].dir*44,y:cA.y},X={x:cB.x+Bs[0].dir*44,y:cB.y},L=Math.hypot(X.x-E.x,X.y-E.y);if(L<50)return;
+    const u={x:(X.x-E.x)/L,y:(X.y-E.y)/L},nr={x:-u.y,y:u.x},Wt=Math.min(18,6+2*n);
+    ws.forEach((w,i)=>{const off=((i+.5)/n-.5)*(Wt-4),A=As[i],B=Bs[i],e={x:E.x+nr.x*off,y:E.y+nr.y*off},x={x:X.x+nr.x*off,y:X.y+nr.y*off};
+      const head=`M${A.x} ${A.y} C${A.x+A.dir*26} ${A.y} ${e.x-u.x*22} ${e.y-u.y*22} ${e.x} ${e.y}`,tail=`M${x.x} ${x.y} C${x.x+u.x*22} ${x.y+u.y*22} ${B.x+B.dir*26} ${B.y} ${B.x} ${B.y}`;
+      LM[w.id]={d:head+' '+tail,e,x}});
+    tubes.push({E,X,Wt,n,lm});
+  });
+  return{LM,tubes};
+}
+function tubeSVG(t){
+  const{E,X,Wt,n,lm}=t,d=`M${E.x} ${E.y} L${X.x} ${X.y}`,mx=(E.x+X.x)/2,my=(E.y+X.y)/2;
+  return `<g pointer-events="none"><path d="${d}" stroke="#08090b" stroke-width="${Wt+3}" stroke-linecap="round" fill="none"/><path d="${d}" stroke="#262b32" stroke-width="${Wt}" stroke-linecap="round" fill="none"/><path d="${d}" stroke="#555d68" stroke-width="${Wt-3}" stroke-dasharray="1.6 2.8" fill="none"/><text x="${mx}" y="${my-Wt/2-8}" text-anchor="middle" fill="#cfd4da" font-size="11" font-family="IBM Plex Mono,monospace">${esc(lm.name)} · ${n} wire${n>1?'s':''}</text></g>`;
+}
+const MSEL=new Set();
+
 
 /* ---------- geometry ---------- */
 const HDR=36,IW=112;
@@ -414,7 +523,7 @@ const gapOf=(t,i)=>(t.pins[i].blk||0)*16;
 function dims(p){
   const t=T[p.t];if(t.node)return{w:24,h:24};
   const n=t.pins.length,rh=rowH(t),mb=Math.max(0,...t.pins.map(x=>x.blk||0));
-  if(t.bulk)return{w:pcol(p)*2+64,h:HDR+n*rh+mb*16+20};
+  if(t.bulk){const b=bgeo(p);return{w:b.w,h:b.h}}
   const a=mockArt(p),sc=Math.min(1,(IW-14)/a.w);
   return{w:IW+pcol(p),h:HDR+Math.max(n*rh,a.h*sc+14)+16,a,sc};
 }
@@ -422,7 +531,22 @@ const pw=p=>dims(p).w,ph=p=>dims(p).h;
 const ctr=p=>({x:p.x+pw(p)/2,y:p.y+ph(p)/2});
 const plabel=(p,i)=>(p.pl&&p.pl[i]!==undefined&&p.pl[i]!=='')?p.pl[i]:T[p.t].pins[i].l;
 const fzTxt=(p,i)=>p.fa&&p.fa[i]?' · '+p.fa[i]+'A':'';
-const pinY=(p,i)=>{const t=T[p.t];return p.y+HDR+8+i*rowH(t)+rowH(t)/2+gapOf(t,i)};
+const BG={};
+function bgeo(p){
+  const t=T[p.t],key=p.t;if(BG[key])return BG[key];
+  const blks={};t.pins.forEach((pin,i)=>{(blks[pin.blk||0]=blks[pin.blk||0]||[]).push(i)});
+  const ks=Object.keys(blks).sort((a,b)=>a-b),SP=19,RH=16.5,info=ks.map(k=>{
+    const ids=blks[k],m=ids.length;let r=18,pts;
+    for(;;r+=2){pts=[];const nr=Math.floor(r/RH);for(let row=-nr;row<=nr;row++){const y=row*RH,off=(Math.abs(row)%2)?SP/2:0,nk=Math.ceil(r/SP)+1;for(let q=-nk;q<=nk;q++){const x=q*SP+off;if(Math.hypot(x,y)<=r)pts.push([x,y])}}if(pts.length>=m)break}
+    pts.sort((a,b)=>Math.hypot(a[0],a[1])-Math.hypot(b[0],b[1]));pts=pts.slice(0,m).sort((a,b)=>a[1]-b[1]||a[0]-b[0]);
+    return{ids,m,pts,R:r+17}});
+  const Rm=Math.max(...info.map(b=>b.R)),w=Math.max(2*Rm+70,info.some(b=>b.m>14)?300:230),cx=w/2,res={w,blocks:[],pos:{}};let y=HDR+12;
+  info.forEach(b=>{const cy=y+b.R;res.blocks.push({cx,cy,R:b.R,m:b.m,ids:b.ids});
+    b.ids.forEach((i,j)=>{res.pos[i]={x:cx+b.pts[j][0],y:cy+b.pts[j][1]}});
+    const rows=Math.ceil(b.m/(b.m>14?2:1));b.leg=cy+b.R+18;b.rows=rows;y=b.leg+rows*12+14});
+  res.legend=info.map(b=>({y:b.leg,cols:b.m>14?2:1,ids:b.ids}));res.h=y;return BG[key]=res;
+}
+const pinY=(p,i)=>{const t=T[p.t];if(t.bulk)return p.y+bgeo(p).pos[i].y;return p.y+HDR+8+i*rowH(t)+rowH(t)/2+gapOf(t,i)};
 let SIDE={};
 function computeSides(){
   SIDE={};
@@ -434,6 +558,7 @@ function computeSides(){
 function anc(p,i,tx,s){
   const t=T[p.t];if(t.node)return{x:p.x,y:p.y,dir:0};
   const y=pinY(p,i),w=pw(p),left=t.bulk?((s||'L')==='L'):((SIDE[p.id]||'R')==='L');
+  if(t.bulk){const q=bgeo(p).pos[i];return{x:p.x+q.x,y,dir:left?-1:1}}
   return{x:left?p.x:p.x+w,y,dir:left?-1:1};
 }
 function geo(w){
@@ -456,7 +581,7 @@ function sampleSegs(segs,step){
       pts.push({x,y,nx:-dy/m,ny:dx/m,s:sl})}});
   return pts;
 }
-function twistD(g,phase){const pts=sampleSegs(g.segs,4);return 'M'+pts.map(p=>{const o=3*Math.sin(2*Math.PI*p.s/20+phase);return (p.x+p.nx*o).toFixed(1)+' '+(p.y+p.ny*o).toFixed(1)}).join(' L')}
+function twistD(g,phase){const pts=sampleSegs(g.segs,4);return 'M'+pts.map(p=>{const o=5*Math.sin(2*Math.PI*p.s/26+phase);return (p.x+p.nx*o).toFixed(1)+' '+(p.y+p.ny*o).toFixed(1)}).join(' L')}
 const twPhase=w=>{const f=S.wires.find(x=>x.tw===w.tw);return f===w?0:Math.PI};
 const autoLen=w=>{const g=geo(w);return g?Math.round(g.d/(S.scale||4)*1.15*2)/2:0};
 const wlen=w=>(+w.len>0?+w.len:autoLen(w));
@@ -481,22 +606,27 @@ function draw(){
   (S.zones||[]).forEach(z=>out.push(`<g data-zone="${esc(z.id)}" style="cursor:move"><rect data-zone="${esc(z.id)}" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="16" fill="${z.col}" fill-opacity=".07" stroke="${z.col}" stroke-opacity=".75" stroke-width="2" stroke-dasharray="10 8"/><text pointer-events="none" x="${z.x+20}" y="${z.y+42}" fill="${z.col}" font-family="Barlow Condensed,sans-serif" font-weight="800" font-size="34" letter-spacing="3">${esc(z.name.toUpperCase())}</text><rect data-zone-resize="${esc(z.id)}" x="${z.x+z.w-20}" y="${z.y+z.h-20}" width="14" height="14" rx="3" fill="${z.col}" stroke="var(--fg)" stroke-width="1.5" style="cursor:nwse-resize"/></g>`));
   if(S.fw!=null)out.push(fwSVG(V));
   if(S.tk!=null)out.push(tkSVG(V));
+  S.parts.forEach(p=>{if(T[p.t].bulk)out.push(partSVG(p))});
   const handles=[];
-  S.wires.forEach(w=>{const g=geo(w);if(!g)return;const lm=(S.looms||[]).find(l=>l.id===w.loom);
+  const PAIR={};S.wires.forEach(w=>{if(w.tw)(PAIR[w.tw]=PAIR[w.tw]||[]).push(w)});const LP=loomPlan(),LM=LP.LM;
+  S.wires.forEach(w=>{const g=geo(w);if(!g||LM[w.id])return;const lm=(S.looms||[]).find(l=>l.id===w.loom);
     if(lm)out.push(`<path d="${g.path}" fill="none" stroke="${lm.color}" stroke-width="14" stroke-linecap="round" opacity=".22"/>`)});
   S.wires.forEach(w=>{
     const g=geo(w);if(!g)return;
-    const sel=selection&&selection.type==='wire'&&selection.id===w.id;
-    const c=cpart(w.color,0)||'var(--mute)',c2=cpart(w.color,1),d=w.tw?twistD(g,twPhase(w)):g.path;
-    if(sel)out.push(`<path d="${g.path}" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" opacity=".5"/>`);
-    if(ERR.w.has(w.id))out.push(`<path d="${g.path}" fill="none" stroke="var(--bad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="3 7" opacity=".85"/>`);
-    out.push(`<path d="${d}" fill="none" stroke="var(--mute)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>`);
-    out.push(`<path d="${d}" fill="none" stroke="${c}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>`);
-    if(c2)out.push(`<path d="${d}" fill="none" stroke="${c2}" stroke-width="3.6" stroke-dasharray="7 9"/>`);
-    out.push(`<path data-wire="${w.id}" d="${g.path}" fill="none" stroke="transparent" stroke-width="18" style="cursor:pointer"/>`);
+    const sel=(selection&&selection.type==='wire'&&selection.id===w.id)||MSEL.has(w.id);
+    const lmi=LM[w.id],PD=!lmi&&!!(w.tw&&PAIR[w.tw]&&PAIR[w.tw].length===2),dd=lmi?lmi.d:g.path;
+    const c=cpart(w.color,0)||'var(--mute)',c2=cpart(w.color,1),d=lmi?dd:(w.tw?twistD(g,twPhase(w)):g.path);
+    if(sel)out.push(`<path d="${dd}" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" opacity=".5"/>`);
+    if(ERR.w.has(w.id))out.push(`<path d="${dd}" fill="none" stroke="var(--bad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="3 7" opacity=".85"/>`);
+    if(PD&&PAIR[w.tw][0]===w)out.push(pairSVG(PAIR[w.tw]));
+    if(!PD)out.push(`<path d="${d}" fill="none" stroke="${w.tw?'#000':'var(--mute)'}" stroke-width="${w.tw?5.6:6}" stroke-linecap="round" stroke-linejoin="round" opacity="${w.tw?.55:.5}"/>`);
+    if(!PD)out.push(`<path d="${d}" fill="none" stroke="${c}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>`);
+    if(c2&&!PD)out.push(`<path d="${d}" fill="none" stroke="${c2}" stroke-width="3.6" stroke-dasharray="7 9"/>`);
+    out.push(`<path data-wire="${w.id}" d="${dd}" fill="none" stroke="transparent" stroke-width="18" style="cursor:pointer"/>`);
     if(sel){out.push(`<text class="wl" x="${g.mid.x}" y="${g.mid.y-16}" text-anchor="middle">${wlen(w)} in</text>`);handles.push(`<circle data-vh="${w.id}" cx="${g.mid.x}" cy="${g.mid.y}" r="9" fill="var(--accent)" stroke="var(--bg)" stroke-width="2" style="cursor:grab"/>`)}
   });
-  S.parts.forEach(p=>out.push(partSVG(p)));
+  LP.tubes.forEach(t=>out.push(tubeSVG(t)));
+  S.parts.forEach(p=>{if(!T[p.t].bulk)out.push(partSVG(p))});
   out.push(handles.join(''));
   out.push('</g>');
   cv.innerHTML=out.join('');
@@ -518,24 +648,26 @@ function partSVG(p){
   }
   const h=g.h,rh=rowH(t),n=t.pins.length,pc=pcol(p),s=[];
   const sub=[t.sub,t.pn].filter(Boolean).join(' · ');
-  s.push(`<g class="${sel?'sel':''}${ERR.p.has(p.id)?' err':''}" data-part="${p.id}"><rect class="box" x="${p.x}" y="${p.y}" width="${w}" height="${h}" rx="10"/><path class="hdr" d="M${p.x+1} ${p.y+HDR} V${p.y+10} a9 9 0 0 1 9 -9 H${p.x+w-10} a9 9 0 0 1 9 9 V${p.y+HDR} Z"/>`);
+  s.push(`<g class="${sel?'sel':''}${ERR.p.has(p.id)?' err':''}" data-part="${p.id}"><rect class="box" ${t.bulk?'style="fill-opacity:.25"':''} x="${p.x}" y="${p.y}" width="${w}" height="${h}" rx="10"/><path class="hdr" d="M${p.x+1} ${p.y+HDR} V${p.y+10} a9 9 0 0 1 9 -9 H${p.x+w-10} a9 9 0 0 1 9 9 V${p.y+HDR} Z"/>`);
   s.push(`<circle cx="${p.x+w-16}" cy="${p.y+HDR/2}" r="5" fill="${FAM[t.fam]||'var(--mute)'}"/>`);
   s.push(`<text class="t" x="${p.x+14}" y="${p.y+16}">${esc(p.name.length>28?p.name.slice(0,27)+'…':p.name)}</text>`);
   if(sub)s.push(`<text class="ps" x="${p.x+14}" y="${p.y+29}">${esc(sub.length>34?sub.slice(0,33)+'…':sub)}</text>`);
   const dot=(cx,y,ref,used)=>`<circle class="pd${pending===ref?' pend':used?' used':''}" cx="${cx}" cy="${y}" r="5"/><circle data-pin="${ref}" class="hit" cx="${cx}" cy="${y}" r="11"/>`;
   if(t.bulk){
-    const px=p.x+pc,top=p.y+HDR+4,bot=p.y+h-10;
-    s.push(`<rect x="${px}" y="${top}" width="64" height="${bot-top}" rx="6" fill="#4a5059" stroke="#8a919b"/>`);
-    [top+10,bot-10].forEach(by=>[px+10,px+54].forEach(bx=>s.push(`<circle cx="${bx}" cy="${by}" r="4" fill="#9aa1ab" stroke="#2c3036"/>`)));
-    const blks={};t.pins.forEach((pin,i)=>{const b=pin.blk||0;(blks[b]=blks[b]||[]).push(pinY(p,i))});
-    Object.values(blks).forEach(ys=>{const cy=(ys[0]+ys[ys.length-1])/2;s.push(`<circle cx="${px+32}" cy="${cy}" r="22" fill="#1b1e23" stroke="#9aa1ab" stroke-width="2"/><text x="${px+32}" y="${cy+4}" text-anchor="middle" fill="#cfd4da" font-size="11" font-family="monospace">${ys.length}</text>`)});
+    const bg=bgeo(p);
+    bg.blocks.forEach(b=>{const cx=p.x+b.cx,cy=p.y+b.cy;
+      s.push(`<circle cx="${cx}" cy="${cy}" r="${b.R+8}" fill="#3a4047" stroke="#8a919b" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="${b.R}" fill="#1b1e23" stroke="#9aa1ab" stroke-width="1.5"/>`);
+      [-1,1].forEach(sx=>s.push(`<circle cx="${cx+sx*(b.R+4)}" cy="${cy}" r="3" fill="#9aa1ab" stroke="#2c3036"/>`))});
     t.pins.forEach((pin,i)=>{
-      const y=pinY(p,i),l=plabel(p,i),maxc=Math.floor((pc-34)/5.4),lt=l?(l.length>maxc?l.slice(0,maxc-1)+'…':l):'';
-      s.push(`<text class="pid" x="${p.x+14}" y="${y+4}">${esc(pin.p)}</text>`);
-      if(lt)s.push(`<text class="pl" x="${p.x+14+Math.max(18,pin.p.length*8)}" y="${y+4}">${esc(lt)}</text>`);
-      s.push(`<text class="pid" x="${p.x+w-14}" y="${y+4}" text-anchor="end">${esc(pin.p)}</text>`);
-      s.push(dot(p.x,y,p.id+':'+i+':L',faceUsed(p.id,i,'L')),dot(p.x+w,y,p.id+':'+i+':R',faceUsed(p.id,i,'R')));
+      const q=bg.pos[i],x=p.x+q.x,y=p.y+q.y,rl=p.id+':'+i+':L',rr=p.id+':'+i+':R',uL=faceUsed(p.id,i,'L'),uR=faceUsed(p.id,i,'R');
+      s.push(`<circle cx="${x}" cy="${y}" r="7" fill="#2a2f36" stroke="#9aa1ab" stroke-width="1"/>`);
+      s.push(`<path class="pd${pending===rl?' pend':uL?' used':''}" d="M${x} ${y-7} A7 7 0 0 0 ${x} ${y+7} Z"/><path class="pd${pending===rr?' pend':uR?' used':''}" d="M${x} ${y-7} A7 7 0 0 1 ${x} ${y+7} Z"/>`);
+      s.push(`<text x="${x}" y="${y+2.4}" text-anchor="middle" fill="#cfd4da" font-size="6.5" font-family="monospace" pointer-events="none">${esc(String(pin.p).slice(0,3))}</text>`);
+      s.push(`<path data-pin="${rl}" class="hit" d="M${x} ${y-9} A9 9 0 0 0 ${x} ${y+9} Z"/><path data-pin="${rr}" class="hit" d="M${x} ${y-9} A9 9 0 0 1 ${x} ${y+9} Z"/>`);
     });
+    bg.legend.forEach(L=>{const cw=(w-28)/L.cols,mc=Math.max(6,Math.floor(cw/5.3)-5),rows=Math.ceil(L.ids.length/L.cols);
+      L.ids.forEach((i,j)=>{const col=Math.floor(j/rows),row=j%rows,l=plabel(p,i)||'',pn=String(t.pins[i].p);
+        s.push(`<text class="pl" x="${p.x+14+col*cw}" y="${p.y+L.y+row*12+8}">${esc(pn)} ${esc(l.length>mc?l.slice(0,mc-1)+'…':l)}</text>`)})});
   }else{
     const sd=SIDE[p.id]||'R',a=g.a,sc=g.sc,ix=sd==='R'?p.x:p.x+pc,iy=p.y+HDR+8;
     const dx=sd==='R'?p.x+w:p.x,colStart=sd==='R'?p.x+IW:p.x+pc;
@@ -564,7 +696,7 @@ cv.addEventListener('pointerdown',e=>{
   const V=v();
   if(ptrs.size===2){const[a,b]=[...ptrs.values()];G={kind:'pinch',d:Math.hypot(a.x-b.x,a.y-b.y)||1,k:V.k,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,vx:V.x,vy:V.y,moved:true};return}
   const pin=e.target.closest('[data-pin]'),pt=e.target.closest('[data-part]'),wr=e.target.closest('[data-wire]'),fwh=e.target.closest('[data-fw]'),tkh=e.target.closest('[data-tk]'),vh=e.target.closest('[data-vh]'),zr=e.target.closest('[data-zone-resize]'),zn=e.target.closest('[data-zone]');
-  G={kind:pin?'pin':vh?'vh':wr?'wire':pt?'part':fwh?'fw':tkh?'tk':zr?'zoneResize':zn?'zone':'bg',sx:e.clientX,sy:e.clientY,moved:false,pin:pin&&pin.dataset.pin,part:pt&&+pt.dataset.part,wire:wr&&+wr.dataset.wire,vh:vh&&+vh.dataset.vh,zone:(zr||zn)&&(zr||zn).dataset.zoneResize||(zr||zn)&&(zr||zn).dataset.zone,vx:V.x,vy:V.y};
+  G={kind:pin?'pin':vh?'vh':wr?'wire':pt?'part':fwh?'fw':tkh?'tk':zr?'zoneResize':zn?'zone':'bg',sx:e.clientX,sy:e.clientY,moved:false,shift:e.shiftKey,pin:pin&&pin.dataset.pin,part:pt&&+pt.dataset.part,wire:wr&&+wr.dataset.wire,vh:vh&&+vh.dataset.vh,zone:(zr||zn)&&(zr||zn).dataset.zoneResize||(zr||zn)&&(zr||zn).dataset.zone,vx:V.x,vy:V.y};
   if(G.kind==='part'){const p=part(G.part);G.ox=p.x;G.oy=p.y}
   if(G.kind==='zone'||G.kind==='zoneResize'){const z=(S.zones||[]).find(q=>q.id===G.zone);if(z){G.ox=z.x;G.oy=z.y;G.ow=z.w;G.oh=z.h;selection={type:'zone',id:z.id};renderInsp()}}
   if(G.kind==='fw')G.ox=S.fw;
@@ -600,9 +732,9 @@ function up(e){
   if(g.moved){save();return}
   if(g.kind==='fw'||g.kind==='tk'||g.kind==='vh'||g.kind==='zone'||g.kind==='zoneResize') { if(g.kind==='zone'||g.kind==='zoneResize'){save();renderInsp()} return; }
   if(g.kind==='pin')return pinTap(g.pin);
-  if(g.kind==='wire'){pending=null;selection={type:'wire',id:g.wire};renderInsp();draw();hint();return}
-  if(g.kind==='part'){pending=null;selection={type:'part',id:g.part};renderInsp();draw();hint();return}
-  pending=null;selection=null;renderInsp();draw();hint();
+  if(g.kind==='wire'){pending=null;if(g.shift){if(!MSEL.size&&selection&&selection.type==='wire')MSEL.add(selection.id);if(MSEL.has(g.wire))MSEL.delete(g.wire);else MSEL.add(g.wire)}else MSEL.clear();selection={type:'wire',id:g.wire};renderInsp();draw();hint();return}
+  if(g.kind==='part'){MSEL.clear();pending=null;selection={type:'part',id:g.part};renderInsp();draw();hint();return}
+  MSEL.clear();pending=null;selection=null;renderInsp();draw();hint();
 }
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);G=null});
 cv.addEventListener('wheel',e=>{
@@ -668,10 +800,10 @@ function addPart(id){
 S.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});
 /* ---------- E90 example layout by zone ---------- */
 const E90ZONES=[
- ['Engine bay','#ff8a1f',[112,118,119,120,122,125,126,127,128,129,133]],
- ['DME box','#e0b13a',[101,102,103,108,110,114,115,117]],
- ['Cabin','#4a86e8',[111,116,113,123,130]],
- ['Trunk','#3fae6a',[104,105,106,107,109,121,124,131,134]]];
+ ['Engine bay','#ff8a1f',[112,118,119,120,122,125,126,127,128,129,133,144,149]],
+ ['DME box','#e0b13a',[101,102,103,107,158,108,110,114,115,117,145,146,148,154,155,156]],
+ ['Cabin','#4a86e8',[140,141,142,143,152,111,116,113,123,130]],
+ ['Trunk','#3fae6a',[104,105,106,109,121,124,131,134,147,150,151,157,159,160]]];
 function e90Layout(){
   if(!S.lay)return;S.lay=0;S.zones=[];const GAP=36,PAD=30,TOP=70,MAXH=1500;let x=0;
   E90ZONES.forEach(([name,col,ids])=>{
@@ -724,11 +856,20 @@ function renderInsp(){
   }else if(selection&&selection.type==='zone'){
     const z=(S.zones||[]).find(q=>q.id===selection.id);if(!z){selection=null;return renderInsp()}
     el.innerHTML=`<h2>Zone / work area</h2><p class="muted">Drag the dashed border to move it. Drag the square at the bottom-right to resize it.</p><label><span>Zone name</span><input data-zi="name" value="${esc(z.name)}"></label><label><span>Zone color</span><input data-zi="col" type="color" value="${esc(z.col)}"></label><div class="two"><label><span>Width</span><input data-zi="w" type="number" min="240" value="${z.w}"></label><label><span>Height</span><input data-zi="h" type="number" min="240" value="${z.h}"></label></div><div class="row"><button class="btn danger" data-act="delZone">Delete zone</button><button class="btn" data-act="zoneDone">Done</button></div>`;
+  }else if(MSEL.size>1&&selection&&selection.type==='wire'){
+    MSEL.forEach(id=>{if(!wireById(id))MSEL.delete(id)});
+    const gs=Object.keys(AMPS).sort((a,b)=>b-a).map(g=>`<option value="${g}">${g} AWG</option>`).join('');
+    el.innerHTML=`<h2>${MSEL.size} wires selected</h2><p class="muted">Shift-click wires to add or remove. Tap empty space to clear.</p>
+     <label><span>Put in loom</span><select data-bulk="loom"><option value="">Choose…</option><option value="none">No loom</option>${(S.looms||[]).map(l=>`<option value="${l.id}">${esc(l.name)}</option>`).join('')}<option value="new">+ New loom</option></select></label>
+     <label><span>Gauge</span><select data-bulk="awg"><option value="">Choose…</option>${gs}</select></label>
+     <label><span>Color</span><input data-bulk="color" placeholder="RED or WHT/BLK"></label>
+     <div class="row"><button class="btn" data-act="subHarness">Make sub-harness plug</button><button class="btn danger" data-act="bulkDel">Delete selected</button></div>`;
   }else if(selection&&selection.type==='wire'){
     const w=S.wires.find(x=>x.id===selection.id);if(!w){selection=null;return renderInsp()}
     const gs=`<option value="0" ${+w.awg===0?'selected':''}>TBD / not sized</option>`+Object.keys(AMPS).sort((a,b)=>b-a).map(g=>`<option value="${g}" ${+w.awg===+g?'selected':''}>${g} AWG</option>`).join('');
     el.innerHTML=`<h2>Wire</h2>
      <p class="nt">${esc(endName(w.a))}<br>→ ${esc(endName(w.b))}</p>
+     <div class="call"><b>Move a wire end</b>${['a','b'].map(k=>{const r=w[k],pp=part(r.p);return `<div class="two"><label><span>End ${k.toUpperCase()} part</span><select data-we="${k}" data-wk="p">${S.parts.map(q=>`<option value="${q.id}" ${q.id===r.p?'selected':''}>${esc(q.name)}</option>`).join('')}</select></label><label><span>Pin</span><select data-we="${k}" data-wk="i">${(T[pp.t].node?[{p:'node'}]:T[pp.t].pins).map((pin,i)=>`<option value="${i}" ${i===r.i?'selected':''}>${esc(String(pin.p)+(plabel(pp,i)?' · '+plabel(pp,i):''))}</option>`).join('')}</select></label></div>`}).join('')}<p class="muted">Pick a different part or pin to move that end of the wire.</p></div>
      <label><span>Signal / what it does</span><input data-wi="sig" value="${esc(w.sig)}"></label>
      <div class="two">
       <label><span>Gauge</span><select data-wi="awg">${gs}</select></label>
@@ -746,7 +887,7 @@ function renderInsp(){
       <label><span>Twisted with</span><select data-tw="1"><option value="">Not twisted</option>${S.wires.filter(x=>x.id!==w.id).map(x=>`<option value="${x.id}" ${w.tw&&x.tw===w.tw?'selected':''}>#${S.wires.indexOf(x)+1} ${esc(x.sig||'unnamed')}</option>`).join('')}</select></label>
      </div>
      <label><span>Review notes</span><textarea data-wi="reviewNotes" placeholder="Source, datasheet, test result, crimp spec…">${esc(w.reviewNotes||'')}</textarea></label>
-     <div class="row"><button class="btn" data-act="spliceHere">Splice here</button><button class="btn" data-act="resetRoute">Reset route</button></div>
+     <div class="row"><button class="btn" data-act="spliceHere">Splice here</button><button class="btn" data-act="subHarness">Make sub-harness plug</button><button class="btn" data-act="resetRoute">Reset route</button></div>
      <p class="muted">Drag the round handle on the wire to bend its route. Leave length empty to measure it from the drawing using your scale.</p>
      <div class="row"><button class="btn" data-act="useAsDefault">Use gauge + color for new wires</button><button class="btn danger" data-act="delWire">Delete wire</button></div>`;
   }else{
@@ -923,7 +1064,7 @@ function rBom(){
 /* ---------- compatibility engine ---------- */
 const rp=(n,k)=>Array(n).fill(k);
 const KINDS={
- mx12:['p12','gnd','gpo','gpo','gpo',null,'p12','gpo','gpo','mot','mot',null],
+ mx12:['p12','gnd','gpo','gpo','gpo',null,'p12','gpo',null,'mot','mot',null],
  mx16:['p5','sgnd','ain','ain','ain','ain',null,'gpo','can','can','din','din','din','din','gpo',null],
  mxpedal:['sgnd','sgnd','ain','p5','p5','ain'],mxwbo:['p12','can','can','gnd'],
  etb6:['mot','mot','sgnd','ain','p5','ain'],tps3:['p5','sgnd','ain'],
@@ -932,7 +1073,7 @@ const KINDS={
  fuse6:rp(7,'p12'),fuse12:rp(13,'p12'),inl:['p12','p12'],pdb:rp(5,'p12'),gbus6:rp(7,'gnd'),gbus12:rp(13,'gnd'),
  fusegnd:['p12'].concat(rp(12,'p12'),['gnd'],rp(12,'gnd')),
  starter:['p12','p12'],bmwbig:['p12'],bmwsmall:['p12'],bat:['p12','gnd'],
- sens3:['p5','sgnd','ain'],sens2:['ain','sgnd'],load2:['ldp','ldm'],flex:['p12','din','gnd'],heater:['ldp','ldm'],nsol:['ldp','ldm'],psol:['ldp','ldm'],
+ sens3:['p5','sgnd','ain'],sens2:['ain','sgnd'],load2:['ldp','ldm'],flex:['p12','din',null],heater:['ldp','ldm'],nsol:['ldp','ldm'],psol:['ldp','ldm'],
  surge:['ldp','ldm','ldp','ldm','ldp','ldm'],
  canhub4:['p12','gnd'].concat(rp(8,'can')),canhub6:['p12','gnd'].concat(rp(12,'can'))
 };
@@ -1002,7 +1143,7 @@ function compatIssues(){
   });
   S.wires.forEach((w,n)=>{
     const nm=`Wire #${n+1} (${w.sig||'unnamed'})`,pa=part(w.a.p),pb=part(w.b.p);if(!pa||!pb)return;
-    [[pa,w.a],[pb,w.b]].forEach(([p,r])=>{const t=T[p.t];if(/^dt\d+$/.test(t.id)&&(+w.awg<14||+w.awg>20))add('bd',`${nm} is ${w.awg} AWG but ${p.name} (Deutsch DT) takes 14 to 20 AWG.`,[p.id],[w.id])});
+    [[pa,w.a],[pb,w.b]].forEach(([p,r])=>{const t=T[p.t];if(/^dt\d+$/.test(t.id)&&(+w.awg>0&&(+w.awg<14||+w.awg>20)))add('bd',`${nm} is ${w.awg} AWG but ${p.name} (Deutsch DT) takes 14 to 20 AWG.`,[p.id],[w.id])});
     if(+w.amps>0&&(AMPS[w.awg]||0)<+w.amps)add('bd',`${nm} carries ${w.amps} A but ${w.awg} AWG holds about ${AMPS[w.awg]||0} A.`,[],[w.id]);
     if((kindOf(pa,w.a.i)==='can'||kindOf(pb,w.b.i)==='can')&&!w.tw)add('wn',`${nm} is a CAN wire but is not twisted.`,[],[w.id]);
   });
@@ -1167,11 +1308,18 @@ function rBuild(){
 }
 function buildReport(){return BUILD_STAGES.map(g=>g.name+'\n'+g.items.map(([id,title])=>(S.buildChecks?.[id]?'[x] ':'[ ] ')+title).join('\n')).join('\n\n')}
 
+const DKEY='harness-bench-designs';
+function designList(){try{return JSON.parse(localStorage.getItem(DKEY))||[]}catch(e){return[]}}
+function designPut(a){try{localStorage.setItem(DKEY,JSON.stringify(a))}catch(e){toast('Could not save. Browser storage is full or blocked.')}}
 function rSave(){
   document.getElementById('t-save').innerHTML=`<h2>Backup</h2>
    <p class="muted">Your drawing saves in this browser only. Copy the backup text and keep it somewhere safe. To restore, paste it below and press Load.</p>
    <textarea id="bk" placeholder="Paste a backup here to load it"></textarea>
    <div class="row"><button class="btn primary" data-act="bkCopy">Copy backup</button><button class="btn" data-act="bkLoad">Load from box</button></div>
+   <h3>Saved designs</h3>
+   <p class="muted">Save the drawing under a name, like "Current build" or "Bulkhead rebuild". Designs stay in this browser.</p>
+   <div class="row"><input id="dsn" placeholder="Design name" style="flex:1"><button class="btn primary" data-act="designSave">Save design</button></div>
+   ${designList().map((x,i)=>`<div class="row"><b style="flex:1">${esc(x.name)}</b><span class="muted">${x.parts} parts · ${x.wires} wires</span><button class="btn" data-act="designLoad" data-i="${i}">Load</button><button class="btn danger" data-act="designDel" data-i="${i}">Delete</button></div>`).join('')||'<p class="muted">No saved designs yet.</p>'}
    <h3>Start over</h3>
    <div class="row"><button class="btn" data-act="loadEx">Load the MaxxECU starter</button><button class="btn danger" data-act="clearAll">Clear drawing</button></div>`;
 }
@@ -1327,6 +1475,27 @@ document.addEventListener('click',e=>{
    case'dupPart':{commit();const p=part(selection.id),c=JSON.parse(JSON.stringify(p));c.id=nid();c.x+=30;c.y+=30;S.parts.push(c);selection={type:'part',id:c.id};save();renderInsp();draw();break}
    case'delWire':{commit();S.wires=S.wires.filter(w=>w.id!==selection.id);selection=null;save();renderInsp();draw();hint();break}
    case'useAsDefault':{const w=S.wires.find(x=>x.id===selection.id);S.def={awg:w.awg,color:w.color};save();syncBar();toast('New wires will use this');break}
+   case'bulkDel':{commit();S.wires=S.wires.filter(w=>!MSEL.has(w.id));MSEL.clear();selection=null;save();renderInsp();draw();hint();break}
+   case'subHarness':{
+    const w0=MSEL.size>1?S.wires.find(x=>MSEL.has(x.id)):S.wires.find(x=>x.id===selection.id);if(!w0)break;
+    const k=(x,y)=>x+'>'+y,key=k(w0.a.p,w0.b.p),rk=k(w0.b.p,w0.a.p);
+    const grp=S.wires.filter(x=>{const q=k(x.a.p,x.b.p);return(q===key||q===rk)&&(MSEL.size<2||MSEL.has(x.id))});
+    const size=[2,3,4,6,8,12].find(n=>n>=grp.length);if(!size){toast('More than 12 wires. Pick fewer.');break}
+    commit();
+    const A=part(w0.a.p),B=part(w0.b.p),mx=snap((A.x+B.x)/2),my=snap((A.y+B.y)/2),tid='dt'+size,n=S.parts.filter(x=>x.name.startsWith('SUB')).length/2+1;
+    const pl={id:nid(),t:tid,x:mx-70,y:my,name:'SUB'+n+' plug (DT'+size+')',pl:{}},rc={id:nid(),t:tid,x:mx+130,y:my,name:'SUB'+n+' receptacle (DT'+size+')',pl:{}};
+    S.parts.push(pl,rc);const twm={};
+    grp.forEach((w,i)=>{
+      const fwd=w.a.p===w0.a.p,tw1=w.tw?(twm['a'+w.tw]=twm['a'+w.tw]||nid()):0,tw2=w.tw?(twm['b'+w.tw]=twm['b'+w.tw]||nid()):0;
+      const c=o=>Object.assign({},w,o,{id:nid(),len:0,v:undefined});
+      const first=fwd?{a:w.a,b:{p:pl.id,i}}:{a:w.b,b:{p:pl.id,i}},second=fwd?{a:{p:rc.id,i},b:w.b}:{a:{p:rc.id,i},b:w.a};
+      S.wires.push(c(Object.assign(first,{tw:tw1||undefined})),c(Object.assign(second,{tw:tw2||undefined})));
+    });
+    const ids=new Set(grp.map(w=>w.id));S.wires=S.wires.filter(w=>!ids.has(w.id));
+    S.wires.slice(-grp.length*2).forEach(nameEnds);S.examples=false;MSEL.clear();selection={type:'part',id:pl.id};save();renderInsp();draw();hint();toast('Sub-harness made: '+grp.length+' wire'+(grp.length>1?'s':'')+' through a DT'+size+' pair');break}
+   case'designSave':{const n=(document.getElementById('dsn').value||'').trim()||('Design '+(designList().length+1)),a=designList().filter(x=>x.name!==n);a.push({name:n,parts:S.parts.length,wires:S.wires.length,data:JSON.stringify(S)});designPut(a);rSave();toast('Saved "'+n+'"');break}
+   case'designLoad':{const x=designList()[+b.dataset.i];if(!x)break;commit();const o=JSON.parse(x.data);o.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});S=Object.assign(S,o,{tab:'save'});S.parts=S.parts.filter(p=>T[p.t]);selection=null;pending=null;save();rSave();toast('Loaded "'+x.name+'"');break}
+   case'designDel':{const a=designList();a.splice(+b.dataset.i,1);designPut(a);rSave();break}
    case'clearAll':{commit();S.parts=[];S.wires=[];S.zones=[];S.examples=false;selection=null;pending=null;S.view=null;save();showTab(S.tab);break}
    case'loadEx':{commit();Object.assign(S,starter());S.zones=[];selection=null;pending=null;save();showTab('draw');break}
    case'bookAdd':{ensureBook();let id='NEW-'+(Date.now().toString().slice(-6));while(S.circuitBook.some(x=>x.id===id))id+='X';S.circuitBook.push({id,kind:'Circuit',name:'New circuit',from:'',to:'',cavity:'',wire:'',status:'Planned / unverified',notes:''});save();showTab('book');toast('Record added');break;}
@@ -1342,6 +1511,12 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target,d=t.dataset;
+  if(d.bulk&&MSEL.size>1){const ws=S.wires.filter(w=>MSEL.has(w.id));if(d.bulk==='color')commitOnce('bcol');else commit();
+    if(d.bulk==='loom'){if(!t.value)return;const id=t.value==='none'?'':(t.value==='new'?newLoom().id:+t.value);ws.forEach(w=>w.loom=id)}
+    else if(d.bulk==='awg'){if(!t.value)return;ws.forEach(w=>w.awg=+t.value)}
+    else ws.forEach(w=>w.color=t.value.toUpperCase());
+    save();if(d.bulk!=='color')renderInsp();draw();return}
+  if(d.we&&selection&&selection.type==='wire'){const w=S.wires.find(x=>x.id===selection.id);if(w){commit();const r=w[d.we];if(d.wk==='p'){r.p=+t.value;r.i=0}else r.i=+t.value;delete r.s;save();renderInsp();draw();hint()}return}
   if(t.id==='bookQ'){const pos=t.selectionStart;rBook();const nq=document.getElementById('bookQ');if(nq){nq.focus();try{nq.setSelectionRange(pos,pos)}catch(_){}}return}
   if(d.book&&d.field){ensureBook();const rec=S.circuitBook.find(x=>x.id===d.book);if(rec&&d.field!=='id'){rec[d.field]=t.value;save()}return} 
 
