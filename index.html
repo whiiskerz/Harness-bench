@@ -568,7 +568,7 @@ function e90ProjectStarter(){
   wire(165,1,161,5,'DT6 sensor-ground conductor → cabin DT2-C pin 2 (molded cavity mapping TBD)',18,'BLK',{loom:993,circuitType:'sensor-ground'});
   parts.find(p=>p.id===106).name='Trunk chassis ground point — ring-terminal stack';
   parts.find(p=>p.id===110).name='BMW EKP control wire — DME-box source cavity TBD';
-  parts.find(p=>p.id===131).name='Valved mufflers — paired motors / MaxxECU reversing outputs (protection TBD)';
+  parts.find(p=>p.id===131).name='Valved mufflers — output assignment unresolved (verify ECU config)';
   parts.find(p=>p.id===157).name='Trunk 6-slot fuse box — physical slots and ratings unverified';
   return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'},{id:993,name:'Trunk DT6 to three cabin DT2s · lengths TBD',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
 }
