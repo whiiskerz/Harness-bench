@@ -305,7 +305,7 @@ group('E90 LS project connectors',[
  lab('e90dt12','DT12 power breakout — user pin map',[
  ['1','Coils +12V'],['2','Engine ground'],['3','GPO2 fuel pump 1'],['4','GPO6 A/C clutch'],['5','GPO3 fuel pump 2'],['6','Starter input'],['7','ECU switched +12V'],['8','GPO8 tach (unused)'],['9','GPO15 +12V (unused)'],['10','H-bridge 2 + (unused)'],['11','H-bridge 2 − (unused)'],['12','Alternator excite (unused; self-exciting alt)']],'dt','User-defined terminated breakout'),
  lab('e90analog8','DT8 analog sub — user pin map',[
- ['1','Sensor +5V'],['2','MaxxECU sensor ground'],['3','Paddle resistor AIN1'],['4','AIN2 spare'],['5','Fuel pressure signal'],['6','A/C pressure signal'],['7','Spare DIN/GPO'],['8','Radiator fan PWM / GPO5']],'dt','User-defined terminated breakout'),
+ ['1','Sensor +5V'],['2','MaxxECU sensor ground'],['3','Paddle resistor AIN1'],['4','AIN2 spare'],['5','Fuel pressure signal'],['6','A/C pressure signal'],['7','GPO7 / DIN3'],['8','Radiator fan PWM / GPO5']],'dt','User-defined terminated breakout'),
  lab('e90can8','DT8 CAN/control sub — user pin map',[
  ['1','CAN Low'],['2','CAN High'],['3','Brake DIN1'],['4','Shifter input 1'],['5','Shifter input 2'],['6','Flex fuel DIN5'],['7','Nitrous GPO4 → SSR'],['8','Spare']],'dt','User-defined terminated breakout'),
  lab('e90dt4shifter','Shifter control DT4',[
@@ -530,14 +530,14 @@ function e90ProjectStarter(){
   wire(157,2,159,0,'Trunk fuse-box starlights feed (physical slot / inline-fuse branch topology TBD)',0,'RED',{amps:0,fuse:'STARLIGHTS_FEED_TBD',fa:0});
   wire(159,1,106,4,'Starlights − → trunk ground bus',0,'BLK');
   // Cabin-side DT2 pigtails route the six loose ECU conductors to the DT6 pass-through.
-  wire(140,2,163,0,'MaxxECU GPO2 → cabin DT2-A pin 1 (separate ECU-side run)',14,'GRN',{circuitType:'signal'});
-  wire(140,4,163,1,'MaxxECU GPO3 → cabin DT2-A pin 2 (separate ECU-side run)',14,'YEL',{circuitType:'signal'});
-  wire(141,6,164,0,'MaxxECU GPO7 → cabin DT2-B pin 1 (separate ECU-side run; verify ECU output assignment)',14,'ORG',{circuitType:'signal'});
-  wire(141,3,164,1,'MaxxECU AIN2 → cabin DT2-B pin 2 (separate ECU-side run)',18,'PUR',{circuitType:'signal'});
-  wire(141,0,167,0,'MaxxECU +5V sensor supply → cabin +5V branch splice',20,'RED',{circuitType:'sensor-power'});
+  wire(101,2,163,0,'DT12 terminated breakout GPO2 → cabin DT2-A pin 1 (separate breakout-side run)',14,'GRN',{circuitType:'signal'});
+  wire(101,4,163,1,'DT12 terminated breakout GPO3 → cabin DT2-A pin 2 (separate breakout-side run)',14,'YEL',{circuitType:'signal'});
+  wire(102,6,164,0,'DT8 analog breakout GPO7/DIN3 → cabin DT2-B pin 1 (separate breakout-side run; verify ECU output assignment)',14,'ORG',{circuitType:'signal'});
+  wire(102,3,164,1,'DT8 analog breakout AIN2 → cabin DT2-B pin 2 (separate breakout-side run)',18,'PUR',{circuitType:'signal'});
+  wire(102,0,167,0,'DT8 analog breakout +5V sensor supply → cabin +5V branch splice',20,'RED',{circuitType:'sensor-power'});
   wire(167,0,102,0,'Cabin +5V splice → DT8 analog harness +5V',20,'RED',{circuitType:'sensor-power'});
   wire(167,0,165,0,'Cabin +5V splice → cabin DT2 #3 pin 1',20,'RED',{circuitType:'sensor-power'});
-  wire(141,1,168,0,'MaxxECU sensor ground → cabin ground branch splice',20,'BLK',{circuitType:'sensor-ground'});
+  wire(102,1,168,0,'DT8 analog breakout sensor ground → cabin ground branch splice',20,'BLK',{circuitType:'sensor-ground'});
   wire(168,0,102,1,'Cabin ground splice → DT8 analog harness sensor ground',20,'BLK',{circuitType:'sensor-ground'});
   wire(168,0,165,1,'Cabin ground splice → cabin DT2 #3 pin 2',20,'BLK',{circuitType:'sensor-ground'});
   wire(163,0,162,0,'Cabin DT2 #1 pin 1 → cabin DT6 pin 1 (GPO2)',20,'GRN',{circuitType:'signal'});
