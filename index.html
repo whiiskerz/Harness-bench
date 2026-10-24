@@ -694,12 +694,10 @@ function partSVG(p){
       const q=bg.pos[i],x=p.x+q.x,y=p.y+q.y,rl=p.id+':'+i+':L',rr=p.id+':'+i+':R',uL=faceUsed(p.id,i,'L'),uR=faceUsed(p.id,i,'R'),pr=({4:10,8:9,12:8,16:6.8,20:5.8})[pin.size||16]||7,hit= Math.max(9,pr+3);
       s.push(`<circle cx="${x}" cy="${y}" r="${pr}" fill="#2a2f36" stroke="#9aa1ab" stroke-width="1"/>`);
       s.push(`<path class="pd${pending===rl?' pend':uL?' used':''}" d="M${x} ${y-pr} A${pr} ${pr} 0 0 0 ${x} ${y+pr} Z"/><path class="pd${pending===rr?' pend':uR?' used':''}" d="M${x} ${y-pr} A${pr} ${pr} 0 0 1 ${x} ${y+pr} Z"/>`);
-      s.push(`<text x="${x}" y="${y+2.4}" text-anchor="middle" fill="#cfd4da" font-size="${pr>8?7:6.5}" font-family="monospace" pointer-events="none">${esc(String(pin.p).slice(0,3))}</text>`);
+      s.push(`<text x="${x}" y="${y+2.4}" text-anchor="middle" fill="#cfd4da" font-size="${pr>8?7:6.5}" font-family="monospace" pointer-events="none">${bulkOrder(p,i)}</text>`);
       s.push(`<path data-pin="${rl}" class="hit" d="M${x} ${y-hit} A${hit} ${hit} 0 0 0 ${x} ${y+hit} Z"/><path data-pin="${rr}" class="hit" d="M${x} ${y-hit} A${hit} ${hit} 0 0 1 ${x} ${y+hit} Z"/>`);
     });
-    bg.legend.forEach(L=>{const cw=(w-28)/L.cols,mc=Math.max(6,Math.floor(cw/5.3)-5),rows=Math.ceil(L.ids.length/L.cols);
-      L.ids.forEach((i,j)=>{const col=Math.floor(j/rows),row=j%rows,l=plabel(p,i)||'',pn=String(t.pins[i].p);
-        s.push(`<text class="pl" x="${p.x+14+col*cw}" y="${p.y+L.y+row*12+8}">${esc(pn)} ${esc(l.length>mc?l.slice(0,mc-1)+'…':l)}</text>`)})});
+    /* Cavity markers use compact order numbers; pin details are in the inspector table. */
   }else{
     const sd=SIDE[p.id]||'R',a=g.a,sc=g.sc,ix=sd==='R'?p.x:p.x+pc,iy=p.y+HDR+8;
     const dx=sd==='R'?p.x+w:p.x,colStart=sd==='R'?p.x+IW:p.x+pc;
@@ -1629,6 +1627,12 @@ function bgeo(p){
  });
  return {w,h,blocks:outBlocks,pos,legend};
 }
+function bulkOrder(p,i){const t=T[p.t],block=t.pins[i].blk||0;return t.pins.slice(0,i+1).filter(pin=>(pin.blk||0)===block).length;}
+function bulkTableHtml(p){
+ const t=T[p.t],seen={};
+ const rows=t.pins.map((pin,i)=>{const block=pin.blk||0,order=(seen[block]||0)+1;seen[block]=order;return '<tr><td>'+(block?'B':'A')+order+'</td><td>'+esc(pin.p)+'</td><td>Size '+esc(pin.size||16)+'</td><td>'+esc(plabel(p,i)||pin.l||'—')+'</td></tr>';}).join('');
+ return '<div style="overflow:auto;max-height:360px"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th>Order</th><th>Pin ID</th><th>Contact</th><th>Function / label</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
 function renderInsp(){
  renderInspBase();
  if(!selection||selection.type!=='part')return;
@@ -1639,7 +1643,7 @@ function renderInsp(){
  el.insertAdjacentHTML('beforeend',`<h3>Bulkhead geometry</h3>
  <label><span>Dual connector layout</span><select data-bulkcfg="bulkLayout"><option value="horizontal" ${layout==='horizontal'?'selected':''}>Side-by-side</option><option value="vertical" ${layout==='vertical'?'selected':''}>Stacked vertically</option></select></label>
  <label><span>View orientation</span><select data-bulkcfg="bulkFace"><option value="mating" ${face==='mating'?'selected':''}>Mating face</option><option value="wire" ${face==='wire'?'selected':''}>Wire side (mirrored)</option></select></label>
- <p class="muted">HD30 shell 24 · cavity sizes shown schematically. Verify cavity numbers and orientation against the exact TE insert drawing before building.</p>`);
+ <p class="muted">Circle numbers are order numbers within each insert (A1… or B1…). They are a navigation aid, not a manufacturer cavity map. Verify actual cavity positions/orientation against the exact TE insert drawing before building.</p>`); el.insertAdjacentHTML("beforeend","<h3>Pin order / contact list</h3>"+bulkTableHtml(p));
 };
 function rStudio(){
  rStudioBase();
@@ -1648,11 +1652,11 @@ function rStudio(){
  svg.push(`<svg viewBox="0 0 ${bg.w} ${bg.h}" role="img" aria-label="Schematic circular bulkhead cavity layout" style="width:100%;max-height:480px;background:var(--panel2);border:1px solid var(--line);border-radius:8px">`);
  bg.blocks.forEach(b=>svg.push(`<circle cx="${b.cx}" cy="${b.cy}" r="${b.R+7}" fill="#3a4047" stroke="#9aa1ab" stroke-width="2"/><circle cx="${b.cx}" cy="${b.cy}" r="${b.R}" fill="#1b1e23" stroke="#9aa1ab" stroke-width="1.5"/>`));
  pins.forEach((pin,i)=>{const q=bg.pos[i];if(!q)return;const rad=({4:10,8:9,12:8,16:6.8,20:5.8})[pin.size||16]||7;
- svg.push(`<circle cx="${q.x}" cy="${q.y}" r="${rad}" fill="#252b33" stroke="#d1d5db" stroke-width="1.2"/><text x="${q.x}" y="${q.y+2.7}" text-anchor="middle" font-size="${rad>8?7:6.5}" fill="#fff" font-family="monospace">${esc(pin.p)}</text>`);
+ svg.push(`<circle cx="${q.x}" cy="${q.y}" r="${rad}" fill="#252b33" stroke="#d1d5db" stroke-width="1.2"/><text x="${q.x}" y="${q.y+2.7}" text-anchor="middle" font-size="7" fill="#fff" font-family="monospace">${bulkOrder(p,i)}</text>`);
  });
  svg.push('</svg>');
  const stage=document.createElement('div');stage.className='card';stage.innerHTML=`<div class="hd"><b>Circular insert layout</b><span class="pill wn">${(p.bulkFace||'mating')==='wire'?'WIRE SIDE · MIRRORED':'MATING FACE'}</span></div><p class="muted">Cavity circles vary by contact size. This is a circular schematic, not a verified manufacturer cavity-number map.</p>`+svg.join('');
- const host=document.querySelector('#t-studio .studio-grid');if(host)host.insertAdjacentElement('afterend',stage);
+ const host=document.querySelector('#t-studio .studio-grid');if(host){host.insertAdjacentElement('afterend',stage);const table=document.createElement('div');table.className='card';table.innerHTML='<h3>Pin order / contact list</h3>'+bulkTableHtml(p);stage.insertAdjacentElement('afterend',table);}
 };
 document.addEventListener('change',e=>{
  const f=e.target;if(!f.dataset.bulkcfg)return;
