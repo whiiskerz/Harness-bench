@@ -5,7 +5,7 @@
 
 .dashboard-hero{padding:18px;background:linear-gradient(120deg,var(--panel),var(--panel2));border-left:4px solid var(--accent)}.eyebrow{font:500 11px var(--mono);letter-spacing:.14em;color:var(--accent);margin-bottom:8px}.dashboard-hero h2{font-size:clamp(24px,4vw,36px);margin-bottom:8px}.dashboard-hero p{max-width:780px;margin-bottom:12px}.dash-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.stat{padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}.stat>span{font:500 10px var(--mono);color:var(--mute);letter-spacing:.08em}.stat>b{font:700 clamp(18px,3vw,28px) var(--display);overflow-wrap:anywhere}.stat small{font-size:11px;color:var(--mute)}.status-warn{color:var(--warn)!important;font-size:17px!important}.system-map{padding:16px;display:flex;flex-direction:column;align-items:center;gap:7px}.sys-node{display:flex;flex-direction:column;gap:3px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:12px;min-width:0;width:100%;max-width:310px}.sys-node b{font:700 14px var(--display);letter-spacing:.06em;color:var(--accent)}.sys-node span{font-size:12px;color:var(--mute)}.sys-node.power{border-color:#d69a31}.sys-node.ecu{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel2))}.sys-arrow{font-size:23px;color:var(--accent);line-height:1}.sys-split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;align-items:start}.sys-branch{display:flex;align-items:center;flex-direction:column;gap:7px;min-width:0}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid2 .card{min-width:0}@media(max-width:700px){.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.sys-split{grid-template-columns:1fr}.sys-branch{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center}.sys-branch .sys-node{max-width:none}.sys-arrow{transform:none}}
 </style></head><body>
-<title>Harness Bench</title>
+<title>WireForge</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -39,7 +39,12 @@ header{padding:16px 0 8px;display:flex;gap:12px;align-items:baseline;flex-wrap:w
 h1{font:700 30px/1 var(--display);letter-spacing:.02em;text-transform:uppercase;margin:0}
 h1 span{color:var(--accent)}
 .sub{color:var(--mute);font-size:13px;margin:0}
-nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);padding:6px 0}
+/* WireForge workspace navigation */
+.wrap{display:grid;grid-template-columns:196px minmax(0,1fr);column-gap:20px;align-items:start}header{grid-column:1/-1}
+nav{position:sticky;top:14px;z-index:5;background:var(--bg);display:flex;flex-direction:column;gap:3px;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 28px);border-right:1px solid var(--line);border-bottom:0;padding:8px 10px 8px 0;grid-column:1;grid-row:2}
+.nav-label{font:500 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);padding:13px 10px 4px}
+nav button{width:100%;text-align:left;white-space:normal;line-height:1.25}.wrap>section{grid-column:2;grid-row:2;min-width:0}
+@media(max-width:760px){.wrap{display:flex;flex-direction:column;gap:0}header{width:100%}nav{position:sticky;top:0;width:100%;max-height:none;flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line);padding:6px 0;gap:4px}nav .nav-label{display:none}nav button{width:auto;flex:0 0 auto;white-space:nowrap}.wrap>section{width:100%}}
 nav button{flex:0 0 auto;font:600 15px var(--display);letter-spacing:.06em;text-transform:uppercase;background:none;color:var(--mute);border:0;padding:9px 14px;border-radius:6px;cursor:pointer}
 nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
@@ -146,13 +151,14 @@ a{color:var(--accent)}
 
 <div class="wrap">
 <header>
-  <h1>Harness <span>Bench</span></h1>
+  <h1>Wire<span>Forge</span></h1>
   <p class="sub">Motorsport harness design · linked pinouts · wire schedules · build documentation</p>
 </header>
 <nav id="tabs"></nav>
 
 <section id="t-project" hidden></section>
 <section id="t-studio" hidden></section>
+<section id="t-sim" hidden></section>
 <section id="t-draw">
   <div class="bar">
     <button class="btn primary" data-act="lib" id="libBtn" aria-pressed="false">+ Add part</button>
@@ -188,10 +194,10 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>Harness Bench <b id="appVersion">v0.6.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.7.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.6.0';
+const APP_VERSION='0.7.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1055,7 +1061,7 @@ function mFit(){
 }
 function mZoom(f){const el=document.getElementById('mk'),V=mv(),r=el.getBoundingClientRect(),cx=r.width/2,cy=r.height/2,wx=(cx-V.x)/V.k,wy=(cy-V.y)/V.k,k=Math.max(.2,Math.min(3,V.k*f));V.k=k;V.x=cx-wx*k;V.y=cy-wy*k;drawMock();save()}
 function rMock(){
-  document.getElementById('t-mock').innerHTML=`<h2>Physical mockup</h2><div class="bar"><button class="btn" data-act="mfit">Fit</button><button class="btn" data-act="mzin" aria-label="Zoom in">+</button><button class="btn" data-act="mzout" aria-label="Zoom out">−</button></div><p class="muted">The same drawing as it would be built. Wires in a loom bundle into a sleeve. Wires with no loom run bare. Drag to pan, scroll or buttons to zoom. Move parts and routes on the Draw tab.</p><div class="stage"><svg id="mk" role="img" aria-label="Physical harness mockup"></svg></div>`;
+  document.getElementById('t-mock').innerHTML=`<h2>Loom Studio</h2><div class="bar"><button class="btn" data-act="mfit">Fit</button><button class="btn" data-act="mzin" aria-label="Zoom in">+</button><button class="btn" data-act="mzout" aria-label="Zoom out">−</button></div><p class="muted">The same drawing as it would be built. Wires in a loom bundle into a sleeve. Wires with no loom run bare. Drag to pan, scroll or buttons to zoom. Move parts and routes on the Draw tab.</p><div class="stage"><svg id="mk" role="img" aria-label="Physical harness mockup"></svg></div>`;
   const el=document.getElementById('mk');let drag=null;
   el.addEventListener('pointerdown',e=>{try{el.setPointerCapture(e.pointerId)}catch(_){}drag={x:e.clientX,y:e.clientY,vx:mv().x,vy:mv().y}});
   el.addEventListener('pointermove',e=>{if(!drag)return;const V=mv();V.x=drag.vx+e.clientX-drag.x;V.y=drag.vy+e.clientY-drag.y;drawMock()});
@@ -1447,15 +1453,34 @@ function calcElectrical(){
 }
 
 /* ---------- tabs ---------- */
-const TABS=[['project','Dashboard · E90 Example'],['studio','Connector Studio'],['draw','Draw'],['mock','Mockup'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts list'],['checks','Checks'],['electrical','Electrical Checker'],['build','Build tracker'],['notes','Notes'],['save','Backup']];
-const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,build:rBuild,notes:rNotes,save:rSave};
+const TABS=[['project','Dashboard'],['draw','Harness Designer'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
+const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
-tabsEl.innerHTML=TABS.map(([k,l])=>`<button role="tab" data-tab="${k}">${l}</button>`).join('');
+const TAB_GROUP={project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
+let lastTabGroup='';
+tabsEl.innerHTML=TABS.map(([k,l])=>{const g=TAB_GROUP[k]||'Workspace',head=g!==lastTabGroup?'<div class="nav-label">'+g+'</div>':'';lastTabGroup=g;return head+'<button role="tab" data-tab="'+k+'">'+l+'</button>'}).join('');
 function showTab(k){
   S.tab=k;save();
   TABS.forEach(([t])=>{document.getElementById('t-'+t).hidden=t!==k});
   tabsEl.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===k));
   if(k==='draw'){syncBar();if(!S.view)fit();else draw();renderInsp();hint()}else{computeSides();RENDER[k]()};
+}
+/* Test Sim preview: per-wire current, fuse/gauge stress and copper voltage drop. */
+const AWG_OHM_1000FT={22:16.14,20:10.15,18:6.385,16:4.016,14:2.525,12:1.588,10:0.999,8:0.6282};
+function simState(){S.sim=S.sim||{power:false,engine:false,voltage:12.6};return S.sim}
+function simMetrics(){
+ const q=simState(),v=q.engine?14.2:(+q.voltage||12.6),rows=(S.wires||[]).map((w,i)=>{
+  const a=Math.max(0,+((w.simAmps!==undefined)?w.simAmps:w.amps)||0),f=+w.fa||0,g=+w.awg||0,len=Math.max(0,+w.len||0),cap=AMPS[g]||0,ohm=AWG_OHM_1000FT[g]||0,drop=a*ohm*(len/12)/1000*2,pct=v?drop/v*100:0,fp=f?a/f*100:0,flags=[];
+  if(a&&!f)flags.push('No fuse rating');if(f&&a>f)flags.push('Fuse overloaded');if(a&&!cap)flags.push('Gauge not rated');if(cap&&a>cap)flags.push('Wire overloaded');if(pct>3)flags.push('Voltage drop over 3%');
+  return {w,i,a,f,g,len,cap,drop,pct,fp,flags};
+ });return {v,total:rows.reduce((n,r)=>n+r.a,0),rows,findings:rows.reduce((n,r)=>n+r.flags.length,0)};
+}
+function setSimLoad(id,val){const w=wireById(id);if(w){w.simAmps=Math.max(0,+val||0);save();rSim()}}
+function setSimVoltage(val){simState().voltage=Math.max(1,Math.min(60,+val||12.6));save();rSim()}
+function rSim(){
+ const el=document.getElementById('t-sim');if(!el)return;const q=simState(),m=simMetrics();
+ const rows=m.rows.length?'<div class="table-wrap"><table><thead><tr><th>Circuit</th><th>Load A</th><th>Gauge</th><th>Fuse</th><th>Drop</th><th>Findings</th></tr></thead><tbody>'+m.rows.map(r=>'<tr><td>'+esc(r.w.sig||('Wire '+(r.i+1)))+'</td><td><input style="width:76px" type="number" min="0" step=".1" value="'+r.a+'" onchange="setSimLoad('+r.w.id+',this.value)"></td><td>'+(r.g?r.g+' AWG':'TBD')+'</td><td>'+(r.f?r.f+' A':'—')+'</td><td>'+r.drop.toFixed(3)+' V / '+r.pct.toFixed(2)+'%</td><td><span class="pill '+(r.flags.length?'wn':'ok')+'">'+(r.flags.length?esc(r.flags.join(', ')):'No modeled fault')+'</span></td></tr>').join('')+'</tbody></table></div>':'<p>No wires yet. Add and connect parts in Harness Designer first.</p>';
+ el.innerHTML='<div class="dashboard-hero"><div class="eyebrow">LIVE VALIDATION · EARLY PREVIEW</div><h2>Test Sim</h2><p>Run a first-pass stress check against entered wire loads. This preview checks gauge ampacity, fuse loading and estimated voltage drop. It is not yet a full circuit solver and does not simulate relay mechanics or current paths.</p><div class="row"><button class="btn '+(q.power?'danger':'primary')+'" data-act="simPower">'+(q.power?'■ Power off':'▶ Power on · F9')+'</button><button class="btn" data-act="simEngine">'+(q.engine?'Engine running · 14.2 V':'Engine off')+'</button><label><span>Supply voltage</span><input type="number" min="1" max="60" step=".1" value="'+(+q.voltage||12.6)+'" onchange="setSimVoltage(this.value)" '+(q.engine?'disabled':'')+'></label></div></div><div class="dash-stats"><div class="stat card"><span>BUS VOLTAGE</span><b>'+m.v.toFixed(1)+' V</b><small>'+(q.power?'Energized':'Power off')+'</small></div><div class="stat card"><span>SUMMED LOAD</span><b>'+m.total.toFixed(1)+' A</b><small>Entered per-wire currents</small></div><div class="stat card"><span>POWER</span><b>'+(m.v*m.total).toFixed(0)+' W</b><small>V × A estimate</small></div><div class="stat card"><span>FINDINGS</span><b class="'+(m.findings?'status-warn':'')+'">'+m.findings+'</b><small>Screening checks only</small></div></div><div class="card"><div class="hd"><b>Wire stress table</b><span class="pill '+(m.findings?'wn':'ok')+'">'+(m.findings?'Review rows':'No modeled findings')+'</span></div><p class="muted">Copper voltage-drop estimate assumes a two-way path at the entered one-way wire length. Populate length, gauge, fuse and load data for meaningful results. This is not a safety certification.</p>'+rows+'</div><div class="card"><h3>Next simulation stages</h3><p class="muted">Connectivity-aware voltage at each pin, switch and relay states, battery sag, fuse thermal behavior, moving current-flow indicators, virtual multimeter and scope.</p></div>';
 }
 function syncBar(){
   document.getElementById('defAwg').innerHTML=Object.keys(AMPS).sort((a,b)=>b-a).map(g=>`<option value="${g}" ${+S.def.awg===+g?'selected':''}>${g} AWG</option>`).join('');
@@ -1468,6 +1493,7 @@ function syncBar(){
 
 /* ---------- copy ---------- */
 let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,1800)}
+window.addEventListener('keydown',e=>{if(e.key==='F9'&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();const q=simState();q.power=!q.power;save();if(S.tab!=='sim')showTab('sim');else rSim();toast(q.power?'Test Sim powered on':'Test Sim powered off')}});
 window.addEventListener('error',e=>{try{toast('App error: '+(e.message||'unknown error')+' — refresh or restore your backup')}catch(_){}});window.addEventListener('unhandledrejection',e=>{try{toast('Action failed: '+String(e.reason||'unknown error'))}catch(_){}});
 async function copy(text,anchor){
   try{await navigator.clipboard.writeText(text);toast('Copied')}
@@ -1513,6 +1539,8 @@ document.addEventListener('click',e=>{
   if(d.auditWire){selection={type:'wire',id:+d.auditWire};showTab('draw');return}
   switch(d.act){
    case'goMock':showTab('mock');break;case'goChecks':showTab('checks');break;case'goDraw':showTab('draw');break;
+   case'simPower':{const q=simState();q.power=!q.power;save();rSim();toast(q.power?'Test Sim powered on':'Test Sim powered off');break;}
+   case'simEngine':{const q=simState();q.engine=!q.engine;save();rSim();break;}
    case'newZone':{commit();S.zones=S.zones||[];const id='zone-custom-'+Date.now();S.zones.push({id,name:'New work zone',col:'#4a86e8',x:snap(toWorld(rectOf().left+rectOf().width/2,rectOf().top+rectOf().height/2).x),y:snap(toWorld(rectOf().left+rectOf().width/2,rectOf().top+rectOf().height/2).y),w:520,h:420});selection={type:'zone',id};save();draw();renderInsp();toast('Zone added — drag border to move, corner to resize');break;}
    case'delZone':{if(selection?.type==='zone'){commit();S.zones=(S.zones||[]).filter(z=>z.id!==selection.id);selection=null;save();draw();renderInsp()}break;}
    case'zoneDone':{selection=null;save();draw();renderInsp();break;}
