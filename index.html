@@ -518,7 +518,7 @@ function e90ProjectStarter(){
   wire(157,3,131,0,'Fuse box slot → valved mufflers control +',0,'RED');
   wire(131,1,106,5,'Valved mufflers control − → trunk ground bus',0,'BLK');
   W.forEach(w=>{if(/^ECU 16-pin/.test(w.sig))return;if(/CAN L(ow)?\b/i.test(w.sig))w.color='PUR';else if(/CAN H(igh)?\b/i.test(w.sig))w.color='BLU'});
-  return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
+  return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'},{id:993,name:'Trunk-to-cabin DT6 · 6-core',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
 }
 
 let S=Object.assign({scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'project'},e90ProjectStarter());
@@ -1045,7 +1045,7 @@ function mockSVG(V){
       const m=pt(.5),mx=Math.max(...ws.map(wlen));chips.push(`<g><rect x="${m.x-62}" y="${m.y-34}" width="124" height="18" rx="9" fill="var(--panel)" stroke="${lm.color}"/><text x="${m.x}" y="${m.y-21}" text-anchor="middle" fill="var(--fg)" font-size="10" font-family="monospace">${esc(lm.name.slice(0,14))} · ${n}w · ${mx}in</text></g>`)}
   });
   S.parts.forEach(p=>{const i=info[p.id],a=i.a;
-    out.push(`<g transform="translate(${i.c.x-a.w*MS/2} ${i.c.y-a.h*MS/2}) scale(${MS})">${a.svg}</g><text x="${i.c.x}" y="${i.c.y+a.h*MS/2+16}" text-anchor="middle" fill="var(--fg)" font-size="12" font-weight="600" font-family="Barlow,system-ui,sans-serif">${esc(p.name)}</text>`);
+    out.push(`<g data-mpart="${p.id}" transform="translate(${i.c.x-a.w*MS/2} ${i.c.y-a.h*MS/2}) scale(${MS})">${a.svg}</g><text data-mpart="${p.id}" x="${i.c.x}" y="${i.c.y+a.h*MS/2+16}" text-anchor="middle" fill="var(--fg)" font-size="12" font-weight="600" font-family="Barlow,system-ui,sans-serif">${esc(p.name)}</text>`);
     if(p.mate&&info[p.mate]&&p.id<p.mate)out.push(`<line x1="${i.c.x}" y1="${i.c.y}" x2="${info[p.mate].c.x}" y2="${info[p.mate].c.y}" stroke="var(--mute)" stroke-dasharray="4 5"/>`)});
   out.push(chips.join(''),'</g>');
   return `<defs><pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="var(--grid)"/></pattern></defs>`+out.join('');
@@ -1061,12 +1061,19 @@ function mFit(){
   S.mview={k,x:(r.width-(x1-x0)*k)/2-x0*k,y:(r.height-(y1-y0)*k)/2-y0*k};save();drawMock();
 }
 function mZoom(f){const el=document.getElementById('mk'),V=mv(),r=el.getBoundingClientRect(),cx=r.width/2,cy=r.height/2,wx=(cx-V.x)/V.k,wy=(cy-V.y)/V.k,k=Math.max(.2,Math.min(3,V.k*f));V.k=k;V.x=cx-wx*k;V.y=cy-wy*k;drawMock();save()}
+function setMockWireField(id,field,val){const w=wireById(id);if(!w)return;commit();if(field==='awg')w.awg=+val||0;else if(field==='fa')w.fa=+val||0;else if(field==='amps')w.amps=Math.max(0,+val||0);else if(field==='len')w.len=Math.max(0,+val||0);save();rMock()}
+function setMockWireLoom(id,val){const w=wireById(id);if(!w)return;commit();if(val==='new')w.loom=newLoom().id;else w.loom=val?+val:null;save();rMock()}
+function filterMockWires(q){q=(q||'').toLowerCase();document.querySelectorAll('#mockWireRows tr[data-wire-name]').forEach(r=>r.hidden=!!q&&!r.dataset.wireName.includes(q))}
 function rMock(){
-  document.getElementById('t-mock').innerHTML=`<h2>Loom Studio</h2><div class="bar"><button class="btn" data-act="mfit">Fit</button><button class="btn" data-act="mzin" aria-label="Zoom in">+</button><button class="btn" data-act="mzout" aria-label="Zoom out">−</button></div><p class="muted">The same drawing as it would be built. Wires in a loom bundle into a sleeve. Wires with no loom run bare. Drag to pan, scroll or buttons to zoom. Move parts and routes on the Draw tab.</p><div class="stage"><svg id="mk" role="img" aria-label="Physical harness mockup"></svg></div>`;
-  const el=document.getElementById('mk');let drag=null;
-  el.addEventListener('pointerdown',e=>{try{el.setPointerCapture(e.pointerId)}catch(_){}drag={x:e.clientX,y:e.clientY,vx:mv().x,vy:mv().y}});
-  el.addEventListener('pointermove',e=>{if(!drag)return;const V=mv();V.x=drag.vx+e.clientX-drag.x;V.y=drag.vy+e.clientY-drag.y;drawMock()});
-  const end=()=>{if(drag){drag=null;save()}};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+ const loomOptions=id=>'<option value="" '+(!id?'selected':'')+'>No sleeve</option>'+(S.looms||[]).map(l=>'<option value="'+l.id+'" '+(id===l.id?'selected':'')+'>'+esc(l.name)+'</option>').join('')+'<option value="new">+ New loom…</option>';
+ const awgOptions=g=>[22,20,18,16,14,12,10,8].map(a=>'<option value="'+a+'" '+(+g===a?'selected':'')+'>'+a+' AWG</option>').join('')+'<option value="0" '+(!+g?'selected':'')+'>TBD</option>';
+ const fuseOptions=f=>[0,3,5,7.5,10,15,20,25,30,40,50,60,70,80,100].map(a=>'<option value="'+a+'" '+(+f===a?'selected':'')+'>'+(a?a+' A':'TBD / none')+'</option>').join('');
+ const wireTable=S.wires.map(w=>'<tr data-wire-name="'+esc((w.sig||'')+' '+endName(w.a)+' '+endName(w.b)).toLowerCase()+'"><td>'+esc(w.sig||'Unnamed wire')+'</td><td>'+esc(endName(w.a))+' → '+esc(endName(w.b))+'</td><td><select aria-label="Assign loom" onchange="setMockWireLoom('+w.id+',this.value)">'+loomOptions(w.loom)+'</select></td><td><select aria-label="Wire gauge" onchange="setMockWireField('+w.id+',\'awg\',this.value)">'+awgOptions(w.awg)+'</select></td><td><input aria-label="Load current amps" type="number" min="0" step=".1" value="'+(+w.amps||0)+'" onchange="setMockWireField('+w.id+',\'amps\',this.value)" style="width:72px"></td><td><select aria-label="Fuse rating amps" onchange="setMockWireField('+w.id+',\'fa\',this.value)">'+fuseOptions(w.fa)+'</select></td><td>'+wlen(w)+' in</td></tr>').join('');
+ document.getElementById('t-mock').innerHTML='<div class="dashboard-hero"><div class="eyebrow">PHYSICAL HARNESS WORKSPACE</div><h2>Loom Studio</h2><p class="muted">Edit the physical harness here: drag connector/component bodies to reposition them, drag empty space to pan, and assign wires to sleeves. Looms control the visible cover, colour and bundled runs. Gauge, entered current and fuse rating feed the validation checks.</p><div class="bar"><button class="btn" data-act="mfit">Fit layout</button><button class="btn" data-act="mzin" aria-label="Zoom in">+</button><button class="btn" data-act="mzout" aria-label="Zoom out">−</button><button class="btn primary" data-act="newLoom">+ New loom</button><button class="btn" data-act="tidyE90">Re-layout example by zone</button></div></div><div class="stage"><svg id="mk" role="img" aria-label="Editable physical harness loom layout"></svg></div><div class="card"><h3>Loom / sleeve definitions</h3>'+loomPanel()+'</div><div class="card"><div class="hd"><h3>Wire-to-loom assignment & protection inputs</h3><span class="pill">'+S.wires.length+' wires</span></div><input placeholder="Filter wires by signal or endpoint…" oninput="filterMockWires(this.value)" style="max-width:420px;margin-bottom:10px"><div class="table-wrap" style="max-height:480px;overflow:auto"><table><thead><tr><th>Signal</th><th>Route</th><th>Sleeve</th><th>Gauge</th><th>Load A</th><th>Fuse A</th><th>Length</th></tr></thead><tbody id="mockWireRows">'+wireTable+'</tbody></table></div><p class="muted">TBD is not a pass. Current draw, routed length, conductor ampacity, fuse type, temperature derating, bundling and source protection must be verified before fabrication.</p></div>';
+ const el=document.getElementById('mk');let drag=null;
+ el.addEventListener('pointerdown',e=>{const target=e.target.closest&&e.target.closest('[data-mpart]');try{el.setPointerCapture(e.pointerId)}catch(_){}if(target){const p=part(+target.dataset.mpart);if(p){commit();drag={mode:'part',id:p.id,x:e.clientX,y:e.clientY,px:p.x,py:p.y}}}else drag={mode:'pan',x:e.clientX,y:e.clientY,vx:mv().x,vy:mv().y}});
+ el.addEventListener('pointermove',e=>{if(!drag)return;const V=mv();if(drag.mode==='part'){const p=part(drag.id);if(p){p.x=drag.px+(e.clientX-drag.x)/V.k;p.y=drag.py+(e.clientY-drag.y)/V.k;drawMock()}}else{V.x=drag.vx+e.clientX-drag.x;V.y=drag.vy+e.clientY-drag.y;drawMock()}});
+ const end=()=>{if(drag){drag=null;save()}};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
   el.addEventListener('wheel',e=>{e.preventDefault();const V=mv(),r=el.getBoundingClientRect(),k=Math.max(.2,Math.min(3,V.k*(e.deltaY<0?1.12:1/1.12))),wx=(e.clientX-r.left-V.x)/V.k,wy=(e.clientY-r.top-V.y)/V.k;V.k=k;V.x=e.clientX-r.left-wx*k;V.y=e.clientY-r.top-wy*k;drawMock()},{passive:false});
   if(!S.mview)mFit();else drawMock();
 }
@@ -1571,7 +1578,8 @@ document.addEventListener('click',e=>{
    case'studioFlip':{const p=part(+(S.studioSelected||0));if(p){if(T[p.t]?.bulk){p.bulkFace=p.bulkFace==='wire'?'mating':'wire'}else{p.studioFace=p.studioFace==='wire'?'mating':'wire'}save();rStudio();draw();toast('View: '+((p.studioFace||p.bulkFace)==='wire'?'wire side (mirrored)':'mating face'))}break;}
    case'buildReset':if(confirm('Reset all Build Tracker checkboxes?')){S.buildChecks={};save();rBuild()}break;
    case'buildCopy':copy(buildReport(),b);break;
-   case'loadE90':{commit();S=e90ProjectStarter();e90Layout();selection=null;pending=null;canMode=false;canQ=[];save();showTab('draw');toast('E90 project mock-up loaded');break}
+   case'loadE90':{commit();S=e90ProjectStarter();e90Layout();selection=null;pending=null;canMode=false;canQ=[];save();showTab('draw');toast('E90 example loaded with zoned layout and DT6 trunk-to-cabin branch');break}
+   case'tidyE90':{commit();e90Layout(true);save();draw();renderInsp();showTab('draw');toast('Example re-laid out by vehicle zone');break}
    case'lib':{const l=document.getElementById('lib');l.hidden=!l.hidden;b.setAttribute('aria-pressed',!l.hidden);if(!l.hidden&&!l.children.length)renderLib();break}
    case'zin':zoom(1.25);break;case'zout':zoom(1/1.25);break;case'fit':fit();break;
    case'undo':doUndo();break;case'redo':doRedo();break;
@@ -1583,8 +1591,8 @@ document.addEventListener('click',e=>{
      const w2=Object.assign({},w,{id:nid(),a:{p:sp.id,i:0},tw:null});delete w2.v;w.b={p:sp.id,i:0};delete w.v;w.tw=null;
      S.wires.splice(S.wires.indexOf(w)+1,0,w2);selection={type:'part',id:sp.id};save();renderInsp();draw();hint();toast('Splice added. Tap its dot, then a pin, to run a new wire.');break}
    case'flip':{const p=part(selection&&selection.id);if(p){commit();p.flip=(SIDE[p.id]||'R')==='R'?'L':'R';save();draw()}break}
-   case'newLoom':{commit();newLoom();save();renderInsp();break}
-   case'delLoom':{commit();S.looms=S.looms.filter(l=>l.id!==+d.lid);S.wires.forEach(w=>{if(w.loom===+d.lid)w.loom=null});if(S.def.loom===+d.lid)S.def.loom=null;save();renderInsp();draw();break}
+   case'newLoom':{commit();newLoom();save();renderInsp();if(S.tab==='mock')rMock();break}
+   case'delLoom':{commit();S.looms=S.looms.filter(l=>l.id!==+d.lid);S.wires.forEach(w=>{if(w.loom===+d.lid)w.loom=null});if(S.def.loom===+d.lid)S.def.loom=null;save();renderInsp();draw();if(S.tab==='mock')rMock();break}
    case'mfit':mFit();break;case'mzin':mZoom(1.25);break;case'mzout':mZoom(.8);break;
    case'fw':{if(S.fw==null){const r=rectOf();S.fw=snap(toWorld(r.left+r.width/2,r.top).x)}else S.fw=null;save();syncBar();draw();break}
    case'delPart':{if(selection&&selection.type==='part'){commit();delPart(selection.id);selection=null;save();renderInsp();draw();hint()}break}
