@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.0 — 2026-10-24
+- Reworked Loom Studio into an editing workspace: drag parts, manage loom covers/colours, assign wires to sleeves, and edit gauge/current/fuse inputs.
+- Added a trunk-to-cabin DT6 six-core example linking GPO2, GPO3, GPO7, AIN2, +5 V and sensor ground, with three cabin DT2 pigtails.
+- Reorganized the E90 example into vehicle zones and added a re-layout control.
+- Expanded Test Sim / wire audit checks for fuse-to-wire ampacity mismatch, load-vs-fuse mismatch, missing current data, and voltage drop. These remain rough design-screening checks, not certification.
+
 ## v0.8.0 — 2026-10-24
 - Added a dedicated MaxxECU RACE pinout reference workspace for the supplied 48-pin main connector and 32-pin black Connector 2.
 - Added V1/RACE/PRO, STREET and SPORT variant selection, searchable cavity maps/tables, cavity selection, and CSV export.
