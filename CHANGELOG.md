@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.5.0 — 2026-10-24
+- Added DEUTSCH HD30 shell-size-24 insert presets for 24-9, 24-21, 24-14, 24-23, 24-7, 24-19, 24-16, 24-29, 24-18, and 24-31.
+- Added circular schematic cavity layouts with contact-size-dependent cavity diameters.
+- Added adjustable dual-bulkhead side-by-side/stacked layout and mating-face/wire-side mirrored view controls.
+- Added a circular insert preview to Connector Studio.
+- Cavity numbering is schematic only until verified against the exact manufacturer insert drawing; do not use it as a fabrication pin map.
+
+
 ## v0.4.0 — 2026-10-23
 - Added a Circuit Audit table with per-wire missing-data flags, direct connector/pin endpoints, review status, review notes, jump-to-wire inspection, and CSV export.
 - Added wire review statuses: Draft, Needs verification, and Verified. “Verified” is a manual review label and does not certify safety.
