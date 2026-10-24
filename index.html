@@ -4,6 +4,28 @@
 
 
 .dashboard-hero{padding:18px;background:linear-gradient(120deg,var(--panel),var(--panel2));border-left:4px solid var(--accent)}.eyebrow{font:500 11px var(--mono);letter-spacing:.14em;color:var(--accent);margin-bottom:8px}.dashboard-hero h2{font-size:clamp(24px,4vw,36px);margin-bottom:8px}.dashboard-hero p{max-width:780px;margin-bottom:12px}.dash-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.stat{padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}.stat>span{font:500 10px var(--mono);color:var(--mute);letter-spacing:.08em}.stat>b{font:700 clamp(18px,3vw,28px) var(--display);overflow-wrap:anywhere}.stat small{font-size:11px;color:var(--mute)}.status-warn{color:var(--warn)!important;font-size:17px!important}.system-map{padding:16px;display:flex;flex-direction:column;align-items:center;gap:7px}.sys-node{display:flex;flex-direction:column;gap:3px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:12px;min-width:0;width:100%;max-width:310px}.sys-node b{font:700 14px var(--display);letter-spacing:.06em;color:var(--accent)}.sys-node span{font-size:12px;color:var(--mute)}.sys-node.power{border-color:#d69a31}.sys-node.ecu{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel2))}.sys-arrow{font-size:23px;color:var(--accent);line-height:1}.sys-split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;align-items:start}.sys-branch{display:flex;align-items:center;flex-direction:column;gap:7px;min-width:0}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid2 .card{min-width:0}@media(max-width:700px){.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.sys-split{grid-template-columns:1fr}.sys-branch{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center}.sys-branch .sys-node{max-width:none}.sys-arrow{transform:none}}
+
+/* WireForge workspace refresh: additive, responsive, existing controls remain intact */
+header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:16px 22px;background:linear-gradient(110deg,#101923,#1b2735);border-bottom:1px solid #354353}
+header h1{margin:0;letter-spacing:.025em}header .sub{margin:0;opacity:.85}
+#tabs{position:sticky;top:0;z-index:40;background:var(--panel);box-shadow:0 7px 20px #0002}
+#t-draw .bar{gap:7px;padding:12px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+#t-draw .btn{border-radius:7px;transition:background .15s,border-color .15s}
+#t-draw .btn:focus-visible,.wf-workspace button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wf-workspace{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:12px 0;padding:14px;box-shadow:0 5px 24px #0001}
+.wf-workspace .wf-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.wf-workspace h2{font:700 22px var(--display);margin:0}
+.wf-actions{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.wf-actions button{padding:9px 12px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:7px;cursor:pointer}
+.wf-actions button:hover{border-color:var(--accent)}
+.wf-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px}
+.wf-metric{background:var(--panel2);padding:11px;border-radius:8px;border:1px solid var(--line)}
+.wf-metric strong{display:block;font:700 23px var(--display);color:var(--accent)}
+.wf-metric small{color:var(--mute)}
+.wf-issues{margin-top:10px;max-height:200px;overflow:auto;font-size:12px}
+.wf-issues p{margin:5px 0;padding:7px;border-left:3px solid var(--warn);background:var(--panel2)}
+.wf-help{font-size:12px;color:var(--mute);margin-top:8px}
+@media(max-width:650px){header{padding:12px}.wf-workspace{padding:10px}.wf-actions button{flex:1 1 130px}}
 </style></head><body>
 <title>WireForge</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -167,6 +189,19 @@ a{color:var(--accent)}
 <section id="t-studio" hidden></section>
 <section id="t-sim" hidden></section>
 <section id="t-draw">
+<aside class="wf-workspace" id="wfWorkspace" aria-label="Harness editor tools">
+<div class="wf-top"><h2>Harness workspace <small style="font-size:12px;color:var(--mute)">BETA · v0.17 preview</small></h2><span id="wfStatus" class="pill">Ready</span></div>
+<div class="wf-metrics" id="wfMetrics" aria-live="polite"></div>
+<div class="wf-actions">
+<button type="button" id="wfRefresh">Run wiring audit</button>
+<button type="button" id="wfSnap">Snap parts to 20px grid</button>
+<button type="button" id="wfAlign">Align selected part to grid</button>
+<button type="button" id="wfLock">Lock selected part</button>
+<button type="button" id="wfPinExport">Export connector pinouts CSV</button>
+<button type="button" id="wfLoomExport">Export harness bundles CSV</button>
+</div>
+<div class="wf-help">Snap changes positions and can be undone. Lock is a workspace marker, not yet enforced during dragging. Electrical findings require manual verification against component datasheets.</div>
+<div class="wf-issues" id="wfIssues"></div></aside>
   <div class="bar">
     <button class="btn primary" data-act="lib" id="libBtn" aria-pressed="false">+ Add part</button>
     <button class="btn" data-act="zout" aria-label="Zoom out">−</button>
@@ -2033,6 +2068,68 @@ document.addEventListener('change',e=>{
  const p=part(selection&&selection.id);if(!p)return;
  commit();p[f.dataset.bulkcfg]=f.value;save();draw();renderInsp();if(S.tab==='studio'){S.studioSelected=p.id;rStudio()}
 });
+
+
+/* v0.17 workspace: read-only audits and explicit editor actions */
+(function(){
+ const $=id=>document.getElementById(id);
+ const csvCell=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+ const downloadCSV=(name,rows)=>{
+   const blob=new Blob(['\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ };
+ function findings(){
+   const issues=[],pins=new Map(),parts=new Map((S.parts||[]).map(p=>[+p.id,p]));
+   (S.wires||[]).forEach((w,i)=>{
+     if(!w.a||!w.b||!parts.has(+w.a.p)||!parts.has(+w.b.p)){issues.push('Wire '+(i+1)+': missing endpoint part');return}
+     for(const end of [w.a,w.b]){
+       const p=parts.get(+end.p),t=T[p.t],n=t&&t.pins&&t.pins.length;
+       if(!Number.isInteger(+end.i)||+end.i<0||+end.i>=n)issues.push('Wire '+(i+1)+': invalid cavity index at '+(p.name||p.id));
+       const key=end.p+':'+end.i;
+       if(!pins.has(key))pins.set(key,[]);
+       pins.get(key).push(w.sig||'Wire '+(i+1));
+     }
+     if(!w.sig)issues.push('Wire '+(i+1)+': missing circuit label');
+     if(!w.color)issues.push('Wire '+(i+1)+': missing color');
+     if(+w.fa>0&&+w.amps>+w.fa)issues.push('Wire '+(i+1)+': entered current exceeds entered fuse rating');
+   });
+   pins.forEach((labels,key)=>{if(labels.length>1)issues.push('Shared cavity '+key+': '+labels.join(' / ')+' — verify intentional splice or tap')});
+   return issues;
+ }
+ function refresh(){
+   if(!$('wfMetrics'))return;
+   const issues=findings(),stats=[['Components',(S.parts||[]).length],['Wire segments',(S.wires||[]).length],['Harness bundles',(S.looms||[]).length],['Zones',(S.zones||[]).length],['Review findings',issues.length]];
+   $('wfMetrics').innerHTML=stats.map(([n,v])=>'<div class="wf-metric"><strong>'+v+'</strong><small>'+n+'</small></div>').join('');
+   $('wfStatus').textContent=issues.length?issues.length+' to review':'No basic audit findings';
+   $('wfIssues').innerHTML=issues.length?issues.slice(0,50).map(t=>{const p=document.createElement('p');p.textContent=t;return p.outerHTML}).join('')+(issues.length>50?'<p>Additional findings omitted.</p>':''):'<p>No basic structural findings. This does not certify wiring safety.</p>';
+ }
+ function snap(onlySelected){
+   const chosen=onlySelected&&selection&&selection.type==='part'?[part(selection.id)]:onlySelected?[]:(S.parts||[]);
+   if(!chosen.length){toast('Select a part first');return}
+   commit();chosen.forEach(p=>{p.x=Math.round((+p.x||0)/20)*20;p.y=Math.round((+p.y||0)/20)*20});
+   save();draw();renderInsp();refresh();toast('Snapped '+chosen.length+' component(s) to grid');
+ }
+ function pinExport(){
+   const rows=[['Part','Connector type','Cavity','Default function','Custom label','Connected signals']];
+   (S.parts||[]).forEach(p=>{const t=T[p.t];if(!t||!Array.isArray(t.pins))return;t.pins.forEach((pin,i)=>{
+     const wires=(S.wires||[]).filter(w=>(w.a&&+w.a.p===+p.id&&+w.a.i===i)||(w.b&&+w.b.p===+p.id&&+w.b.i===i));
+     rows.push([p.name||'',t.name||p.t,pin.p||i+1,pin.l||'',p.pl&&p.pl[i]||'',wires.map(w=>w.sig||w.id).join('; ')]);
+   })});downloadCSV('wireforge-connector-pinouts.csv',rows);toast('Connector pinout CSV exported');
+ }
+ function loomExport(){
+   const rows=[['Bundle ID','Bundle name','Wire ID','Signal','AWG','Color','From part','To part']];
+   (S.looms||[]).forEach(l=>{const members=(S.wires||[]).filter(w=>w.loom===l.id||(Array.isArray(l.wires)&&l.wires.includes(w.id)));
+     if(!members.length)rows.push([l.id,l.name||'', '', '', '', '', '', '']);
+     members.forEach(w=>rows.push([l.id,l.name||'',w.id,w.sig,w.awg,w.color,(part(w.a&&w.a.p)||{}).name,(part(w.b&&w.b.p)||{}).name]));
+   });downloadCSV('wireforge-harness-bundles.csv',rows);toast('Harness bundle CSV exported');
+ }
+ const bind=(id,fn)=>{const el=$(id);if(el)el.addEventListener('click',fn)};
+ bind('wfRefresh',refresh);bind('wfSnap',()=>snap(false));bind('wfAlign',()=>snap(true));
+ bind('wfLock',()=>{if(!selection||selection.type!=='part'){toast('Select a part first');return}const p=part(selection.id);commit();p.wfLocked=!p.wfLocked;save();refresh();toast(p.wfLocked?'Part marked locked':'Part unlocked')});
+ bind('wfPinExport',pinExport);bind('wfLoomExport',loomExport);
+ document.addEventListener('click',e=>{if(e.target.closest('#tabs')||e.target.closest('#t-draw'))requestAnimationFrame(refresh)});
+ refresh();
+})();
 
 /* ---------- start ---------- */
 ensureBook();

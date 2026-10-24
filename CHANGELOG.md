@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — v0.17.0 editor overhaul (preview)
+- Redesigned the drawing workspace header, action controls, and responsive editor dashboard.
+- Added an on-demand structural wiring audit for invalid endpoints, shared cavities, missing circuit labels/colors, and entered load/fuse conflicts.
+- Added 20px grid snapping for all components or the selected component, with undo integration.
+- Added connector cavity/pinout CSV export and harness-bundle CSV export.
+- Added selected-component lock metadata as a preview; drag enforcement is not implemented yet.
+- Existing 90-degree routing, loom tools, and SVG/print exports remain available. Automatic obstacle-free rerouting, fully interactive bundle branches, and comprehensive validation remain future work.
+
+
 ## Unreleased — E90 wiring accuracy corrections
 - Corrected each 4-port and 6-port CAN hub port to pin 1 CAN H, pin 2 CAN L, pin 3 switched 12V VDD, pin 4 GND.
 - Kept the CAN hub as a planned library option and represented the installed 1-in / 3-out CAN1 DT twisted splitter in the E90 example.
