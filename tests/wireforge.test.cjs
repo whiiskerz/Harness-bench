@@ -79,3 +79,34 @@ test('safety and backup affordances are present', () => {
     'not an electrical safety certification'
   ]) assert.ok(script.toLowerCase().includes(token.toLowerCase()), 'expected source token: ' + token);
 });
+
+test('Power Budget and filtered wire schedule features are wired into the app', () => {
+  for (const token of [
+    "['power','Power Budget']",
+    'function rPower()',
+    'function downloadPowerBudget()',
+    'function downloadProjectReport()',
+    "case'savePowerVoltage'",
+    "case'downloadPower'",
+    "case'powerReport'",
+    'id="wireSearch"',
+    'id="wireFilter"',
+    "filter==='missing'",
+    "filter==='powered'",
+    'drawing-estimate',
+    'may double-count loads'
+  ]) assert.ok(script.includes(token), 'expected feature token: ' + token);
+});
+
+test('Power budget groups are described as segment-level estimates, not safety certification', () => {
+  const start = script.indexOf('function rPower()');
+  const end = script.indexOf('function downloadPowerBudget()', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const power = script.slice(start, end);
+  assert.ok(power.includes('new Map()'));
+  assert.ok(power.includes('unknownCurrent'));
+  assert.ok(power.includes('unknownFuse'));
+  assert.ok(power.includes('wire segments'));
+  assert.ok(power.includes('safety certification'));
+});
