@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.0 — 2026-10-24
+- Rebranded the app UI to **WireForge** while retaining the Harness-bench repository and creator credit.
+- Replaced the wide horizontal tab strip with grouped workspace navigation on desktop and compact horizontal navigation on small screens.
+- Renamed the physical mockup workspace to **Loom Studio**.
+- Added an early **Test Sim** preview: editable per-wire simulated loads, supply voltage / engine-running mode, fuse and wire-rating flags, and estimated two-way copper voltage drop.
+- Test Sim is a screening model, not a circuit solver. It does not yet model electrical connectivity, relay behavior, battery sag, thermal fuse curves, moving current, virtual meter or scope.
+- JavaScript syntax validation passed; browser visual and interaction testing is still required.
+
 ## v0.6.0 — 2026-10-24
 - Rebuilt the Add Part library as a searchable visual catalog with connector-face previews, pin counts, family filters, and contact-size summaries where available.
 - Added expandable pinout tables showing order number, pin ID, function, and contact size for catalog parts.
