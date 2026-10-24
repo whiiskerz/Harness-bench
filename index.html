@@ -923,7 +923,7 @@ function renderLib(){
  const groups=catalog.map((g,i)=>'<details class="grp catalog-group" '+(g.open?'open':'')+' data-group="'+i+'"><summary><span>'+esc(g.name)+'</span><small>'+g.ids.length+' parts</small></summary><div class="connector-catalog">'+g.ids.map(connectorCard).join('')+'</div></details>').join('');
  const visibleIds=uniq(catalog.flatMap(g=>g.ids));
  const families=[...new Set(visibleIds.map(id=>T[id]?.fam||'other'))].sort().map(f=>'<option value="'+esc(f)+'">'+esc(f.toUpperCase())+'</option>').join('');
- el.innerHTML='<div class="catalog-tools"><label><span>Find a connector / part</span><input id="lq" placeholder="Search Gen1 RACE, DT, Maven, HD30, relay…"></label><label><span>Family</span><select id="libFamily"><option value="">All families</option>'+families+'</select></label></div><p class="muted">Compact catalog · expand a category to browse. ECU cavities and HD30 insert contact counts are pinout-backed from the supplied reference data; drawings are schematic, not manufacturer face-orientation drawings.</p>'+groups;
+ el.innerHTML='<div class="catalog-tools"><label><span>Find a connector / part</span><input id="lq" placeholder="Search Gen1 RACE, DT, Maven, HD30, relay…"></label><label><span>Family</span><select id="libFamily"><option value="">All families</option>'+families+'</select></label></div><p class="muted">Compact catalog · expand a category to browse. ECU cavity functions and HD30 insert contact-size counts use the supplied reference data; cavity layouts are schematic, not manufacturer face-orientation drawings.</p>'+groups;
 }
 function addPart(id){
   let tid=id;
