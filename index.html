@@ -105,6 +105,8 @@ textarea{font:12px var(--mono);min-height:110px}
 .lcard{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:6px;padding:8px}
 input[type=color]{padding:0;height:34px;width:44px}
 .row select{width:auto}
+.err .box{stroke:var(--bad);stroke-width:2.5}
+nav button.bad{color:var(--bad)}
 /* tables */
 .tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
 table{border-collapse:collapse;width:100%;font-size:14px}
@@ -355,12 +357,12 @@ function e90ProjectStarter(){
   wire(102,0,115,0,'MaxxECU sensor +5V → flex fuel sensor supply (verify sensor spec)',20,'RED');
   wire(102,1,115,2,'MaxxECU sensor ground → flex fuel sensor ground (sensor ground only)',20,'BLK');
   wire(115,1,102,5,'Flex fuel signal → MaxxECU DIN5',20,'YEL');
-  return {parts,wires:W,nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
+  return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
 }
 
 let S=Object.assign({scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'project'},e90ProjectStarter());
 try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&Array.isArray(o.parts))S=Object.assign(S,o)}}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{CHKD=true;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const nid=()=>S.nid++;
 const part=id=>S.parts.find(p=>p.id===+id);
 const wireById=id=>S.wires.find(w=>w.id===+id);
@@ -438,9 +440,10 @@ const faceUsed=(pid,i,s)=>usedOn(pid,i).some(w=>faceOf(w,pid,i)===s);
 const cv=document.getElementById('cv');
 const v=()=>S.view||(S.view={x:20,y:20,k:.8});
 function draw(){
-  computeSides();const V=v(),out=[];
+  computeSides();ERR=errSets();const V=v(),out=[];
   out.push(`<defs><pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="var(--grid)"/></pattern></defs>`);
   out.push(`<g transform="translate(${V.x} ${V.y}) scale(${V.k})"><rect data-bg="1" x="-5000" y="-5000" width="10000" height="10000" fill="url(#g)"/>`);
+  (S.zones||[]).forEach(z=>out.push(`<g pointer-events="none"><rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="16" fill="${z.col}" fill-opacity=".07" stroke="${z.col}" stroke-opacity=".6" stroke-width="2" stroke-dasharray="10 8"/><text x="${z.x+20}" y="${z.y+42}" fill="${z.col}" font-family="Barlow Condensed,sans-serif" font-weight="800" font-size="34" letter-spacing="3">${z.name.toUpperCase()}</text></g>`));
   if(S.fw!=null)out.push(fwSVG(V));
   if(S.tk!=null)out.push(tkSVG(V));
   const handles=[];
@@ -451,6 +454,7 @@ function draw(){
     const sel=selection&&selection.type==='wire'&&selection.id===w.id;
     const c=cpart(w.color,0)||'var(--mute)',c2=cpart(w.color,1),d=w.tw?twistD(g,twPhase(w)):g.path;
     if(sel)out.push(`<path d="${g.path}" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" opacity=".5"/>`);
+    if(ERR.w.has(w.id))out.push(`<path d="${g.path}" fill="none" stroke="var(--bad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="3 7" opacity=".85"/>`);
     out.push(`<path d="${d}" fill="none" stroke="var(--mute)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>`);
     out.push(`<path d="${d}" fill="none" stroke="${c}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>`);
     if(c2)out.push(`<path d="${d}" fill="none" stroke="${c2}" stroke-width="3.6" stroke-dasharray="7 9"/>`);
@@ -461,6 +465,7 @@ function draw(){
   out.push(handles.join(''));
   out.push('</g>');
   cv.innerHTML=out.join('');
+  chkBadge();
 }
 function fwSVG(V){
   const x=S.fw,y0=-V.y/V.k+22;
@@ -478,7 +483,7 @@ function partSVG(p){
   }
   const h=g.h,rh=rowH(t),n=t.pins.length,pc=pcol(p),s=[];
   const sub=[t.sub,t.pn].filter(Boolean).join(' · ');
-  s.push(`<g class="${sel?'sel':''}" data-part="${p.id}"><rect class="box" x="${p.x}" y="${p.y}" width="${w}" height="${h}" rx="10"/><path class="hdr" d="M${p.x+1} ${p.y+HDR} V${p.y+10} a9 9 0 0 1 9 -9 H${p.x+w-10} a9 9 0 0 1 9 9 V${p.y+HDR} Z"/>`);
+  s.push(`<g class="${sel?'sel':''}${ERR.p.has(p.id)?' err':''}" data-part="${p.id}"><rect class="box" x="${p.x}" y="${p.y}" width="${w}" height="${h}" rx="10"/><path class="hdr" d="M${p.x+1} ${p.y+HDR} V${p.y+10} a9 9 0 0 1 9 -9 H${p.x+w-10} a9 9 0 0 1 9 9 V${p.y+HDR} Z"/>`);
   s.push(`<circle cx="${p.x+w-16}" cy="${p.y+HDR/2}" r="5" fill="${FAM[t.fam]||'var(--mute)'}"/>`);
   s.push(`<text class="t" x="${p.x+14}" y="${p.y+16}">${esc(p.name.length>28?p.name.slice(0,27)+'…':p.name)}</text>`);
   if(sub)s.push(`<text class="ps" x="${p.x+14}" y="${p.y+29}">${esc(sub.length>34?sub.slice(0,33)+'…':sub)}</text>`);
@@ -596,6 +601,7 @@ function pinTap(ref){
   const A=parseRef(pending),B=parseRef(ref),ex=usedOn(A.p,A.i)[0],pt=part(A.p),thru=!!(pt&&(T[pt.t].bulk||T[pt.t].node)&&ex);
   const w=mkW(A,B,{id:nid(),sig:pinSig(A)||pinSig(B),awg:(thru?ex.awg:+S.def.awg)||18,color:(thru?ex.color:S.def.color)||'',loom:(thru?ex.loom:S.def.loom)||null});
   commit();S.wires.push(w);nameEnds(w);S.examples=false;pending=null;selection={type:'wire',id:w.id};save();renderInsp();draw();hint();
+  const bad=getChk().find(x=>x.lvl==='bd'&&x.wires.has(w.id));if(bad)toast('Incompatible: '+bad.plain.split(' Joined:')[0]);
 }
 function hint(){
   const h=document.getElementById('hint');
@@ -623,6 +629,25 @@ function addPart(id){
 }
 /* restore custom types used by saved parts */
 S.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});
+/* ---------- E90 example layout by zone ---------- */
+const E90ZONES=[
+ ['Engine bay','#ff8a1f',[112,118,119,120,122]],
+ ['DME box','#e0b13a',[101,102,103,108,110,114,115,117]],
+ ['Cabin','#4a86e8',[111,116,113,123]],
+ ['Trunk','#3fae6a',[104,105,106,107,109,121,124]]];
+function e90Layout(){
+  if(!S.lay)return;S.lay=0;S.zones=[];const GAP=36,PAD=30,TOP=70,MAXH=1500;let x=0;
+  E90ZONES.forEach(([name,col,ids])=>{
+    const ps=ids.map(i=>part(i)).filter(Boolean);if(!ps.length)return;
+    let cx=x+PAD,cy=TOP,colW=0,right=x;
+    ps.forEach(p=>{const d=dims(p);if(cy>TOP&&cy+d.h>MAXH){cx+=colW+GAP;cy=TOP;colW=0}
+      p.x=cx;p.y=cy;cy+=d.h+GAP;colW=Math.max(colW,d.w);right=Math.max(right,cx+d.w)});
+    const h=Math.min(MAXH,Math.max(...ps.map(p=>p.y+dims(p).h)))+PAD-0;
+    S.zones.push({name,col,x:x,y:0,w:right+PAD-x,h:h});x=right+PAD+90;
+  });
+  S.view=null;save();
+}
+try{e90Layout()}catch(e){}
 S.parts=S.parts.filter(p=>T[p.t]);
 
 /* ---------- inspector ---------- */
@@ -836,6 +861,116 @@ function rBom(){
   document.getElementById('t-bom').innerHTML=`<h2>Parts list</h2><p class="muted">Counted from the drawing. It lists what to buy, not part numbers.</p>
    ${rows.length?`<div class="tw"><table><thead><tr><th>Item</th><th class="num">Qty</th><th>Unit</th><th>Note</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r[0])}</td><td class="num mono">${esc(r[1])}</td><td>${esc(r[2])}</td><td class="nt">${esc(r[3])}</td></tr>`).join('')}</tbody></table></div><div class="row"><button class="btn" data-copy="bom">Copy parts list as CSV</button></div>`:empty('Nothing to list yet.')}`;
 }
+/* ---------- compatibility engine ---------- */
+const rp=(n,k)=>Array(n).fill(k);
+const KINDS={
+ mx12:['p12','gnd','gpo','gpo','gpo',null,'p12','gpo','gpo','mot','mot',null],
+ mx16:['p5','sgnd','ain','ain','ain','ain',null,'gpo','can','can','din','din','din','din','gpo',null],
+ mxpedal:['sgnd','sgnd','ain','p5','p5','ain'],mxwbo:['p12','can','can','gnd'],
+ etb6:['mot','mot','sgnd','ain','p5','ain'],tps3:['p5','sgnd','ain'],
+ relay:['p12','cm','cp','out','out'],relay4:['p12','cm','cp','out'],rp5:['p12','cm','cp','out','out'],rp4:['p12','cm','cp','out'],
+ leash1:['p12','out','cp','cm'],dual:['p12','out','out','cp','cm','cp','cm'],ssr:['out','cp','cm','p12'],
+ fuse6:rp(7,'p12'),fuse12:rp(13,'p12'),inl:['p12','p12'],pdb:rp(5,'p12'),gbus6:rp(7,'gnd'),gbus12:rp(13,'gnd'),
+ fusegnd:['p12'].concat(rp(12,'p12'),['gnd'],rp(12,'gnd')),
+ starter:['p12','p12'],bmwbig:['p12'],bmwsmall:['p12'],bat:['p12','gnd'],
+ sens3:['p5','sgnd','ain'],sens2:['ain','sgnd'],load2:['ldp','ldm'],flex:['p12','din','gnd'],heater:['ldp','ldm'],nsol:['ldp','ldm'],psol:['ldp','ldm'],
+ surge:['ldp','ldm','ldp','ldm','ldp','ldm'],
+ canhub4:['p12','gnd'].concat(rp(8,'can')),canhub6:['p12','gnd'].concat(rp(12,'can'))
+};
+if(T.gnd)T.gnd.kind='gnd';
+const BUSES={pdb:[[0,1,2,3,4]],gbus6:[[0,1,2,3,4,5,6]],gbus12:[Array.from({length:13},(_,i)=>i)],fusegnd:[Array.from({length:13},(_,i)=>i+13)]};
+[4,6].forEach(m=>{const h=[],l=[];for(let k=0;k<m;k++){h.push(2+2*k);l.push(3+2*k)}BUSES['canhub'+m]=[h,l]});
+const RATE={relay:30,relay4:30,rp5:30,rp4:30,leash1:70};
+const MVP={8:{12:8},20:{16:2,20:18},21:{20:21},16:{12:16},29:{12:4,16:19,20:6},35:{16:3,20:32},47:{16:5,20:42}};
+const csz=a=>a<=14?'12':a<=18?'16':'20';
+const kindOf=(p,i)=>{const t=T[p.t];if(t.node)return t.kind||null;const a=KINDS[t.id];return a?(a[i]||null):(t.pins[i].k||null)};
+const KLBL={p12:'12V power',p5:'5V sensor supply',gnd:'power ground',sgnd:'sensor ground',gpo:'ground-switching output',ain:'analog input',din:'digital input',can:'CAN',cp:'relay coil +',cm:'relay coil −',out:'switched output',ldp:'load +',ldm:'load −',mot:'motor output'};
+const RULES=[
+ ['p12','gnd','bd','12V power is joined to ground. That is a dead short.'],
+ ['p12','sgnd','bd','12V power is joined to sensor ground.'],
+ ['p12','p5','bd','12V is joined to a 5V sensor supply. This can destroy sensors and the ECU.'],
+ ['p5','gnd','bd','The 5V sensor supply is joined to ground.'],
+ ['p5','sgnd','bd','The 5V sensor supply is joined to sensor ground.'],
+ ['gnd','sgnd','bd','Sensor ground is joined to power ground. MaxxECU says never do this. Keep it as its own wire back to the ECU.'],
+ ['gpo','p12','bd','A GPO only switches ground. 12V into it can damage the ECU.'],
+ ['gpo','p5','bd','5V is joined to a GPO output.'],
+ ['gpo','gnd','wn','A GPO is joined to ground, so it would always be on.'],
+ ['gpo','sgnd','wn','A GPO is joined to sensor ground.'],
+ ['gpo','gpo','wn','Two outputs are joined together.'],
+ ['ain','p12','bd','12V is joined to an analog input. Inputs are 0 to 5V only.'],
+ ['ain','gpo','wn','An analog input is joined to an output.'],
+ ['ain','gnd','wn','An analog input is joined to power ground.'],
+ ['cp','gpo','wn','A relay coil + is on a ground output. Put coil − on the GPO and coil + on switched 12V.'],
+ ['cp','gnd','wn','A relay coil + is joined to ground.'],
+ ['cm','p12','wn','A relay coil − is joined to 12V, so the coil never gets current.'],
+ ['cp','cm','bd','A relay coil + and coil − are joined together.'],
+ ['ldp','gnd','bd','A load + is joined to ground.'],['ldp','sgnd','bd','A load + is joined to sensor ground.'],
+ ['ldp','p5','bd','A load + is joined to the 5V sensor supply.'],['ldp','ain','bd','A load + is joined to an analog input.'],
+ ['ldp','gpo','bd','A load + is on a ground output. Put the load − on the GPO or relay trigger.'],
+ ['ldm','p12','wn','A load − is joined to 12V, so no current can flow.'],
+ ['ldp','ldm','bd','A load + is joined to a load − (short).'],
+ ['out','gnd','bd','A relay or SSR output is joined to ground.'],['out','sgnd','bd','A relay or SSR output is joined to sensor ground.'],
+ ['out','p5','bd','A relay or SSR output is joined to the 5V sensor supply.'],['out','gpo','bd','A relay or SSR output is joined to a GPO.'],
+ ['out','ain','bd','A relay or SSR output is joined to an analog input.']
+];
+function compat(a,b){
+  if(a==='can'||b==='can')return a===b?null:{lvl:'bd',msg:'A CAN wire is joined to a pin that is not CAN.'};
+  for(const r of RULES)if((r[0]===a&&r[1]===b)||(r[0]===b&&r[1]===a))return{lvl:r[2],msg:r[3]};
+  return null;
+}
+function netsOf(){
+  const par=new Map(),key=(p,i)=>p+':'+i;
+  const find=k=>{if(!par.has(k))par.set(k,k);let r=k;while(par.get(r)!==r)r=par.get(r);while(par.get(k)!==r){const n=par.get(k);par.set(k,r);k=n}return r};
+  const uni=(a,b)=>{const x=find(a),y=find(b);if(x!==y)par.set(x,y)};
+  S.wires.forEach(w=>uni(key(w.a.p,w.a.i),key(w.b.p,w.b.i)));
+  S.parts.forEach(p=>(BUSES[p.t]||[]).forEach(g=>g.slice(1).forEach(i=>uni(key(p.id,g[0]),key(p.id,i)))));
+  return{find,key};
+}
+function compatIssues(){
+  const out=[],{find,key}=netsOf(),nets=new Map();
+  const add=(lvl,plain,parts,wires)=>out.push({lvl,plain,msg:esc(plain),parts:new Set(parts||[]),wires:new Set(wires||[])});
+  S.parts.forEach(p=>{const t=T[p.t],n=t.node?1:t.pins.length;for(let i=0;i<n;i++){const k=kindOf(p,i);if(!k)continue;const r=find(key(p.id,i));if(!nets.has(r))nets.set(r,[]);nets.get(r).push({p,i,k})}});
+  nets.forEach((pins,root)=>{
+    const wires=S.wires.filter(w=>find(key(w.a.p,w.a.i))===root);
+    if(!wires.length)return;
+    const kinds=[...new Set(pins.map(x=>x.k))].sort();
+    for(let a=0;a<kinds.length;a++)for(let b=a;b<kinds.length;b++){
+      const ka=kinds[a],kb=kinds[b];if(a===b&&pins.filter(x=>x.k===ka).length<2)continue;
+      const r=compat(ka,kb);if(!r)continue;
+      const pa=pins.find(x=>x.k===ka),pb=a===b?pins.filter(x=>x.k===ka)[1]:pins.find(x=>x.k===kb);
+      add(r.lvl,`${r.msg} Joined: ${endName({p:pa.p.id,i:pa.i})} (${KLBL[ka]}) and ${endName({p:pb.p.id,i:pb.i})} (${KLBL[kb]}).`,[pa.p.id,pb.p.id],wires.map(w=>w.id));
+    }
+  });
+  S.wires.forEach((w,n)=>{
+    const nm=`Wire #${n+1} (${w.sig||'unnamed'})`,pa=part(w.a.p),pb=part(w.b.p);if(!pa||!pb)return;
+    [[pa,w.a],[pb,w.b]].forEach(([p,r])=>{const t=T[p.t];if(/^dt\d+$/.test(t.id)&&(+w.awg<14||+w.awg>20))add('bd',`${nm} is ${w.awg} AWG but ${p.name} (Deutsch DT) takes 14 to 20 AWG.`,[p.id],[w.id])});
+    if(+w.amps>0&&(AMPS[w.awg]||0)<+w.amps)add('bd',`${nm} carries ${w.amps} A but ${w.awg} AWG holds about ${AMPS[w.awg]||0} A.`,[],[w.id]);
+    if((kindOf(pa,w.a.i)==='can'||kindOf(pb,w.b.i)==='can')&&!w.tw)add('wn',`${nm} is a CAN wire but is not twisted.`,[],[w.id]);
+  });
+  const tg={};S.wires.forEach(w=>{if(w.tw)(tg[w.tw]=tg[w.tw]||[]).push(w)});
+  Object.values(tg).forEach(a=>{if(a.length!==2)add('wn',`A twisted pair has ${a.length} wire${a.length===1?'':'s'}. A pair needs exactly 2.`,[],a.map(w=>w.id))});
+  S.parts.forEach(p=>{
+    const t=T[p.t],rate=RATE[t.id];
+    if(rate)t.pins.forEach((_,i)=>{const k=kindOf(p,i);if(k!=='p12'&&k!=='out')return;const ws=usedOn(p.id,i),sum=ws.reduce((a,w)=>a+(+w.amps||0),0);if(sum>rate)add('bd',`${p.name} pin ${t.pins[i].p} carries ${sum} A but is rated ${rate} A.`,[p.id],ws.map(w=>w.id))});
+    if(t.bulk&&/^mv/.test(t.id)){
+      const blks={};t.pins.forEach((pin,i)=>{const b=pin.blk||0;(blks[b]=blks[b]||[]).push(i)});
+      Object.values(blks).forEach((idx,bi)=>{
+        const pool=MVP[idx.length];if(!pool)return;const need={12:0,16:0,20:0},ids=[];
+        idx.forEach(i=>{const ws=usedOn(p.id,i);if(!ws.length)return;need[ws.map(w=>csz(+w.awg)).sort()[0]]++;ws.forEach(w=>ids.push(w.id))});
+        const P12=pool[12]||0,P16=pool[16]||0,P20=pool[20]||0,over=[];
+        if(need[12]>P12)over.push(`${need[12]} pins need 12 ga contacts but only ${P12} exist`);
+        if(need[16]>P16)over.push(`${need[16]} pins need 16 ga contacts but only ${P16} exist`);
+        const f20=P20+Math.max(0,P16-need[16]);if(need[20]>f20)over.push(`${need[20]} pins need 20 ga contacts but only ${f20} are free`);
+        if(over.length)add('bd',`${p.name}${Object.keys(blks).length>1?' ('+'AB'[bi]+' side)':''}: ${over.join('; ')}.`,[p.id],ids);
+      });
+    }
+  });
+  return out;
+}
+let CHK=[],CHKD=true,ERR={w:new Set(),p:new Set()};
+function getChk(){if(CHKD){CHK=compatIssues();CHKD=false}return CHK}
+function errSets(){const e={w:new Set(),p:new Set()};getChk().forEach(x=>{if(x.lvl==='bd'){x.wires.forEach(i=>e.w.add(i));x.parts.forEach(i=>e.p.add(i))}});return e}
+function chkBadge(){const n=getChk().filter(x=>x.lvl==='bd').length,b=document.querySelector('#tabs [data-tab="checks"]');if(b){b.textContent=n?'Checks ('+n+')':'Checks';b.classList.toggle('bad',n>0)}}
 function rChecks(){
   const issues=[];
   S.wires.forEach((w,i)=>{
@@ -856,9 +991,13 @@ function rChecks(){
   }
   const bh=S.parts.filter(p=>T[p.t].bulk);
   if(bh.length)fwHTML=`<h3>Firewall bulkheads</h3><div class="tw"><table><thead><tr><th>Bulkhead</th><th class="num">Pins</th><th class="num">Used</th><th class="num">Spare</th></tr></thead><tbody>${bh.map(p=>{const n=T[p.t].pins.length,u=T[p.t].pins.filter((_,i)=>usedOn(p.id,i).length).length;return `<tr><td>${esc(p.name)}</td><td class="num mono">${n}</td><td class="num mono">${u}</td><td class="num mono">${n-u}</td></tr>`}).join('')}</tbody></table></div><p class="muted">Used counts a pin when either face has a wire. Plan some spare pins for later.</p>`;
+  getChk().forEach(x=>issues.push([x.lvl,x.msg,x]));
+  issues.sort((a,b)=>({bd:0,wn:1,in:2}[a[0]]-{bd:0,wn:1,in:2}[b[0]]));
   document.getElementById('t-checks').innerHTML=`<h2>Checks</h2>
    ${issues.length?`<div class="card"><ul class="tight">${issues.map(x=>`<li class="${x[0]}">${x[1]}</li>`).join('')}</ul></div>`:'<div class="call"><span class="ok">Nothing to fix.</span> Every wire has a color and name, and no pin has two wires.</div>'}
    ${fwHTML}
+   <h3>What the compatibility check looks at</h3>
+   <ul class="tight muted"><li>It follows wires, splices, bulkhead pins, power blocks and ground buses to find every pin that is electrically joined, then flags bad pairings: 12V to ground, 12V to a 5V supply, 12V into a GPO or analog input, sensor ground to power ground, CAN to non-CAN, relay outputs to ground, and load + to ground.</li><li>It also checks wire gauge against the part (Deutsch DT takes 14 to 20 AWG), amps against wire size, relay and board ratings, CAN wires that are not twisted, and Maven bulkhead contact counts.</li><li>Maven contact sizes are assumed by gauge: 14 AWG and thicker use 12 ga contacts, 16 to 18 AWG use 16 ga, 20 AWG and thinner use 20 ga. Check your bulkhead's contact table.</li><li>Pins with no known function (generic connectors) are not checked. Red dashed wires and red part outlines on the Draw tab mark errors.</li></ul>
    <h2>Fuse check</h2>
    <p class="muted">Set a fuse group, current and fuse size on a wire. This adds the current per group, suggests a fuse with 25% room, and flags wire too small for its fuse. Ratings are rule-of-thumb for short chassis runs.</p>
    ${keys.map(k=>{const ws=g[k],sum=ws.reduce((a,w)=>a+(+w.amps||0),0),fa=Math.max(...ws.map(w=>+w.fa||0)),ok=fa>0&&fa>=sum*1.25;
@@ -1051,7 +1190,7 @@ document.addEventListener('click',e=>{
    case'studioFlip':toast('Confirm mating-face vs wire-side orientation from manufacturer documentation before termination');break;
    case'buildReset':if(confirm('Reset all Build Tracker checkboxes?')){S.buildChecks={};save();rBuild()}break;
    case'buildCopy':copy(buildReport(),b);break;
-   case'loadE90':{commit();S=e90ProjectStarter();selection=null;pending=null;canMode=false;canQ=[];save();showTab('draw');toast('E90 project mock-up loaded');break}
+   case'loadE90':{commit();S=e90ProjectStarter();e90Layout();selection=null;pending=null;canMode=false;canQ=[];save();showTab('draw');toast('E90 project mock-up loaded');break}
    case'lib':{const l=document.getElementById('lib');l.hidden=!l.hidden;b.setAttribute('aria-pressed',!l.hidden);if(!l.hidden&&!l.children.length)renderLib();break}
    case'zin':zoom(1.25);break;case'zout':zoom(1/1.25);break;case'fit':fit();break;
    case'undo':doUndo();break;case'redo':doRedo();break;
@@ -1071,8 +1210,8 @@ document.addEventListener('click',e=>{
    case'dupPart':{commit();const p=part(selection.id),c=JSON.parse(JSON.stringify(p));c.id=nid();c.x+=30;c.y+=30;S.parts.push(c);selection={type:'part',id:c.id};save();renderInsp();draw();break}
    case'delWire':{commit();S.wires=S.wires.filter(w=>w.id!==selection.id);selection=null;save();renderInsp();draw();hint();break}
    case'useAsDefault':{const w=S.wires.find(x=>x.id===selection.id);S.def={awg:w.awg,color:w.color};save();syncBar();toast('New wires will use this');break}
-   case'clearAll':{commit();S.parts=[];S.wires=[];S.examples=false;selection=null;pending=null;S.view=null;save();showTab(S.tab);break}
-   case'loadEx':{commit();Object.assign(S,starter());selection=null;pending=null;save();showTab('draw');break}
+   case'clearAll':{commit();S.parts=[];S.wires=[];S.zones=[];S.examples=false;selection=null;pending=null;S.view=null;save();showTab(S.tab);break}
+   case'loadEx':{commit();Object.assign(S,starter());S.zones=[];selection=null;pending=null;save();showTab('draw');break}
    case'bookAdd':{ensureBook();let id='NEW-'+(Date.now().toString().slice(-6));while(S.circuitBook.some(x=>x.id===id))id+='X';S.circuitBook.push({id,kind:'Circuit',name:'New circuit',from:'',to:'',cavity:'',wire:'',status:'Planned / unverified',notes:''});save();showTab('book');toast('Record added');break;}
    case'bookDelete':{ensureBook();S.circuitBook=S.circuitBook.filter(x=>x.id!==d.id);save();showTab('book');break;}
    case'bookCSV':copy(bookCSV(),b);break;
