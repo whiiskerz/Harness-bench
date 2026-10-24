@@ -61,6 +61,23 @@ textarea{font:12px var(--mono);min-height:110px}
 .mono{font-family:var(--mono);font-size:13px}
 .chip{flex:0 0 14px;width:14px;height:14px;border-radius:50%;border:1px solid var(--mute);display:inline-block;vertical-align:-2px}
 .cw{display:flex;gap:6px;align-items:center}
+/* visual connector catalogue */
+.catalog-tools{display:grid;grid-template-columns:minmax(180px,2fr) minmax(130px,1fr);gap:10px;align-items:end}
+.connector-catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-top:8px}
+.connector-card{display:grid;grid-template-columns:120px minmax(0,1fr);gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);min-width:0}
+.connector-thumb{min-width:0;display:flex;align-items:flex-start}
+.connector-card-title{font:600 13px var(--display);line-height:1.3}
+.connector-card-meta{font:10px var(--mono);color:var(--mute);margin-top:4px;overflow-wrap:anywhere}
+.connector-card-actions{margin:8px 0}
+.connector-card details{font-size:12px}
+.connector-card summary{cursor:pointer;color:var(--accent);padding:4px 0}
+.connector-pin-table{max-height:220px;overflow:auto;margin-top:5px}
+.connector-pin-table table{width:100%;border-collapse:collapse;font-size:11px}
+.connector-pin-table th,.connector-pin-table td{text-align:left;padding:4px;border-bottom:1px solid var(--line);vertical-align:top}
+.connector-pin-table th{position:sticky;top:0;background:var(--panel);color:var(--mute)}
+.connector-card[hidden]{display:none}
+@media(max-width:600px){.catalog-tools{grid-template-columns:1fr}.connector-catalog{grid-template-columns:1fr}.connector-card{grid-template-columns:100px minmax(0,1fr)}}
+
 /* drawing */
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
 .bar label{width:96px}
@@ -171,11 +188,12 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>Harness Bench <b id="appVersion">v0.4.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>Harness Bench <b id="appVersion">v0.6.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.4.0';
+const APP_VERSION='0.6.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
+document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const KEY='harness-bench-v2';
 
@@ -297,6 +315,38 @@ const colorOf=s=>cpart(s,0)||'transparent';
 const AMPS={22:5,20:7.5,18:10,16:13,14:17,12:23,10:33,8:46};
 const FUSES=[3,5,7.5,10,15,20,25,30,40,50,60,70,80,100];
 const nextFuse=a=>FUSES.find(f=>f>=a)||Math.ceil(a/10)*10;
+
+/* HD30 shell-size 24 inserts. Contact counts come from TE Connectivity's HD30/HDP20 configuration catalog.
+   Cavity numbering in the schematic is generated for visualization; verify against the exact manufacturer insert drawing. */
+const HD30_INSERTS={
+ '24-9':{4:1,8:2,12:6},
+ '24-21':{12:4,16:17},
+ '24-14':{4:1,12:1,16:12},
+ '24-23':{16:23},
+ '24-7':{4:3,16:4},
+ '24-19':{12:6,16:13},
+ '24-16':{12:16},
+ '24-29':{12:4,16:19,20:6},
+ '24-18':{8:1,12:3,16:14},
+ '24-31':{16:31}
+};
+function hd30PinSizes(arr){
+ const cfg=HD30_INSERTS[arr]||HD30_INSERTS['24-23'],out=[];
+ Object.keys(cfg).map(Number).sort((a,b)=>a-b).forEach(sz=>{for(let i=0;i<cfg[sz];i++)out.push(sz)});
+ return out;
+}
+function hd30Part(id,arrs){
+ const dual=arrs.length===2,pins=[];
+ arrs.forEach((arr,bi)=>hd30PinSizes(arr).forEach((size,i)=>pins.push({p:(dual?'AB'[bi]:'')+(i+1),l:'',size,blk:bi})));
+ return {id,name:'DEUTSCH HD30 shell 24 · '+arrs.join(' + '),seal:true,fam:'bulk',bulk:true,sub:'HD30 · shell size 24',pn:arrs.join(' / '),desc:arrs.map(a=>a+': '+Object.entries(HD30_INSERTS[a]).map(([z,n])=>n+' size '+z).join(', ')).join(' + '),pins,defaultBulkLayout:dual?'horizontal':'vertical',hd30:true,insertArrs:arrs.slice()};
+}
+const hd30Single=Object.keys(HD30_INSERTS).map(a=>hd30Part('hd30_'+a.replace('-','_'),[a]));
+const hd30DualPairs=[
+ ['24-9','24-9'],['24-21','24-21'],['24-14','24-14'],['24-23','24-23'],['24-7','24-7'],
+ ['24-19','24-19'],['24-16','24-16'],['24-29','24-29'],['24-18','24-18'],['24-31','24-31'],
+ ['24-9','24-21'],['24-14','24-23'],['24-16','24-31'],['24-19','24-29'],['24-18','24-21']
+];
+group('DEUTSCH HD30 · shell size 24',hd30Single.concat(hd30DualPairs.map((a,i)=>hd30Part('hd30d_'+i,a))));
 
 /* ---------- state ---------- */
 const mkW=(a,b,o)=>Object.assign({id:0,a,b,sig:'',awg:18,color:'',len:0,amps:0,fuse:'',fa:0},o);
@@ -659,15 +709,13 @@ function partSVG(p){
       s.push(`<circle cx="${cx}" cy="${cy}" r="${b.R+8}" fill="#3a4047" stroke="#8a919b" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="${b.R}" fill="#1b1e23" stroke="#9aa1ab" stroke-width="1.5"/>`);
       [-1,1].forEach(sx=>s.push(`<circle cx="${cx+sx*(b.R+4)}" cy="${cy}" r="3" fill="#9aa1ab" stroke="#2c3036"/>`))});
     t.pins.forEach((pin,i)=>{
-      const q=bg.pos[i],x=p.x+q.x,y=p.y+q.y,rl=p.id+':'+i+':L',rr=p.id+':'+i+':R',uL=faceUsed(p.id,i,'L'),uR=faceUsed(p.id,i,'R');
-      s.push(`<circle cx="${x}" cy="${y}" r="7" fill="#2a2f36" stroke="#9aa1ab" stroke-width="1"/>`);
-      s.push(`<path class="pd${pending===rl?' pend':uL?' used':''}" d="M${x} ${y-7} A7 7 0 0 0 ${x} ${y+7} Z"/><path class="pd${pending===rr?' pend':uR?' used':''}" d="M${x} ${y-7} A7 7 0 0 1 ${x} ${y+7} Z"/>`);
-      s.push(`<text x="${x}" y="${y+2.4}" text-anchor="middle" fill="#cfd4da" font-size="6.5" font-family="monospace" pointer-events="none">${esc(String(pin.p).slice(0,3))}</text>`);
-      s.push(`<path data-pin="${rl}" class="hit" d="M${x} ${y-9} A9 9 0 0 0 ${x} ${y+9} Z"/><path data-pin="${rr}" class="hit" d="M${x} ${y-9} A9 9 0 0 1 ${x} ${y+9} Z"/>`);
+      const q=bg.pos[i],x=p.x+q.x,y=p.y+q.y,rl=p.id+':'+i+':L',rr=p.id+':'+i+':R',uL=faceUsed(p.id,i,'L'),uR=faceUsed(p.id,i,'R'),pr=({4:10,8:9,12:8,16:6.8,20:5.8})[pin.size||16]||7,hit= Math.max(9,pr+3);
+      s.push(`<circle cx="${x}" cy="${y}" r="${pr}" fill="#2a2f36" stroke="#9aa1ab" stroke-width="1"/>`);
+      s.push(`<path class="pd${pending===rl?' pend':uL?' used':''}" d="M${x} ${y-pr} A${pr} ${pr} 0 0 0 ${x} ${y+pr} Z"/><path class="pd${pending===rr?' pend':uR?' used':''}" d="M${x} ${y-pr} A${pr} ${pr} 0 0 1 ${x} ${y+pr} Z"/>`);
+      s.push(`<text x="${x}" y="${y+2.4}" text-anchor="middle" fill="#cfd4da" font-size="${pr>8?7:6.5}" font-family="monospace" pointer-events="none">${bulkOrder(p,i)}</text>`);
+      s.push(`<path data-pin="${rl}" class="hit" d="M${x} ${y-hit} A${hit} ${hit} 0 0 0 ${x} ${y+hit} Z"/><path data-pin="${rr}" class="hit" d="M${x} ${y-hit} A${hit} ${hit} 0 0 1 ${x} ${y+hit} Z"/>`);
     });
-    bg.legend.forEach(L=>{const cw=(w-28)/L.cols,mc=Math.max(6,Math.floor(cw/5.3)-5),rows=Math.ceil(L.ids.length/L.cols);
-      L.ids.forEach((i,j)=>{const col=Math.floor(j/rows),row=j%rows,l=plabel(p,i)||'',pn=String(t.pins[i].p);
-        s.push(`<text class="pl" x="${p.x+14+col*cw}" y="${p.y+L.y+row*12+8}">${esc(pn)} ${esc(l.length>mc?l.slice(0,mc-1)+'…':l)}</text>`)})});
+    /* Cavity markers use compact order numbers; pin details are in the inspector table. */
   }else{
     const sd=SIDE[p.id]||'R',a=g.a,sc=g.sc,ix=sd==='R'?p.x:p.x+pc,iy=p.y+HDR+8;
     const dx=sd==='R'?p.x+w:p.x,colStart=sd==='R'?p.x+IW:p.x+pc;
@@ -782,12 +830,30 @@ function hint(){
 }
 
 /* ---------- add parts ---------- */
+function connectorThumb(id,face='mating'){
+ const t=T[id],pins=t.pins||[],n=pins.length,s=[];
+ if(t.bulk){const g=bgeo({t:id,bulkFace:face});s.push('<svg viewBox="0 0 '+g.w+' '+g.h+'" aria-label="Schematic circular connector face" style="width:100%;height:116px;display:block;background:var(--panel2);border-radius:6px">');
+ g.blocks.forEach(b=>s.push('<circle cx="'+b.cx+'" cy="'+b.cy+'" r="'+(b.R+5)+'" fill="#3a4047" stroke="#9aa1ab" stroke-width="1.5"/><circle cx="'+b.cx+'" cy="'+b.cy+'" r="'+b.R+'" fill="#1b1e23" stroke="#9aa1ab"/>'));
+ pins.forEach((pin,i)=>{const q=g.pos[i];if(!q)return;const r=({4:5,8:4.5,12:4,16:3.4,20:3})[pin.size||16]||3.5;s.push('<circle cx="'+q.x+'" cy="'+q.y+'" r="'+r+'" fill="#252b33" stroke="#d1d5db" stroke-width=".8"/><text x="'+q.x+'" y="'+(q.y+2)+'" text-anchor="middle" font-size="5" fill="#fff">'+(i+1)+'</text>')});
+ return s.join('')+'</svg>';}
+ const cols=Math.min(8,Math.max(2,Math.ceil(Math.sqrt(n)))),rows=Math.ceil(n/cols),bw=Math.max(62,cols*22+20),bh=Math.max(44,rows*17+24),sx=100-bw/2,sy=8;
+ s.push('<svg viewBox="0 0 200 '+Math.max(100,bh+16)+'" aria-label="Schematic connector face" style="width:100%;height:116px;display:block;background:var(--panel2);border-radius:6px"><rect x="'+sx+'" y="'+sy+'" width="'+bw+'" height="'+bh+'" rx="8" fill="#3a4047" stroke="#9aa1ab" stroke-width="2"/><rect x="'+(sx+5)+'" y="'+(sy+5)+'" width="'+(bw-10)+'" height="'+(bh-10)+'" rx="5" fill="#1b1e23" stroke="#6d747e"/>');
+ pins.forEach((pin,i)=>{const col=face==='wire'?(cols-1-(i%cols)):(i%cols),x=sx+10+col*((bw-20)/Math.max(1,cols-1)),y=sy+13+Math.floor(i/cols)*((bh-26)/Math.max(1,rows-1)),r=({4:5,8:4.5,12:4,16:3.5,20:3})[pin.size||16]||4;s.push('<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#252b33" stroke="#d1d5db" stroke-width=".8"/><text x="'+x+'" y="'+(y+2)+'" text-anchor="middle" font-size="5.5" fill="#fff">'+(i+1)+'</text>')});
+ return s.join('')+'</svg>';
+}
+function connectorCard(id){
+ const t=T[id],pins=t.pins||[],meta=[t.sub,t.pn].filter(Boolean).join(' · '),sizes={};
+ pins.forEach(pin=>{if(pin.size)sizes[pin.size]=(sizes[pin.size]||0)+1});
+ const sizeText=Object.keys(sizes).sort((a,b)=>+a-+b).map(z=>sizes[z]+' × size '+z).join(', ');
+ const rows=pins.map((pin,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(pin.p)+'</td><td>'+esc(pin.l||'Unassigned')+'</td><td>'+(pin.size?'Size '+esc(pin.size):'—')+'</td></tr>').join('');
+ const search=(t.name+' '+id+' '+meta+' '+(t.desc||'')+' '+(t.fam||'')).toLowerCase();
+ return '<article class="connector-card" data-card-name="'+esc(search)+'" data-family="'+esc(t.fam||'other')+'"><div class="connector-thumb">'+connectorThumb(id)+'</div><div class="connector-card-main"><div class="connector-card-title">'+esc(t.name||id)+'</div><div class="connector-card-meta">'+pins.length+' pins · '+esc(t.fam||'connector')+(meta?' · '+esc(meta):'')+'</div>'+(sizeText?'<div class="connector-card-meta">'+esc(sizeText)+'</div>':'')+'<div class="connector-card-actions"><button class="btn primary" data-add="'+id+'" data-name="'+esc(search)+'">Add to drawing</button></div><details><summary>View pinout ('+pins.length+')</summary><div class="connector-pin-table"><table><thead><tr><th>Order</th><th>Pin ID</th><th>Function</th><th>Contact</th></tr></thead><tbody>'+rows+'</tbody></table></div></details></div></article>';
+}
 function renderLib(){
-  const el=document.getElementById('lib');
-  el.innerHTML=`<label><span>Search</span><input id="lq" placeholder="DT, Molex, relay, ring..."></label>`+
-   GROUPS.map(g=>`<div class="grp"><b>${esc(g.name)}</b><div class="items">${g.ids.map(id=>`<button class="btn" title="${esc(T[id].desc||T[id].pn||T[id].sub||'')}" data-add="${id}" data-name="${esc((T[id].name+' '+(T[id].pn||'')+' '+(T[id].sub||'')).toLowerCase())}">${esc(T[id].name)}</button>`).join('')}</div></div>`).join('')+
-   `<div class="grp"><b>Firewall bulkhead (mil-spec)</b><div class="row"><label style="width:110px"><span>Number of pins</span><input id="bn" type="number" min="1" max="60" value="24" inputmode="numeric"></label><button class="btn" data-add="bulkc">Add bulkhead</button></div><p class="muted">Left face is the engine bay, right face is the cabin. Wire each face on its own.</p></div>`+
-   `<div class="grp"><b>Custom connector</b><div class="row"><label style="width:110px"><span>Number of pins</span><input id="cn" type="number" min="1" max="60" value="6" inputmode="numeric"></label><button class="btn" data-add="custom">Add</button></div></div>`;
+ const el=document.getElementById('lib');
+ const groups=GROUPS.map(g=>'<section class="grp"><b>'+esc(g.name)+'</b><div class="connector-catalog">'+g.ids.map(connectorCard).join('')+'</div></section>').join('');
+ const families=[...new Set(Object.values(T).map(t=>t.fam||'other'))].sort().map(f=>'<option value="'+esc(f)+'">'+esc(f.toUpperCase())+'</option>').join('');
+ el.innerHTML='<div class="catalog-tools"><label><span>Find a connector / part</span><input id="lq" placeholder="Search DT, HD30, MaxxECU, relay, sensor…"></label><label><span>Family</span><select id="libFamily"><option value="">All families</option>'+families+'</select></label></div><p class="muted">Previews are schematic, not manufacturer-approved cavity drawings. Open View pinout for the ordered pin/function list.</p>'+groups+'<section class="grp"><b>Custom firewall bulkhead</b><div class="row"><label style="width:110px"><span>Number of pins</span><input id="bn" type="number" min="1" max="60" value="24"></label><button class="btn" data-add="bulkc">Add bulkhead</button></div></section><section class="grp"><b>Custom connector</b><div class="row"><label style="width:110px"><span>Number of pins</span><input id="cn" type="number" min="1" max="60" value="6"></label><button class="btn" data-add="custom">Add custom connector</button></div></section>';
 }
 function addPart(id){
   let tid=id;
@@ -843,7 +909,7 @@ function wireAuditHTML(w){
 }
 function refreshWireAudit(){const el=document.getElementById('wireLiveAudit');if(selection&&selection.type==='wire'&&el){const w=wireById(selection.id);if(w)el.innerHTML=wireAuditHTML(w)}}
 
-function renderInsp(){
+function renderInspBase(){
   const el=document.getElementById('insp');
   if(selection&&selection.type==='part'){
     const p=part(selection.id);if(!p){selection=null;return renderInsp()}
@@ -1276,19 +1342,20 @@ function defaultPartPhoto(p){
  if(n.includes('leash')||n.includes('relay board')) return 'https://www.leashelectronics.com/cdn/shop/files/20240119_090319.jpg?v=1705678079';
  return '';
 }
-function rStudio(){
+function rStudioBase(){
  const parts=S.parts||[];const selected=+(S.studioSelected||parts[0]?.id||0);const p=parts.find(x=>x.id===selected)||parts[0];
  if(!p){document.getElementById('t-studio').innerHTML='<h2>Connector Studio</h2><p class="muted">Load the E90 project mock-up or add a part first.</p><button class="btn primary" data-act="loadE90">Load E90 harness mock-up</button>';return}
  S.studioSelected=p.id;S.studioPics=S.studioPics||{};S.studioStatus=S.studioStatus||{};
  const t=T[p.t]||{name:p.name,pins:[{p:'1',l:''}]};const pins=t.pins||[{p:'1',l:''}];const pic=S.studioPics[p.id]||defaultPartPhoto(p);const status=S.studioStatus[p.id]||(defaultPartPhoto(p)?'Reference photo — verify exact part':'Needs photo / verification');
  const cols=Math.min(6,Math.max(2,Math.ceil(Math.sqrt(pins.length))));
+ const faceArt='<div class="card"><div class="face-head"><b>'+esc(t.name||p.name||p.t)+'</b><span>'+(p.studioFace==='wire'?'WIRE SIDE · MIRRORED':'MATING FACE')+'</span></div>'+connectorThumb(p.t,p.studioFace||'mating')+'<p class="muted">Schematic view only. Confirm the exact manufacturer drawing before terminating wires.</p></div>';
  const face=`<div class="face-grid" style="grid-template-columns:repeat(${cols},minmax(42px,1fr))">${pins.map((pin,i)=>`<div class="face-pin"><b>${esc(pin.p)}</b><span>${esc(pin.l||p.pl?.[i]||'Unassigned')}</span></div>`).join('')}</div>`;
  document.getElementById('t-studio').innerHTML=`<h2>Connector Studio</h2><p class="muted">Build a reusable visual library for the actual parts in your harness. Add a photo URL for each part; pin labels come from the current drawing catalog. Photos and verification labels save in this browser and are included in your JSON backup.</p>
  <div class="studio-grid"><div class="card"><label>Choose part<select id="studioPart">${parts.map(q=>`<option value="${q.id}" ${q.id===p.id?'selected':''}>${esc(q.name||T[q.t]?.name||q.t)} · #${q.id}</option>`).join('')}</select></label>
  <label>Photo URL (manufacturer image or your hosted image)<input id="studioPic" type="url" value="${esc(pic)}" placeholder="https://…"></label><label>Upload photo from iPad / computer<input id="studioFile" type="file" accept="image/*"></label><p class="muted">Upload compresses the photo and stores it in this browser. Large photos may hit browser storage limits; keep a copy of the original in your GitHub repository too.</p><label>Image / pinout status<select id="studioStatus">${['Verified manufacturer reference','Owner photo — part number confirmed','Owner photo — part number unknown','Needs photo / verification','Illustration only — not a real part'].map(x=>`<option ${x===status?'selected':''}>${x}</option>`).join('')}</select></label>
- <div class="row"><button class="btn primary" data-act="studioSave">Save component details</button><button class="btn" data-act="studioFlip">Toggle face / wire-side note</button></div><p class="muted">Tip: images need a publicly reachable HTTPS URL to show on GitHub Pages. For private/local photos, upload them into your repository's <code>assets/</code> folder and paste the relative path, such as <code>assets/dt12-front.jpg</code>.</p></div>
+ <div class="row"><button class="btn primary" data-act="studioSave">Save component details</button><button class="btn" data-act="studioFlip">Toggle mating / wire-side view</button></div><p class="muted">Tip: images need a publicly reachable HTTPS URL to show on GitHub Pages. For private/local photos, upload them into your repository's <code>assets/</code> folder and paste the relative path, such as <code>assets/dt12-front.jpg</code>.</p></div>
  <div class="card"><div class="hd"><b>${esc(p.name||t.name||p.t)}</b><span class="pill wn">${esc(status)}</span></div><div class="studio-photo">${pic?`<img src="${esc(pic)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="photo-fallback" style="display:none">Image could not load. Check the URL and repository path.</div>`:`<div class="photo-fallback"><b>No photo added yet</b><span>Paste a part image URL on the left, or upload your own photo into the GitHub assets folder.</span></div>`}</div><p class="muted">Photo status is user-maintained. The image does not verify the pinout or connector orientation.</p></div></div>
- <h3>Pin face / cavity reference</h3><p class="muted">This is a generated cavity index from the app's current pin data, not a manufacturer mating-face drawing. Confirm orientation before using it to terminate wires.</p><div class="card"><div class="face-head"><b>${esc(t.name||p.name||p.t)}</b><span>${pins.length} positions · part #${p.id}</span></div>${face}</div>
+ <h3>Connector face and pin reference</h3><p class="muted">Toggle between a schematic mating-face and mirrored wire-side view. The numbered face corresponds to the pin-order list below.</p>${faceArt}<div class="card"><div class="face-head"><b>Pin order · ${esc(t.name||p.name||p.t)}</b><span>${pins.length} positions · part #${p.id}</span></div>${face}</div>
  <h3>Starter reference gallery</h3><p class="muted">Reference photos are loaded from vendor image URLs. They are visual references only; confirm your exact connector/board model before treating them as the part installed in your car. For offline use, save authorized images into <code>assets/</code> and replace the URL with a relative path.</p><div class="studio-cards">
  <a class="studio-part" href="https://www.deutschconnector.com/products/deutsch_connectors/deutsch_dt_series_connectors/deutsch_dt_12-way_connectors/" target="_blank" rel="noopener"><img loading="lazy" src="https://www.customconnectorkits.com/cdn/shop/products/DT12_Kit.jpg?v=1738190605" alt="Deutsch DT 12-way connector kit" style="width:100%;height:130px;object-fit:contain;background:#0b111b;border-radius:6px"><b>Deutsch DT 12-way</b><span>DT12 connector pair, wedge locks and contacts</span><small>Manufacturer family reference ↗</small></a>
  <a class="studio-part" href="https://www.leashelectronics.com/products/dual-70-amp-relay-module" target="_blank" rel="noopener"><img loading="lazy" src="https://www.leashelectronics.com/cdn/shop/files/20240119_090319.jpg?v=1705678079" alt="Leash dual 70 amp relay module" style="width:100%;height:130px;object-fit:contain;background:#0b111b;border-radius:6px"><b>Leash dual 70A relay module</b><span>Reference for the dual fuel-pump relay layout</span><small>Product page ↗</small></a>
@@ -1452,7 +1519,7 @@ document.addEventListener('click',e=>{
    case'auditExport':copy(csv([['Wire ID','Signal','From','To','Gauge AWG','Color','Length in','Current A','Fuse group','Fuse A','Review status','Review notes','Findings']].concat(auditRows().map(r=>[r.id,r.name,r.from,r.to,r.wire.awg,r.wire.color,r.wire.len,r.wire.amps,r.wire.fuse,r.wire.fa,r.status,r.wire.reviewNotes||'',r.flags.join('; ')]))),b);break;
    case'exportDiagram':exportDiagram();break;case'printDiagram':printDiagram();break;case'bkQuick':copy(JSON.stringify(S),b);break;
    case'studioSave':{S.studioPics=S.studioPics||{};S.studioStatus=S.studioStatus||{};const id=+(document.getElementById('studioPart')?.value||S.studioSelected);const pic=document.getElementById('studioPic')?.value.trim()||'';if(pic)S.studioPics[id]=pic;else delete S.studioPics[id];S.studioStatus[id]=document.getElementById('studioStatus')?.value||'Needs photo / verification';S.studioSelected=id;save();rStudio();toast('Component details saved');break;}
-   case'studioFlip':toast('Confirm mating-face vs wire-side orientation from manufacturer documentation before termination');break;
+   case'studioFlip':{const p=part(+(S.studioSelected||0));if(p){if(T[p.t]?.bulk){p.bulkFace=p.bulkFace==='wire'?'mating':'wire'}else{p.studioFace=p.studioFace==='wire'?'mating':'wire'}save();rStudio();draw();toast('View: '+((p.studioFace||p.bulkFace)==='wire'?'wire side (mirrored)':'mating face'))}break;}
    case'buildReset':if(confirm('Reset all Build Tracker checkboxes?')){S.buildChecks={};save();rBuild()}break;
    case'buildCopy':copy(buildReport(),b);break;
    case'loadE90':{commit();S=e90ProjectStarter();e90Layout();selection=null;pending=null;canMode=false;canQ=[];save();showTab('draw');toast('E90 project mock-up loaded');break}
@@ -1520,7 +1587,7 @@ document.addEventListener('input',e=>{
   if(t.id==='bookQ'){const pos=t.selectionStart;rBook();const nq=document.getElementById('bookQ');if(nq){nq.focus();try{nq.setSelectionRange(pos,pos)}catch(_){}}return}
   if(d.book&&d.field){ensureBook();const rec=S.circuitBook.find(x=>x.id===d.book);if(rec&&d.field!=='id'){rec[d.field]=t.value;save()}return} 
 
-  if(t.id==='lq'){const q=t.value.toLowerCase();document.querySelectorAll('#lib [data-add]').forEach(x=>{if(x.dataset.name!==undefined)x.hidden=!!q&&!x.dataset.name.includes(q)});return}
+  if(t.id==='lq'||t.id==='libFamily'){const q=(document.getElementById('lq')?.value||'').toLowerCase(),fam=document.getElementById('libFamily')?.value||'';document.querySelectorAll('#lib .connector-card').forEach(x=>{x.hidden=(!!q&&!x.dataset.cardName.includes(q))||(!!fam&&x.dataset.family!==fam)});return}
   if(t.id==='defAwg'){S.def.awg=+t.value;return save()}
   if(t.id==='defColor'){S.def.color=t.value;return save()}
   if(t.id==='scale'){S.scale=Math.max(.5,+t.value||4);save();return draw()}
@@ -1557,6 +1624,81 @@ document.addEventListener('keydown',e=>{
   if(m&&k==='z'){e.preventDefault();e.shiftKey?doRedo():doUndo()}
   else if(m&&k==='y'){e.preventDefault();doRedo()}
   else if((e.key==='Delete'||e.key==='Backspace')&&selection){e.preventDefault();const b=document.querySelector('#insp [data-act="delPart"],#insp [data-act="delWire"]');if(b)b.click()}
+});
+
+/* ---------- HD30 circular insert renderer + controls ---------- */
+function bgeo(p){
+ const t=T[p.t],idsByBlock={};
+ t.pins.forEach((pin,i)=>{(idsByBlock[pin.blk||0]=idsByBlock[pin.blk||0]||[]).push(i)});
+ const keys=Object.keys(idsByBlock).sort((a,b)=>+a-+b),layout=p.bulkLayout||t.defaultBulkLayout||(keys.length>1?'horizontal':'vertical');
+ const spacing=21,ringStep=22;
+ const blocks=keys.map(k=>{
+   const ids=idsByBlock[k],n=ids.length;
+   const rings=[];let placed=0,ring=0;
+   while(placed<n){
+     if(ring===0){rings.push({r:0,cap:1});placed++;ring++;continue;}
+     const r=ring*ringStep,cap=Math.max(6,Math.floor((2*Math.PI*r)/spacing));
+     rings.push({r,cap});placed+=cap;ring++;
+   }
+   const outer=rings[rings.length-1].r,R=outer+19,spots=[];
+   rings.forEach((rr,ri)=>{
+     if(ri===0){spots.push([0,0]);return}
+     const cap=Math.max(6,Math.floor((2*Math.PI*rr.r)/spacing));
+     for(let j=0;j<cap;j++){const a=(-Math.PI/2)+(2*Math.PI*j/cap);spots.push([Math.cos(a)*rr.r,Math.sin(a)*rr.r])}
+   });
+   const rank=ids.slice().sort((a,b)=>(+(t.pins[b].size||16))-(+(t.pins[a].size||16))||a-b);
+   const posLocal={};rank.forEach((idx,j)=>{const q=spots[j];posLocal[idx]={x:q[0],y:q[1]}});
+   return {key:k,ids,n,R,posLocal};
+ });
+ const maxR=Math.max(...blocks.map(b=>b.R)),gap=26,vertical=layout!=='horizontal';
+ const w=vertical?Math.max(250,maxR*2+56):blocks.reduce((a,b)=>a+b.R*2,0)+gap*(blocks.length-1)+56;
+ const h=vertical?blocks.reduce((a,b)=>a+b.R*2,0)+gap*(blocks.length-1)+76:maxR*2+76;
+ const pos={},outBlocks=[],legend=[];let cursor=28;
+ blocks.forEach((b,bi)=>{
+   const cx=vertical?w/2:cursor+b.R+28,cy=vertical?cursor+b.R+28:h/2-20;
+   outBlocks.push({cx,cy,R:b.R,m:b.n,ids:b.ids,key:b.key});
+   b.ids.forEach(i=>{const q=b.posLocal[i];let x=cx+q.x,y=cy+q.y;if(p.bulkFace==='wire')x=w-x;pos[i]={x,y}});
+   const cols=b.n>18?2:1,rows=Math.ceil(b.n/cols);
+   legend.push({y:vertical?cy+b.R+16:h-20,cols,ids:b.ids,center:cx,rows});
+   cursor+=b.R*2+gap;
+ });
+ return {w,h,blocks:outBlocks,pos,legend};
+}
+function bulkOrder(p,i){const t=T[p.t],block=t.pins[i].blk||0;return t.pins.slice(0,i+1).filter(pin=>(pin.blk||0)===block).length;}
+function bulkTableHtml(p){
+ const t=T[p.t],seen={};
+ const rows=t.pins.map((pin,i)=>{const block=pin.blk||0,order=(seen[block]||0)+1;seen[block]=order;return '<tr><td>'+(block?'B':'A')+order+'</td><td>'+esc(pin.p)+'</td><td>Size '+esc(pin.size||16)+'</td><td>'+esc(plabel(p,i)||pin.l||'—')+'</td></tr>';}).join('');
+ return '<div style="overflow:auto;max-height:360px"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th>Order</th><th>Pin ID</th><th>Contact</th><th>Function / label</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function renderInsp(){
+ renderInspBase();
+ if(!selection||selection.type!=='part')return;
+ const p=part(selection.id),t=p&&T[p.t];if(!p||!t||!t.bulk)return;
+ const el=document.getElementById('insp');
+ const layout=p.bulkLayout||t.defaultBulkLayout||((t.pins.some(q=>q.blk))?'horizontal':'vertical');
+ const face=p.bulkFace||'mating';
+ el.insertAdjacentHTML('beforeend',`<h3>Bulkhead geometry</h3>
+ <label><span>Dual connector layout</span><select data-bulkcfg="bulkLayout"><option value="horizontal" ${layout==='horizontal'?'selected':''}>Side-by-side</option><option value="vertical" ${layout==='vertical'?'selected':''}>Stacked vertically</option></select></label>
+ <label><span>View orientation</span><select data-bulkcfg="bulkFace"><option value="mating" ${face==='mating'?'selected':''}>Mating face</option><option value="wire" ${face==='wire'?'selected':''}>Wire side (mirrored)</option></select></label>
+ <p class="muted">Circle numbers are order numbers within each insert (A1… or B1…). They are a navigation aid, not a manufacturer cavity map. Verify actual cavity positions/orientation against the exact TE insert drawing before building.</p>`); el.insertAdjacentHTML("beforeend","<h3>Pin order / contact list</h3>"+bulkTableHtml(p));
+};
+function rStudio(){
+ rStudioBase();
+ const p=part(+(S.studioSelected||0)),t=p&&T[p.t];if(!p||!t||!t.bulk)return;
+ const bg=bgeo(p),pins=t.pins,svg=[];
+ svg.push(`<svg viewBox="0 0 ${bg.w} ${bg.h}" role="img" aria-label="Schematic circular bulkhead cavity layout" style="width:100%;max-height:480px;background:var(--panel2);border:1px solid var(--line);border-radius:8px">`);
+ bg.blocks.forEach(b=>svg.push(`<circle cx="${b.cx}" cy="${b.cy}" r="${b.R+7}" fill="#3a4047" stroke="#9aa1ab" stroke-width="2"/><circle cx="${b.cx}" cy="${b.cy}" r="${b.R}" fill="#1b1e23" stroke="#9aa1ab" stroke-width="1.5"/>`));
+ pins.forEach((pin,i)=>{const q=bg.pos[i];if(!q)return;const rad=({4:10,8:9,12:8,16:6.8,20:5.8})[pin.size||16]||7;
+ svg.push(`<circle cx="${q.x}" cy="${q.y}" r="${rad}" fill="#252b33" stroke="#d1d5db" stroke-width="1.2"/><text x="${q.x}" y="${q.y+2.7}" text-anchor="middle" font-size="7" fill="#fff" font-family="monospace">${bulkOrder(p,i)}</text>`);
+ });
+ svg.push('</svg>');
+ const stage=document.createElement('div');stage.className='card';stage.innerHTML=`<div class="hd"><b>Circular insert layout</b><span class="pill wn">${(p.bulkFace||'mating')==='wire'?'WIRE SIDE · MIRRORED':'MATING FACE'}</span></div><p class="muted">Cavity circles vary by contact size. This is a circular schematic, not a verified manufacturer cavity-number map.</p>`+svg.join('');
+ const host=document.querySelector('#t-studio .studio-grid');if(host){host.insertAdjacentElement('afterend',stage);const table=document.createElement('div');table.className='card';table.innerHTML='<h3>Pin order / contact list</h3>'+bulkTableHtml(p);stage.insertAdjacentElement('afterend',table);}
+};
+document.addEventListener('change',e=>{
+ const f=e.target;if(!f.dataset.bulkcfg)return;
+ const p=part(selection&&selection.id);if(!p)return;
+ commit();p[f.dataset.bulkcfg]=f.value;save();draw();renderInsp();if(S.tab==='studio'){S.studioSelected=p.id;rStudio()}
 });
 
 /* ---------- start ---------- */
