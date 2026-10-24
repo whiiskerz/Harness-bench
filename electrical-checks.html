@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harness Bench — Electrical Checks</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0b0e13;
+  --panel: #121720;
+  --border: #2b3442;
+  --text: #e7edf5;
+  --muted: #91a0b5;
+  --blue: #56a6ff;
+  --green: #4bd6a0;
+  --yellow: #f4c66a;
+  --red: #ff747c;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 system-ui, sans-serif;
+}
+header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+header h1 { margin: 0; font-size: 22px; }
+header p { color: var(--muted); margin-bottom: 0; }
+main {
+  max-width: 1050px;
+  margin: auto;
+  padding: 20px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.card {
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+label {
+  display: block;
+  margin: 13px 0 5px;
+  color: var(--muted);
+}
+input, select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--text);
+}
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--blue);
+  color: #07111e;
+  font-weight: 700;
+  cursor: pointer;
+}
+.metric {
+  padding: 13px;
+  margin-top: 12px;
+  background: #191f2a;
+  border-radius: 8px;
+}
+.value { font-size: 23px; font-weight: 750; }
+.muted { color: var(--muted); }
+.result {
+  margin-top: 15px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.warning { color: var(--yellow); }
+.danger { color: var(--red); }
+.good { color: var(--green); }
+@media(max-width:650px) {
+  .grid { grid-template-columns: 1fr; }
+  main { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>HARNESS BENCH <span style="color:#56a6ff">/</span> Electrical Checks</h1>
+  <p>Preliminary circuit sizing and voltage-drop estimator</p>
+</header>
+<main>
+  <div class="grid">
+    <section class="card">
+      <h2>Circuit parameters</h2>
+      <label for="voltage">Supply voltage (V)</label>
+      <input id="voltage" type="number" min="0.1" step="0.1" value="14">
+      <label for="current">Load current (A)</label>
+      <input id="current" type="number" min="0" step="0.1" value="10">
+      <label for="length">One-way wire length (ft)</label>
+      <input id="length" type="number" min="0" step="0.1" value="10">
+      <label for="gauge">Copper wire gauge</label>
+      <select id="gauge">
+        <option value="18">18 AWG</option>
+        <option value="16" selected>16 AWG</option>
+        <option value="14">14 AWG</option>
+        <option value="12">12 AWG</option>
+        <option value="10">10 AWG</option>
+        <option value="8">8 AWG</option>
+        <option value="6">6 AWG</option>
+        <option value="4">4 AWG</option>
+        <option value="2">2 AWG</option>
+        <option value="1">1 AWG</option>
+        <option value="0">1/0 AWG</option>
+        <option value="-1">2/0 AWG</option>
+        <option value="-2">3/0 AWG</option>
+        <option value="-3">4/0 AWG</option>
+      </select>
+      <label for="fuse">Installed fuse rating (A)</label>
+      <input id="fuse" type="number" min="0" step="1" value="15">
+      <label for="dropLimit">Voltage-drop target (%)</label>
+      <select id="dropLimit">
+        <option value="2">2% — sensitive circuit target</option>
+        <option value="3" selected>3% — general design target</option>
+        <option value="5">5% — relaxed target</option>
+      </select>
+      <button id="calculate">Calculate circuit</button>
+    </section>
+    <section class="card">
+      <h2>Preliminary results</h2>
+      <div class="metric">
+        <div class="muted">Estimated voltage drop</div>
+        <div class="value" id="drop">—</div>
+        <div id="dropStatus" class="muted">Enter circuit parameters.</div>
+      </div>
+      <div class="metric">
+        <div class="muted">Voltage at load</div>
+        <div class="value" id="loadVoltage">—</div>
+      </div>
+      <div class="metric">
+        <div class="muted">Round-trip wire resistance</div>
+        <div class="value" id="resistance">—</div>
+      </div>
+      <div class="metric">
+        <div class="muted">Wire heating estimate</div>
+        <div class="value" id="loss">—</div>
+      </div>
+      <div id="result" class="result">
+        Results have not been calculated.
+      </div>
+    </section>
+  </div>
+  <section class="card" style="margin-top:14px">
+    <h2>Limitations</h2>
+    <p class="muted">
+      This tool estimates voltage drop using nominal copper conductor
+      resistance at approximately 20°C. It does not establish safe
+      ampacity, approve a fuse, or certify a circuit. Actual wire
+      ratings depend on insulation, temperature, bundling, routing,
+      terminals, and manufacturer specifications.
+    </p>
+    <p class="warning">
+      A calculation that passes the voltage-drop target does not
+      establish that the wire or fuse is safe.
+    </p>
+  </section>
+</main>
+<script>
+"use strict";
+/*
+ * Approximate copper resistance in ohms per 1000 ft at 20°C.
+ * These values are for voltage-drop estimation, not ampacity.
+ */
+const resistanceOhmsPer1000Ft = {
+  "18": 6.385,
+  "16": 4.016,
+  "14": 2.525,
+  "12": 1.588,
+  "10": 0.999,
+  "8": 0.6282,
+  "6": 0.3951,
+  "4": 0.2485,
+  "2": 0.1563,
+  "1": 0.1239,
+  "0": 0.0983,
+  "-1": 0.0779,
+  "-2": 0.0618,
+  "-3": 0.0490
+};
+const byId = id => document.getElementById(id);
+function calculateCircuit() {
+  const voltage = Number(byId("voltage").value);
+  const current = Number(byId("current").value);
+  const length = Number(byId("length").value);
+  const gauge = byId("gauge").value;
+  const fuse = Number(byId("fuse").value);
+  const dropLimit = Number(byId("dropLimit").value);
+  const values = [voltage, current, length, fuse, dropLimit];
+  if (
+    values.some(v => !Number.isFinite(v)) ||
+    voltage <= 0 ||
+    current < 0 ||
+    length < 0 ||
+    fuse < 0
+  ) {
+    byId("result").textContent =
+      "Enter valid, non-negative circuit values and a supply voltage above zero.";
+    return;
+  }
+  const resistancePer1000 = resistanceOhmsPer1000Ft[gauge];
+  if (resistancePer1000 === undefined) {
+    byId("result").textContent = "No resistance data is available for this gauge.";
+    return;
+  }
+  // One-way length becomes a round-trip length for a two-wire circuit.
+  const roundTripLength = length * 2;
+  const resistance = resistancePer1000 * roundTripLength / 1000;
+  const dropVolts = current * resistance;
+  const dropPercent = dropVolts / voltage * 100;
+  const loadVoltage = voltage - dropVolts;
+  const powerLoss = current * current * resistance;
+  byId("drop").textContent = dropVolts.toFixed(3) + " V (" +
+    dropPercent.toFixed(2) + "%)";
+  byId("loadVoltage").textContent = loadVoltage.toFixed(3) + " V";
+  byId("resistance").textContent = resistance.toFixed(4) + " Ω";
+  byId("loss").textContent = powerLoss.toFixed(2) + " W";
+  byId("dropStatus").textContent =
+    dropPercent <= dropLimit
+      ? "Within the selected voltage-drop target."
+      : "Exceeds the selected voltage-drop target.";
+  byId("dropStatus").className =
+    dropPercent <= dropLimit ? "good" : "warning";
+  const messages = [];
+  if (dropPercent > dropLimit) {
+    messages.push(
+      "Voltage drop exceeds the selected target. Consider a larger conductor or shorter run."
+    );
+  } else {
+    messages.push(
+      "Voltage-drop estimate is within the selected target."
+    );
+  }
+  if (loadVoltage <= 0) {
+    messages.push(
+      "CRITICAL: calculated load voltage is zero or negative. Verify the inputs."
+    );
+  }
+  if (fuse === 0 && current > 0) {
+    messages.push(
+      "WARNING: no fuse rating entered. Verify appropriate circuit protection."
+    );
+  } else if (fuse > 0 && fuse < current) {
+    messages.push(
+      "WARNING: fuse rating is below the entered load current. Verify the load profile and fuse requirements."
+    );
+  } else if (fuse > 0) {
+    messages.push(
+      "The fuse rating has not been validated against conductor ampacity, inrush current, or equipment specifications."
+    );
+  }
+  messages.push(
+    "Wire ampacity and terminal ratings remain unverified. Do not treat this result as an electrical safety approval."
+  );
+  byId("result").textContent = messages.join(" ");
+  byId("result").className = "result " +
+    (loadVoltage <= 0 ? "danger" :
+      dropPercent > dropLimit ? "warning" : "good");
+}
+byId("calculate").addEventListener("click", calculateCircuit);
+[
+  "voltage", "current", "length", "gauge", "fuse", "dropLimit"
+].forEach(id => {
+  byId(id).addEventListener("change", calculateCircuit);
+});
+calculateCircuit();
+</script>
+</body>
+</html>
