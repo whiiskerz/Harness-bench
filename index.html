@@ -372,7 +372,7 @@ function e90ProjectStarter(){
    mk(106,'gbus12',200,-70,'Trunk ground bus'),
    mk(107,'fuse6',-140,40,'Switched fuse box — ECU / coils / 8HP / flex / keypad / A/C',{1:'Coils',2:'ECU',3:'8HP',4:'Flex fuel',5:'CAN keypad',6:'A/C relay'}),
    mk(108,'relay',-140,270,'A/C compressor relay'),
-   mk(109,'e90leash1',-140,470,'Leash single board — switched accessory / heater branch'),
+   mk(109,'e90leash1',-140,470,'Leash single relay board — switched trunk fuse-box feed'),
    mk(110,'ekptrig',-400,500,'EKP trigger (signal endpoint)'),
    mk(111,'e90keypad',240,320,'CAN keypad sub-harness'),
    mk(112,'e908hp',240,160,'8HP harness — 6-position map supplied'),
@@ -405,7 +405,7 @@ function e90ProjectStarter(){
    mk(147,'heater',0,0,'Nitrous bottle heater'),
    mk(148,'relay',0,0,'Nitrous purge relay (86 from GPO15)'),
    mk(149,'bmwsmall',0,0,'Small stud — fused 12V (engine bay)'),
-   mk(150,'dual',0,0,'Leash dual board 2 — heater on B'),
+   
    mk(151,'sens3',0,0,'Nitrous pressure sensor — AIN2'),
    mk(152,'dt6',0,0,'OEM BMW pedal (DBW) — pin numbers match MaxxECU pedal plug'),
    mk(154,'dt12',0,0,'BMW X6021 — paddles'),
@@ -422,7 +422,9 @@ function e90ProjectStarter(){
    mk(163,'dt2',0,0,'Cabin DT2 #1 · fuel-pump triggers',{0:'GPO2',1:'GPO3'}),
    mk(164,'dt2',0,0,'Cabin DT2 #2 · heater trigger / pressure signal',{0:'GPO7',1:'AIN2'}),
    mk(165,'dt2',0,0,'Cabin DT2 #3 · sensor power',{0:'+5V',1:'Sensor ground'}),
+   mk(166,'relay',0,0,'Nitrous bottle heater relay · 85 = GPO7',{0:'30 · fused battery +',1:'85 · GPO7 low-side',2:'86 · switched +12V',3:'87 · heater +',4:'87a · unused'}),
    mk(167,'splice',0,0,'Cabin +5V branch splice'),
+   mk(169,'inl',0,0,'Dedicated nitrous heater contact fuse · rating TBD'),
    mk(168,'splice',0,0,'Cabin sensor-ground branch splice')
   ];
   const W=[];let wid=300;
@@ -491,8 +493,12 @@ function e90ProjectStarter(){
   drop(102,0,125,0);drop(102,1,125,1);
   wire(149,0,148,0,'Small stud fused 12V → purge relay pin 30',0,'RED');
   wire(149,0,133,3,'Small stud fused 12V → SSR battery pin',0,'RED');
-  wire(150,2,147,0,'Leash board 2 output B (relay 87) → nitrous heater +',0,'RED');
-  wire(161,2,150,6,'DT6 trunk pin 3 → Leash board 2 trigger B− (GPO7 heater control)',20,'PUR',{loom:991,circuitType:'signal'});
+  wire(160,3,169,0,'Battery distribution → dedicated nitrous heater fuse holder input (rating TBD)',0,'RED',{fuse:'HEATER_CONTACT_TBD',fa:0});
+  wire(169,1,166,0,'Dedicated heater fuse holder output → relay pin 30',0,'RED',{fuse:'HEATER_CONTACT_TBD',fa:0});
+  wire(166,3,147,0,'Nitrous heater relay pin 87 → heater + (wire/fuse size TBD)',0,'RED',{fuse:'HEATER_CONTACT_TBD',fa:0});
+  wire(157,4,166,2,'Fused switched +12V → nitrous heater relay pin 86',18,'RED',{amps:0.2,fuse:'HEATER_COIL',fa:3});
+  wire(109,3,106,6,'Leash single relay board trigger− → trunk ground bus',0,'BLK');
+  wire(161,2,166,1,'DT6 trunk pin 3 (GPO7) → nitrous heater relay pin 85',20,'PUR',{loom:991,circuitType:'signal'});
   [['TPS 1 signal (to maxx pin 3)',2,'BLU'],['TPS 2 signal (to maxx pin 6)',5,'WHT/YEL'],['5V reference (maxx pin 5)',4,'YEL/GRN'],['5V reference (maxx pin 4)',3,'YEL'],['Ground (maxx pin 2)',1,'BRN/GRN'],['Ground (maxx pin 1)',0,'BRN']].forEach(([n,i,c])=>wire(152,i,142,i,'DBW pedal '+n,0,c));
   wire(154,10,156,0,'Paddles X6021 pin 11 → sensor ground splice',0,'BRN');
   wire(154,11,102,2,'Paddles X6021 pin 12 → AIN1',0,'');
@@ -507,16 +513,17 @@ function e90ProjectStarter(){
   wire(116,0,103,4,'Shifter DT4 pin 1 (blue) → DIN4 shifter 2',0,'BLU');
   wire(116,2,156,0,'Shifter DT4 pin 3 (brown) → sensor ground splice',0,'BRN');
   parts.find(p=>p.id===107).fa={1:20,2:15,3:7.5};
+  parts.find(p=>p.id===157).fa={1:3,4:3};
   wire(149,0,158,0,'Small stud fused 12V → ECU power relay pin 30',0,'RED');
   wire(158,3,107,0,'ECU power relay pin 87 → DME fuse box input',0,'RED');
   wire(122,0,158,1,'Chassis ground → ECU power relay pin 85',0,'BLK');
   wire(121,0,160,0,'Battery + → trunk distribution block (ANL fuse in the cable)',0,'RED');
   wire(160,1,104,0,'Distribution block → Leash board 1 battery in',0,'RED');
-  wire(160,2,150,0,'Distribution block → Leash board 2 battery in',0,'RED');
-  wire(110,0,150,3,'EKP wire (key-on 12V) → Leash board 2 trigger A+',0,'GRN');
-  wire(150,3,150,5,'Jumper A+ to B+ on board 2',0,'');
-  wire(150,4,106,6,'Leash board 2 trigger A− → chassis ground',0,'BLK');
-  wire(150,1,157,0,'Leash board 2 output A → trunk fuse box input',0,'RED');
+  wire(160,2,109,0,'Distribution block → Leash single relay board battery input',0,'RED');
+  
+  
+  
+  wire(109,1,157,0,'Leash single relay board output → trunk fuse box input',0,'RED');
   wire(157,1,104,3,'Fuse box slot → Leash board 1 trigger A+',0,'RED');
   wire(157,1,104,5,'Fuse box slot → Leash board 1 trigger B+ (jumpered with A+)',0,'RED');
   wire(157,2,159,0,'Fuse box slot → starlights +',0,'RED');
@@ -902,7 +909,7 @@ const E90ZONES=[
  ['Engine bay','#ff8a1f',[112,118,119,120,122,125,126,127,128,129,133,144,149]],
  ['DME box','#e0b13a',[101,102,103,107,158,108,110,114,115,117,145,146,148,154]],
  ['Cabin','#4a86e8',[140,141,142,143,152,111,116,113,123,130,162,163,164,165,167,168]],
- ['Trunk','#3fae6a',[104,105,106,109,121,124,131,134,147,150,151,155,156,157,159,160,161]]];
+ ['Trunk','#3fae6a',[104,105,106,109,121,124,131,134,147,151,155,156,157,159,160,161,166,169]]];
 function e90Layout(force=false){
   if(!S.lay&&!force)return;S.lay=0;S.zones=[];const GAP=36,PAD=30,TOP=70,MAXH=1500;let x=0;
   E90ZONES.forEach(([name,col,ids])=>{
