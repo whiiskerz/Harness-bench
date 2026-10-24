@@ -551,8 +551,8 @@ function e90ProjectStarter(){
   wire(164,1,162,3,'Cabin DT2 #2 pin 2 → cabin DT6 pin 4 (AIN2)',20,'WHT',{circuitType:'signal'});
   wire(165,0,162,4,'Cabin DT2 #3 pin 1 → cabin DT6 pin 5 (+5V)',20,'RED',{circuitType:'sensor-power'});
   wire(165,1,162,5,'Cabin DT2 #3 pin 2 → cabin DT6 pin 6 (sensor ground)',20,'BLK',{circuitType:'sensor-ground'});
-  wire(104,4,161,0,'Leash dual A− → trunk DT6 pin 1 (GPO2)',20,'GRN',{circuitType:'signal'});
-  wire(104,6,161,1,'Leash dual B− → trunk DT6 pin 2 (GPO3)',20,'BLU',{circuitType:'signal'});
+  wire(104,4,161,0,'Leash dual A− → trunk DT6 GPO2 function (molded cavity TBD)',16,'GRN',{circuitType:'signal'});
+  wire(104,6,161,1,'Leash dual B− → trunk DT6 GPO3 function (molded cavity TBD)',16,'YEL',{circuitType:'signal'});
   [['GPO2 trigger','GRN','signal'],['GPO3 trigger','BLU','signal'],['GPO7 heater trigger','PUR','signal'],['AIN2 pressure signal','WHT','signal'],['+5V sensor supply','RED','sensor-power'],['Sensor ground','BLK','sensor-ground']].forEach((q,i)=>wire(162,i,161,i,'DT6 cabin pin '+(i+1)+' ↔ trunk pin '+(i+1)+' · '+q[0],20,q[1],{loom:993,circuitType:q[2]}));
   W.forEach(w=>{if(/^ECU 16-pin/.test(w.sig))return;if(/CAN L(ow)?\b/i.test(w.sig))w.color='PUR';else if(/CAN H(igh)?\b/i.test(w.sig))w.color='BLU'});
   // Approved trunk topology baseline: one trunk-side DT6 with three cabin DT2s.
