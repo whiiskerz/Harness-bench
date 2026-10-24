@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.13.0 — 2026-10-24
+- Reworked the E90 trunk starter topology around one trunk-side DT6 feeding three cabin DT2 branches; removed the assumed cabin-side DT6.
+- Updated the starter wire map for the owner-confirmed Leash dual-board pump assignments, 10 AWG red pump feeds, 40A board fuses, A+ to B+ control-power jumper, and separate ECU-side DT2 runs.
+- Marked unknown DT6 cavity mapping, trunk fuse slots/ratings, main fuse hardware, EKP terminals, starlights branch path, conductor count, and wire lengths as unverified rather than assigning guessed values.
+- Expanded the Harness Book with the approved trunk power, ground, Leash board, heater, starlights, fuse-box, and boundary-count records.
+- Updated valved-muffler documentation to reflect paired motors on MaxxECU polarity-reversing outputs and removed the unsupported trunk fuse-box power/ground assumption.
+
 ## v0.12.0 — 2026-10-24
 - Added direct wire routing by dragging a wire segment: dragging the visible wire creates or repositions a bend/waypoint; normal clicks still select the wire.
 - Reuses the existing selected-wire waypoint handle and preserves the wire's endpoints and electrical properties while routing.
