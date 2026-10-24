@@ -14,3 +14,9 @@
 - Shared sensor +5V and sensor-ground splice location and branch topology.
 - Valved muffler output current, Motor 2 rating for the actual actuator load, protection/fuse details, feed wire gauge and route.
 - Other previously documented ECU, BMW chassis, 8HP, Leash relay board and high-current paths still require physical verification before use as production pinouts.
+
+
+## v0.4.0 implementation notes
+- Drawing zones are saved project data and are now draggable/resizable; custom zones can be created, renamed, recolored, resized, and deleted. Undo/redo snapshots include zones.
+- Circuit Audit is based on wire records and direct endpoints. Review status is user-entered; the app does not automatically certify a circuit.
+- Expanded E90 examples preserve uncertain sensor pin/channel assignments as placeholders rather than claiming unverified connections. Flex-fuel signal is drawn to the owner-mapped DIN5 connection on the DT8 CAN/control branch.

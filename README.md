@@ -1,6 +1,6 @@
 # Harness Bench — E90 LS Example
 
-**Current version:** v0.2.0 · **Built by:** @whiiskerzbuilt
+**Current version:** v0.4.0 · **Built by:** @whiiskerzbuilt
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
 
@@ -36,3 +36,11 @@ This is documentation and design software, not a certified electrical design. Co
 - App version and creator credit: **Built by @whiiskerzbuilt**.
 
 The screening calculations are educational aids only; they do not certify wire ampacity, fuse coordination, connector ratings, or vehicle safety.
+
+
+## v0.4.0 updates
+
+- **Circuit Audit:** per-wire missing information flags, endpoint connector/pin labels, review status and notes, jump-to-wire inspection, and CSV export.
+- **Editable work zones:** drag Engine bay / DME box / Cabin / Trunk zone outlines, resize from the lower-right handle, and edit their names, colors, and dimensions in the inspector. Add or delete custom zones.
+- **Expanded E90 example:** includes fuel-pressure and A/C-pressure sensor placeholders, oil-pressure / CLT / IAT placeholders, flex-fuel signal routing, valved muffler Motor 2 endpoints, and nitrous SSR planning.
+- Sensor connector pinouts, temperature-input setup, SSR compatibility, auxiliary fuse feed, high-current sizing and protection remain to be verified against the actual installed hardware.

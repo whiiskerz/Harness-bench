@@ -171,10 +171,10 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>Harness Bench <b id="appVersion">v0.3.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>Harness Bench <b id="appVersion">v0.4.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.3.0';
+const APP_VERSION='0.4.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const KEY='harness-bench-v2';
@@ -330,7 +330,16 @@ function e90ProjectStarter(){
    mk(121,'bat',-1300,-360,'Trunk battery / main positive'),
    mk(122,'gnd',-1050,100,'Engine ground point'),
    mk(123,'gnd',-800,100,'Sensor ground reference — ECU only'),
-   mk(124,'gnd',-800,520,'Trunk accessory ground bus reference')
+   mk(124,'gnd',-800,520,'Trunk accessory ground bus reference'),
+   mk(125,'sens3',-850,280,'Fuel pressure sensor — 0–100 psi / AIN6'),
+   mk(126,'sens3',-850,460,'A/C pressure sensor — AIN7'),
+   mk(127,'sens3',-850,640,'Oil pressure sensor — AIN4'),
+   mk(128,'sens2',-850,820,'Coolant temp sensor — CLT (verify sensor type)'),
+   mk(129,'sens2',-850,1000,'Intake air temp sensor — IAT (verify sensor type)'),
+   mk(130,'e90dt4shifter',650,760,'BMW / 8HP shifter signal interface — verify exact mapping'),
+   mk(131,'load2',950,450,'Valved mufflers — Motor 2 H-bridge (current TBD)'),
+   mk(133,'ssr',950,820,'Nitrous SSR interface — verify model / load circuit'),
+   mk(134,'fuse6',900,1020,'Auxiliary switched fuse box — nitrous SSR signal feed (upstream feed / fuse TBD)')
   ];
   const W=[];let wid=300;
   const wire=(ap,ai,bp,bi,sig,awg,color,extra={})=>{const low=sig.toLowerCase();const loom=low.includes('can ')?992:((low.includes('pump')||low.includes('fp1')||low.includes('fp2')||low.includes('ekp')||low.includes('trunk'))?991:990);W.push(mkW({p:ap,i:ai},{p:bp,i:bi},{id:wid++,sig,awg,color,loom,...extra}));};
@@ -360,9 +369,21 @@ function e90ProjectStarter(){
   wire(105,1,106,1,'Surge pump 1 ground → trunk ground bus',10,'BLK');
   wire(105,3,106,2,'Surge pump 2 ground → trunk ground bus',10,'BLK');
   // Sensor signal and sensor ground are intentionally not tied to chassis ground.
-  wire(102,0,115,0,'MaxxECU sensor +5V → flex fuel sensor supply (verify sensor spec)',20,'RED');
+  wire(107,4,115,0,'Fused switched +12V → flex fuel sensor supply (verify sensor spec)',20,'RED');
   wire(102,1,115,2,'MaxxECU sensor ground → flex fuel sensor ground (sensor ground only)',20,'BLK');
-  wire(115,1,102,5,'Flex fuel signal → MaxxECU DIN5',20,'YEL');
+  wire(115,1,103,5,'Flex fuel signal → MaxxECU DIN5 (DT8 CAN/control pin 6)',20,'YEL');
+  // Additional owner-described sensor and control circuits. Sensor cavity details are generic placeholders until the actual sensor datasheets/connectors are confirmed.
+  wire(102,4,125,2,'AIN6 fuel pressure signal ← 0–100 psi sensor',20,'WHT');
+  wire(102,0,125,0,'Sensor +5V → fuel pressure sensor (verify sensor supply spec)',20,'RED');
+  wire(102,1,125,1,'Sensor ground → fuel pressure sensor',20,'BLK');
+  wire(102,5,126,2,'AIN7 A/C pressure signal ← pressure sensor',20,'WHT');
+  wire(102,0,126,0,'Sensor +5V → A/C pressure sensor (verify sensor supply spec)',20,'RED');
+  wire(102,1,126,1,'Sensor ground → A/C pressure sensor',20,'BLK');
+  wire(103,6,133,2,'GPO4 nitrous enable → SSR signal − / low-side trigger (verify SSR model)',18,'PUR');
+  wire(134,3,133,1,'Auxiliary fused switched +12V → SSR signal + (fuse / feed TBD)',18,'RED');
+  wire(107,0,134,0,'Switched distribution input → auxiliary fuse-box input (upstream feed / protection TBD)',0,'RED',{amps:0,fuse:'AUX_FEED_TBD',fa:0});
+  wire(101,9,131,0,'Motor 2 H-bridge + → valved muffler motor (current / paired outputs TBD)',0,'RED');
+  wire(101,10,131,1,'Motor 2 H-bridge − → valved muffler motor (current / paired outputs TBD)',0,'BLK');
   // Planning-only high-current topology. Cable size, protection, routing,
   // crimp specification and torque are intentionally marked TBD.
   wire(121,0,119,0,'Battery positive → BMW big-stud junction (high-current cable; size/protection TBD)',0,'RED',{amps:0,fuse:'MAIN_FEED_TBD',fa:0});
@@ -375,6 +396,7 @@ function e90ProjectStarter(){
 
 let S=Object.assign({scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'project'},e90ProjectStarter());
 try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&Array.isArray(o.parts))S=Object.assign(S,o)}}catch(e){}
+S.zones=(S.zones||[]).map((z,i)=>Object.assign({id:'zone-saved-'+i},z,{id:z.id||'zone-saved-'+i}));
 const save=()=>{CHKD=true;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const nid=()=>S.nid++;
 const part=id=>S.parts.find(p=>p.id===+id);
@@ -456,7 +478,7 @@ function draw(){
   computeSides();ERR=errSets();const V=v(),out=[];
   out.push(`<defs><pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="var(--grid)"/></pattern></defs>`);
   out.push(`<g transform="translate(${V.x} ${V.y}) scale(${V.k})"><rect data-bg="1" x="-5000" y="-5000" width="10000" height="10000" fill="url(#g)"/>`);
-  (S.zones||[]).forEach(z=>out.push(`<g pointer-events="none"><rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="16" fill="${z.col}" fill-opacity=".07" stroke="${z.col}" stroke-opacity=".6" stroke-width="2" stroke-dasharray="10 8"/><text x="${z.x+20}" y="${z.y+42}" fill="${z.col}" font-family="Barlow Condensed,sans-serif" font-weight="800" font-size="34" letter-spacing="3">${z.name.toUpperCase()}</text></g>`));
+  (S.zones||[]).forEach(z=>out.push(`<g data-zone="${esc(z.id)}" style="cursor:move"><rect data-zone="${esc(z.id)}" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="16" fill="${z.col}" fill-opacity=".07" stroke="${z.col}" stroke-opacity=".75" stroke-width="2" stroke-dasharray="10 8"/><text pointer-events="none" x="${z.x+20}" y="${z.y+42}" fill="${z.col}" font-family="Barlow Condensed,sans-serif" font-weight="800" font-size="34" letter-spacing="3">${esc(z.name.toUpperCase())}</text><rect data-zone-resize="${esc(z.id)}" x="${z.x+z.w-20}" y="${z.y+z.h-20}" width="14" height="14" rx="3" fill="${z.col}" stroke="var(--fg)" stroke-width="1.5" style="cursor:nwse-resize"/></g>`));
   if(S.fw!=null)out.push(fwSVG(V));
   if(S.tk!=null)out.push(tkSVG(V));
   const handles=[];
@@ -541,9 +563,10 @@ cv.addEventListener('pointerdown',e=>{
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
   const V=v();
   if(ptrs.size===2){const[a,b]=[...ptrs.values()];G={kind:'pinch',d:Math.hypot(a.x-b.x,a.y-b.y)||1,k:V.k,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,vx:V.x,vy:V.y,moved:true};return}
-  const pin=e.target.closest('[data-pin]'),pt=e.target.closest('[data-part]'),wr=e.target.closest('[data-wire]'),fwh=e.target.closest('[data-fw]'),tkh=e.target.closest('[data-tk]'),vh=e.target.closest('[data-vh]');
-  G={kind:pin?'pin':vh?'vh':wr?'wire':pt?'part':fwh?'fw':tkh?'tk':'bg',sx:e.clientX,sy:e.clientY,moved:false,pin:pin&&pin.dataset.pin,part:pt&&+pt.dataset.part,wire:wr&&+wr.dataset.wire,vh:vh&&+vh.dataset.vh,vx:V.x,vy:V.y};
+  const pin=e.target.closest('[data-pin]'),pt=e.target.closest('[data-part]'),wr=e.target.closest('[data-wire]'),fwh=e.target.closest('[data-fw]'),tkh=e.target.closest('[data-tk]'),vh=e.target.closest('[data-vh]'),zr=e.target.closest('[data-zone-resize]'),zn=e.target.closest('[data-zone]');
+  G={kind:pin?'pin':vh?'vh':wr?'wire':pt?'part':fwh?'fw':tkh?'tk':zr?'zoneResize':zn?'zone':'bg',sx:e.clientX,sy:e.clientY,moved:false,pin:pin&&pin.dataset.pin,part:pt&&+pt.dataset.part,wire:wr&&+wr.dataset.wire,vh:vh&&+vh.dataset.vh,zone:(zr||zn)&&(zr||zn).dataset.zoneResize||(zr||zn)&&(zr||zn).dataset.zone,vx:V.x,vy:V.y};
   if(G.kind==='part'){const p=part(G.part);G.ox=p.x;G.oy=p.y}
+  if(G.kind==='zone'||G.kind==='zoneResize'){const z=(S.zones||[]).find(q=>q.id===G.zone);if(z){G.ox=z.x;G.oy=z.y;G.ow=z.w;G.oh=z.h;selection={type:'zone',id:z.id};renderInsp()}}
   if(G.kind==='fw')G.ox=S.fw;
   if(G.kind==='tk')G.ox=S.tk;
 });
@@ -557,11 +580,12 @@ cv.addEventListener('pointermove',e=>{
     V.k=k;V.x=G.cx-r.left-wx*k;V.y=G.cy-r.top-wy*k;draw();return;
   }
   const dx=e.clientX-G.sx,dy=e.clientY-G.sy;
-  if(!G.moved&&Math.hypot(dx,dy)>6){G.moved=true;if(G.kind==='part'||G.kind==='fw'||G.kind==='tk'||G.kind==='vh')commit()}
+  if(!G.moved&&Math.hypot(dx,dy)>6){G.moved=true;if(['part','fw','tk','vh','zone','zoneResize'].includes(G.kind))commit()}
   if(!G.moved)return;
   if(G.kind==='fw'){S.fw=snap(G.ox+dx/V.k);draw();return}
   if(G.kind==='tk'){S.tk=snap(G.ox+dx/V.k);draw();return}
   if(G.kind==='vh'){const wd=toWorld(e.clientX,e.clientY),w=wireById(G.vh);if(w){w.v={x:Math.round(wd.x/5)*5,y:Math.round(wd.y/5)*5};draw()}return}
+  if(G.kind==='zone'||G.kind==='zoneResize'){const z=(S.zones||[]).find(q=>q.id===G.zone);if(z){if(G.kind==='zone'){z.x=snap(G.ox+dx/V.k);z.y=snap(G.oy+dy/V.k)}else{z.w=Math.max(240,snap(G.ow+dx/V.k));z.h=Math.max(240,snap(G.oh+dy/V.k))}draw()}return}
   if(G.kind==='part'){
     if(!selection||selection.id!==G.part||selection.type!=='part'){selection={type:'part',id:G.part};renderInsp()}
     const p=part(G.part);p.x=snap(G.ox+dx/V.k);p.y=snap(G.oy+dy/V.k);draw();
@@ -574,7 +598,7 @@ function up(e){
   if(G.kind==='pinch'){if(ptrs.size===0)G=null;save();return}
   const g=G;G=null;
   if(g.moved){save();return}
-  if(g.kind==='fw'||g.kind==='tk'||g.kind==='vh')return;
+  if(g.kind==='fw'||g.kind==='tk'||g.kind==='vh'||g.kind==='zone'||g.kind==='zoneResize') { if(g.kind==='zone'||g.kind==='zoneResize'){save();renderInsp()} return; }
   if(g.kind==='pin')return pinTap(g.pin);
   if(g.kind==='wire'){pending=null;selection={type:'wire',id:g.wire};renderInsp();draw();hint();return}
   if(g.kind==='part'){pending=null;selection={type:'part',id:g.part};renderInsp();draw();hint();return}
@@ -644,10 +668,10 @@ function addPart(id){
 S.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});
 /* ---------- E90 example layout by zone ---------- */
 const E90ZONES=[
- ['Engine bay','#ff8a1f',[112,118,119,120,122]],
+ ['Engine bay','#ff8a1f',[112,118,119,120,122,125,126,127,128,129,133]],
  ['DME box','#e0b13a',[101,102,103,108,110,114,115,117]],
- ['Cabin','#4a86e8',[111,116,113,123]],
- ['Trunk','#3fae6a',[104,105,106,107,109,121,124]]];
+ ['Cabin','#4a86e8',[111,116,113,123,130]],
+ ['Trunk','#3fae6a',[104,105,106,107,109,121,124,131,134]]];
 function e90Layout(){
   if(!S.lay)return;S.lay=0;S.zones=[];const GAP=36,PAD=30,TOP=70,MAXH=1500;let x=0;
   E90ZONES.forEach(([name,col,ids])=>{
@@ -656,7 +680,7 @@ function e90Layout(){
     ps.forEach(p=>{const d=dims(p);if(cy>TOP&&cy+d.h>MAXH){cx+=colW+GAP;cy=TOP;colW=0}
       p.x=cx;p.y=cy;cy+=d.h+GAP;colW=Math.max(colW,d.w);right=Math.max(right,cx+d.w)});
     const h=Math.min(MAXH,Math.max(...ps.map(p=>p.y+dims(p).h)))+PAD-0;
-    S.zones.push({name,col,x:x,y:0,w:right+PAD-x,h:h});x=right+PAD+90;
+    S.zones.push({id:'zone-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-'),name,col,x:x,y:0,w:Math.max(420,right+PAD-x),h:Math.max(620,h)});x=right+PAD+90;
   });
   S.view=null;save();
 }
@@ -697,6 +721,9 @@ function renderInsp(){
      ${t.fz?fuseSection(p,t):''}
      ${t.node?'':`<h3>Pin labels</h3><div class="plist">${t.pins.map((pin,i)=>`<label><span>${esc(pin.p)}</span><input data-pl="${i}" value="${esc((p.pl&&p.pl[i])||'')}" placeholder="${esc(pin.l||'name this pin')}"></label>`).join('')}</div>`}
      <div class="row"><button class="btn" data-act="flip">Flip pin side</button><button class="btn" data-act="dupPart">Duplicate</button><button class="btn danger" data-act="delPart">Delete part</button></div>`;
+  }else if(selection&&selection.type==='zone'){
+    const z=(S.zones||[]).find(q=>q.id===selection.id);if(!z){selection=null;return renderInsp()}
+    el.innerHTML=`<h2>Zone / work area</h2><p class="muted">Drag the dashed border to move it. Drag the square at the bottom-right to resize it.</p><label><span>Zone name</span><input data-zi="name" value="${esc(z.name)}"></label><label><span>Zone color</span><input data-zi="col" type="color" value="${esc(z.col)}"></label><div class="two"><label><span>Width</span><input data-zi="w" type="number" min="240" value="${z.w}"></label><label><span>Height</span><input data-zi="h" type="number" min="240" value="${z.h}"></label></div><div class="row"><button class="btn danger" data-act="delZone">Delete zone</button><button class="btn" data-act="zoneDone">Done</button></div>`;
   }else if(selection&&selection.type==='wire'){
     const w=S.wires.find(x=>x.id===selection.id);if(!w){selection=null;return renderInsp()}
     const gs=`<option value="0" ${+w.awg===0?'selected':''}>TBD / not sized</option>`+Object.keys(AMPS).sort((a,b)=>b-a).map(g=>`<option value="${g}" ${+w.awg===+g?'selected':''}>${g} AWG</option>`).join('');
@@ -710,6 +737,7 @@ function renderInsp(){
       <label><span>Current (A)</span><input data-wi="amps" type="number" min="0" step="0.1" inputmode="decimal" value="${w.amps||''}"></label>
       <label><span>Fuse group</span><input data-wi="fuse" value="${esc(w.fuse)}" placeholder="ECU"></label>
       <label><span>Fuse size (A)</span><input data-wi="fa" type="number" min="0" step="0.5" inputmode="decimal" value="${w.fa||''}"></label>
+      <label><span>Review status</span><select data-wi="review"><option ${(!w.review||w.review==='Draft')?'selected':''}>Draft</option><option ${w.review==='Needs verification'?'selected':''}>Needs verification</option><option ${w.review==='Verified'?'selected':''}>Verified</option></select></label>
      </div>
      <div class="call"><b>Live wire screening</b><div id="wireLiveAudit">${wireAuditHTML(w)}</div><p class="muted">Preliminary estimate only: copper at 20°C, 14 V supply, and round-trip length of twice the entered/estimated run. This does not establish safe ampacity or fuse selection.</p></div>
      <div class="sw">${['RED','BLK','GRN','YEL','BLU','ORG','PUR','WHT','BRN','GRY','PNK'].map(c=>`<button class="swb" data-sw="${c}" title="${c}" aria-label="${c}" style="background:${COLORS[c]}"></button>`).join('')}</div>
@@ -717,12 +745,13 @@ function renderInsp(){
       <label><span>Loom</span><select data-loom="1"><option value="">None</option>${(S.looms||[]).map(l=>`<option value="${l.id}" ${w.loom===l.id?'selected':''}>${esc(l.name)}</option>`).join('')}<option value="new">+ New loom</option></select></label>
       <label><span>Twisted with</span><select data-tw="1"><option value="">Not twisted</option>${S.wires.filter(x=>x.id!==w.id).map(x=>`<option value="${x.id}" ${w.tw&&x.tw===w.tw?'selected':''}>#${S.wires.indexOf(x)+1} ${esc(x.sig||'unnamed')}</option>`).join('')}</select></label>
      </div>
+     <label><span>Review notes</span><textarea data-wi="reviewNotes" placeholder="Source, datasheet, test result, crimp spec…">${esc(w.reviewNotes||'')}</textarea></label>
      <div class="row"><button class="btn" data-act="spliceHere">Splice here</button><button class="btn" data-act="resetRoute">Reset route</button></div>
      <p class="muted">Drag the round handle on the wire to bend its route. Leave length empty to measure it from the drawing using your scale.</p>
      <div class="row"><button class="btn" data-act="useAsDefault">Use gauge + color for new wires</button><button class="btn danger" data-act="delWire">Delete wire</button></div>`;
   }else{
     el.innerHTML=`<h2>Inspector</h2><p class="muted">Tap a part or a wire to edit it. Press <b>+ Add part</b> to bring in connectors, relays, sensors and splices.</p>
-     <p class="muted"><b>${S.parts.length}</b> parts • <b>${S.wires.length}</b> wires</p>${loomPanel()}`;
+     <p class="muted"><b>${S.parts.length}</b> parts • <b>${S.wires.length}</b> wires • <b>${(S.zones||[]).length}</b> zones</p><div class="row"><button class="btn" data-act="newZone">+ Add work zone</button></div>${loomPanel()}`;
   }
 }
 
@@ -1001,6 +1030,27 @@ let CHK=[],CHKD=true,ERR={w:new Set(),p:new Set()};
 function getChk(){if(CHKD){CHK=compatIssues();CHKD=false}return CHK}
 function errSets(){const e={w:new Set(),p:new Set()};getChk().forEach(x=>{if(x.lvl==='bd'){x.wires.forEach(i=>e.w.add(i));x.parts.forEach(i=>e.p.add(i))}});return e}
 function chkBadge(){const n=getChk().filter(x=>x.lvl==='bd').length,b=document.querySelector('#tabs [data-tab="checks"]');if(b){b.textContent=n?'Checks ('+n+')':'Checks';b.classList.toggle('bad',n>0)}}
+function auditRows(){
+ const rows=[];
+ S.wires.forEach((w,i)=>{
+  const a=part(w.a.p),b=part(w.b.p),name=w.sig||`Wire #${i+1}`;
+  const power=/\b(power|pump|starter|alternator|battery|switched|coil|heater|fan|compressor|motor|fuel|12v)\b/i.test(name);
+  const flags=[];
+  if(!w.sig)flags.push('missing signal name');
+  if(!w.color)flags.push('missing color');
+  if(!+w.awg)flags.push('gauge TBD');
+  if(!+w.len)flags.push('routed length not entered');
+  if(power&&!+w.amps)flags.push('current TBD');
+  if(power&&(!w.fuse||!+w.fa)&&!/ground|gnd|negative/i.test(name))flags.push('protection details TBD');
+  if(!w.review||w.review==='Draft')flags.push('not reviewed');
+  rows.push({wire:w,id:w.id,index:i+1,name,from:a?endName(w.a):'missing endpoint',to:b?endName(w.b):'missing endpoint',flags,status:w.review||'Draft'});
+ });
+ return rows;
+}
+function renderCircuitAudit(){
+ const rows=auditRows(),open=rows.filter(r=>r.flags.length),verified=rows.filter(r=>r.status==='Verified'&&!r.flags.length).length;
+ return `<div class="card"><div class="hd"><b>Circuit audit</b><span class="pill ${open.length?'wn':'ok'}">${open.length} wires need attention</span></div><p class="muted">Use “Inspect wire” to jump to the selected wire in Draw. Endpoint labels show the direct from/to connector and pin. “Verified” is a user review status, not an automated safety certification.</p><div class="row"><span class="pill">${rows.length} wire segments</span><span class="pill ok">${verified} fully reviewed</span><button class="btn" data-act="auditExport">Export audit CSV</button></div><div class="tw"><table><thead><tr><th>Circuit / wire</th><th>From → To</th><th>Status</th><th>Audit findings</th><th>Action</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.from)}<br>→ ${esc(r.to)}</td><td><span class="pill ${r.status==='Verified'?'ok':r.status==='Needs verification'?'wn':''}">${esc(r.status)}</span></td><td>${r.flags.length?esc(r.flags.join('; ')):'No basic audit flags'}</td><td><button class="btn" data-audit-wire="${r.id}">Inspect wire</button></td></tr>`).join('')}</tbody></table></div></div>`;
+}
 function rChecks(){
   const issues=[];
   S.wires.forEach((w,i)=>{
@@ -1024,6 +1074,7 @@ function rChecks(){
   getChk().forEach(x=>issues.push([x.lvl,x.msg,x]));
   issues.sort((a,b)=>({bd:0,wn:1,in:2}[a[0]]-{bd:0,wn:1,in:2}[b[0]]));
   document.getElementById('t-checks').innerHTML=`<h2>Checks</h2>
+   ${renderCircuitAudit()}
    ${issues.length?`<div class="card"><ul class="tight">${issues.map(x=>`<li class="${x[0]}">${x[1]}</li>`).join('')}</ul></div>`:'<div class="call"><span class="ok">Nothing to fix.</span> Every wire has a color and name, and no pin has two wires.</div>'}
    ${fwHTML}
    <h3>What the compatibility check looks at</h3>
@@ -1069,7 +1120,7 @@ function rProject(){
  <div class="dash-stats"><div class="card stat"><span>COMPONENTS</span><b>${partCount}</b><small>in active drawing</small></div><div class="card stat"><span>WIRE RUNS</span><b>${wireCount}</b><small>drawn connections</small></div><div class="card stat"><span>CONNECTED PARTS</span><b>${connected}</b><small>touching a wire</small></div><div class="card stat"><span>DESIGN STATUS</span><b class="status-warn">IN PROGRESS</b><small>verify before fabrication</small></div></div>
  <h3>Example harness architecture</h3><p class="muted">A quick visual orientation for the build. This is a system overview, not a pin-accurate schematic. Use Draw, Pinouts and Checks for detailed work.</p>
  <div class="system-map card"><div class="sys-node power"><b>TRUNK POWER</b><span>Battery · main protection</span><span>Switched fuse distribution</span></div><div class="sys-arrow">↓</div><div class="sys-node ecu"><b>MAXXECU RACE</b><span>DT12 power / GPOs</span><span>DT8 analog + control</span></div><div class="sys-split"><div class="sys-branch"><div class="sys-arrow">↙</div><div class="sys-node"><b>FUEL SYSTEM</b><span>Leash dual relay board</span><span>535 lift / 525 staged pump</span></div></div><div class="sys-branch"><div class="sys-arrow">↓</div><div class="sys-node"><b>DRIVER / TRANS</b><span>CAN keypad · 8HP</span><span>Keep chassis CAN separate</span></div></div><div class="sys-branch"><div class="sys-arrow">↘</div><div class="sys-node"><b>ENGINE / BODY</b><span>Coils · A/C · fan interface</span><span>Flex fuel · nitrous SSR</span></div></div></div></div>
- <div class="call"><b>v0.3.0 example update:</b> the drawing includes a planning-level battery / starter / alternator / engine-ground / trunk-ground topology. High-current cable gauge, fuse strategy, routing, crimp specification and torque are marked TBD—not validated design values.</div>
+ <div class="call"><b>v0.4.0 example update:</b> the drawing includes owner-described ECU control, flex-fuel, fuel-pressure, A/C-pressure, fan/nitrous control placeholders, plus planning-level battery / starter / alternator / engine-ground / trunk-ground topology. High-current cable gauge, fuse strategy, routing, crimp specification and torque are marked TBD—not validated design values.</div>
  <div class="grid2"><div class="card"><div class="hd"><b>Confirmed from your notes</b><span class="pill ok">Owner supplied</span></div><ul class="tight"><li>MaxxECU Race Gen 1.</li><li>DT12: GPO2 fuel pump 1, GPO3 fuel pump 2, GPO6 A/C clutch, ECU switched +12V; alternator excite unused for the self-exciting Speedway alternator.</li><li>DT8 analog: +5V, dedicated sensor ground, paddle AIN1, fuel-pressure signal, A/C-pressure signal and fan PWM/GPO5.</li><li>DT8 CAN/control: CAN L/H, brake DIN1, shifter inputs, flex-fuel DIN5, nitrous GPO4 to SSR.</li><li>BMW X60001 interface: pin 20 fan-PWM interface, pin 38 brake switch, pins 7/8 chassis CAN L/H.</li><li>CAN keypad and owner-mapped six-position 8HP interface.</li></ul></div>
  <div class="card"><div class="hd"><b>Critical design rules</b><span class="pill wn">Verify first</span></div><ul class="tight"><li>ECU GPOs are low-side triggers; they do not power pumps or other loads directly.</li><li>Keep MaxxECU sensor ground isolated from chassis/engine ground.</li><li>Do not bridge BMW chassis CAN into the standalone CAN bus without verified topology and compatibility.</li><li>8HP cavity orientation, Leash terminal behavior, fuse sizes, wire gauges and high-current paths remain to be verified.</li><li>Do not treat the drawing as a production-ready harness until every pinout, current load, protection device and endpoint has been checked.</li></ul></div></div>
  <div class="card"><div class="hd"><b>Recommended workflow</b><span class="pill">Design → verify → build</span></div><ol class="tight"><li><b>Draw:</b> place components and connect actual cavities.</li><li><b>Pinouts:</b> inspect every endpoint, signal, color and gauge.</li><li><b>Checks:</b> resolve duplicate pins, missing details and fuse-sizing warnings.</li><li><b>Wire list / Cut list / Parts list:</b> export shop paperwork from the same design.</li><li><b>Backup:</b> save a JSON snapshot before major changes.</li></ol><div class="row"><button class="btn primary" data-act="goDraw">Start drawing</button><button class="btn" data-act="exportDiagram">Export current SVG</button><button class="btn" data-act="bkQuick">Copy project backup</button></div></div>`;
@@ -1244,8 +1295,13 @@ document.addEventListener('click',e=>{
   if(d.sw){const w=S.wires.find(x=>x.id===(selection&&selection.id));if(w){commit();w.color=d.sw;save();renderInsp();draw()}return}
   if(d.copy)return copy(CSVS[d.copy](),b);
   if(d.edit){selection={type:'wire',id:+d.edit};showTab('draw');return}
+  if(d.auditWire){selection={type:'wire',id:+d.auditWire};showTab('draw');return}
   switch(d.act){
    case'goMock':showTab('mock');break;case'goChecks':showTab('checks');break;case'goDraw':showTab('draw');break;
+   case'newZone':{commit();S.zones=S.zones||[];const id='zone-custom-'+Date.now();S.zones.push({id,name:'New work zone',col:'#4a86e8',x:snap(toWorld(rectOf().left+rectOf().width/2,rectOf().top+rectOf().height/2).x),y:snap(toWorld(rectOf().left+rectOf().width/2,rectOf().top+rectOf().height/2).y),w:520,h:420});selection={type:'zone',id};save();draw();renderInsp();toast('Zone added — drag border to move, corner to resize');break;}
+   case'delZone':{if(selection?.type==='zone'){commit();S.zones=(S.zones||[]).filter(z=>z.id!==selection.id);selection=null;save();draw();renderInsp()}break;}
+   case'zoneDone':{selection=null;save();draw();renderInsp();break;}
+   case'auditExport':copy(csv([['Wire ID','Signal','From','To','Gauge AWG','Color','Length in','Current A','Fuse group','Fuse A','Review status','Review notes','Findings']].concat(auditRows().map(r=>[r.id,r.name,r.from,r.to,r.wire.awg,r.wire.color,r.wire.len,r.wire.amps,r.wire.fuse,r.wire.fa,r.status,r.wire.reviewNotes||'',r.flags.join('; ')]))),b);break;
    case'exportDiagram':exportDiagram();break;case'printDiagram':printDiagram();break;case'bkQuick':copy(JSON.stringify(S),b);break;
    case'studioSave':{S.studioPics=S.studioPics||{};S.studioStatus=S.studioStatus||{};const id=+(document.getElementById('studioPart')?.value||S.studioSelected);const pic=document.getElementById('studioPic')?.value.trim()||'';if(pic)S.studioPics[id]=pic;else delete S.studioPics[id];S.studioStatus[id]=document.getElementById('studioStatus')?.value||'Needs photo / verification';S.studioSelected=id;save();rStudio();toast('Component details saved');break;}
    case'studioFlip':toast('Confirm mating-face vs wire-side orientation from manufacturer documentation before termination');break;
@@ -1296,6 +1352,7 @@ document.addEventListener('input',e=>{
   if(t.id==='strip'){S.strip=t.value===''?0:+t.value;save();const p=t.selectionStart;rCut();const n=document.getElementById('strip');n.focus();try{n.setSelectionRange(p,p)}catch(_){}return}
   if(d.fz!==undefined){const p=part(selection&&selection.id);if(p){commitOnce('fz');(p.fa=p.fa||{})[d.fz]=t.value?+t.value:0;save();draw()}return}
   if(d.lm){const l=(S.looms||[]).find(x=>x.id===+d.lid);if(l){commitOnce('lm'+d.lid+d.lm);l[d.lm]=t.value;save();draw()}return}
+  if(d.zi){const z=(S.zones||[]).find(q=>q.id===selection?.id);if(z){commitOnce('zi'+d.zi);if(d.zi==='w'||d.zi==='h')z[d.zi]=Math.max(240,+t.value||240);else z[d.zi]=t.value;save();draw()}return}
   if(!selection)return;
   if(d.loom){commit();const w=wireById(selection.id);if(t.value==='new'){const l=newLoom();w.loom=l.id}else w.loom=t.value?+t.value:null;S.def.loom=w.loom;save();renderInsp();draw();return}
   if(d.tw){commit();const w=wireById(selection.id);S.wires.forEach(x=>{if(w.tw&&x.tw===w.tw)x.tw=null});w.tw=null;const o=t.value?wireById(t.value):null;if(o){S.wires.forEach(x=>{if(o.tw&&x.tw===o.tw)x.tw=null});const id=nid();w.tw=id;o.tw=id}save();renderInsp();draw();return}
@@ -1311,12 +1368,12 @@ document.addEventListener('input',e=>{
 
 /* ---------- undo / redo ---------- */
 const UNDO=[],REDO=[];
-const snapS=()=>JSON.stringify({parts:S.parts,wires:S.wires,nid:S.nid,fw:S.fw,tk:S.tk,looms:S.looms});
+const snapS=()=>JSON.stringify({parts:S.parts,wires:S.wires,zones:S.zones,nid:S.nid,fw:S.fw,tk:S.tk,looms:S.looms});
 function syncUndo(){const u=document.getElementById('undoBtn'),r=document.getElementById('redoBtn');if(u)u.disabled=!UNDO.length;if(r)r.disabled=!REDO.length}
 function commit(){UNDO.push(snapS());if(UNDO.length>60)UNDO.shift();REDO.length=0;syncUndo()}
 let _ck='',_ct=0;
 function commitOnce(k){const n=Date.now();if(_ck===k&&n-_ct<1200){_ct=n;return}_ck=k;_ct=n;commit()}
-function applySnap(j){const o=JSON.parse(j);S.parts=o.parts;S.wires=o.wires;S.nid=o.nid;S.fw=o.fw;S.tk=o.tk;S.looms=o.looms||[];selection=null;pending=null;save();syncBar();draw();renderInsp();hint();syncUndo()}
+function applySnap(j){const o=JSON.parse(j);S.parts=o.parts;S.wires=o.wires;S.zones=o.zones||S.zones||[];S.nid=o.nid;S.fw=o.fw;S.tk=o.tk;S.looms=o.looms||[];selection=null;pending=null;save();syncBar();draw();renderInsp();hint();syncUndo()}
 function doUndo(){if(!UNDO.length)return toast('Nothing to undo');REDO.push(snapS());applySnap(UNDO.pop())}
 function doRedo(){if(!REDO.length)return toast('Nothing to redo');UNDO.push(snapS());applySnap(REDO.pop())}
 document.addEventListener('keydown',e=>{

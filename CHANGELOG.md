@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.4.0 — 2026-10-23
+- Added a Circuit Audit table with per-wire missing-data flags, direct connector/pin endpoints, review status, review notes, jump-to-wire inspection, and CSV export.
+- Added wire review statuses: Draft, Needs verification, and Verified. “Verified” is a manual review label and does not certify safety.
+- Made E90 drawing work-area zones (Engine bay, DME box, Cabin, Trunk) draggable and resizable. Zone name, color, dimensions, and deletion are available in the inspector; custom zones can be added.
+- Added additional E90 example components for fuel pressure, A/C pressure, oil pressure, CLT, IAT, shifter interface, valved mufflers, and nitrous SSR planning.
+- Corrected the example flex-fuel signal route to the DT8 CAN/control branch pin mapped as DIN5, and changed the flex sensor supply branch to the switched fuse-box output with sensor-spec verification noted.
+- Added explicit TBD notes for uncertain sensor types/channels, SSR model, auxiliary fuse feed, and high-current wiring. Example remains a planning model, not a production-ready harness.
+
+
 ## v0.3.0 — 2026-10-23
 - Added live wire screening to the wire inspector: estimated length, voltage drop, percentage drop, approximate resistive loss, and warnings for missing current/fuse details.
 - Added the E90 example’s battery-positive, starter B+, alternator B+, engine-ground and trunk-ground topology as planning-level wire runs.
