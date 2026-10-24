@@ -205,7 +205,7 @@ a{color:var(--accent)}
 <footer class="app-footer"><span>WireForge <b id="appVersion">v0.12.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.12.0';
+const APP_VERSION='0.13.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -376,11 +376,11 @@ function e90ProjectStarter(){
    mk(103,'e90can8',-560,310,'DT8_CAN_CONTROL'),
    mk(104,'dual',-160,-300,'Leash dual fuel pump relay board'),
    mk(105,'surge',180,-300,'Surge tank — Walbro 535 FP1 / 525 FP2'),
-   mk(106,'gbus12',200,-70,'Trunk ground bus'),
+   mk(106,'gbus12',200,-70,'Trunk chassis ground point — ring-terminal stack'),
    mk(107,'fuse6',-140,40,'Switched fuse box — ECU / coils / 8HP / flex / keypad / A/C',{1:'Coils',2:'ECU',3:'8HP',4:'Flex fuel',5:'CAN keypad',6:'A/C relay'}),
    mk(108,'relay',-140,270,'A/C compressor relay'),
    mk(109,'e90leash1',-140,470,'Leash single relay board — switched trunk fuse-box feed'),
-   mk(110,'ekptrig',-400,500,'EKP trigger (signal endpoint)'),
+   mk(110,'ekptrig',-400,500,'BMW EKP control wire — DME-box source cavity TBD'),
    mk(111,'e90keypad',240,320,'CAN keypad sub-harness'),
    mk(112,'e908hp',240,160,'8HP harness — 6-position map supplied'),
    mk(113,'canhub4',-70,650,'MaxxECU / 8HP / keypad CAN hub (if required by topology)'),
@@ -401,7 +401,7 @@ function e90ProjectStarter(){
    mk(128,'sens2',-850,820,'Coolant temp sensor — CLT (verify sensor type)'),
    mk(129,'sens2',-850,1000,'Intake air temp sensor — IAT (verify sensor type)'),
    mk(130,'e90dt4shifter',650,760,'BMW / 8HP shifter signal interface — verify exact mapping'),
-   mk(131,'load2',950,450,'Valved mufflers — Motor 2 H-bridge (current TBD)'),
+   mk(131,'load2',950,450,'Valved mufflers — paired motors / MaxxECU reversing output (protection TBD)'),
    mk(140,'mx12',0,0,'MaxxECU 12-pin (cabin)'),
    mk(141,'mx16',0,0,'MaxxECU 16-pin (cabin)'),
    mk(142,'mxpedal',0,0,'E-pedal 6-pin'),
@@ -418,14 +418,13 @@ function e90ProjectStarter(){
    mk(154,'dt12',0,0,'BMW X6021 — paddles'),
    mk(155,'splice',0,0,'5V sensor splice'),
    mk(156,'splice',0,0,'Sensor ground splice'),
-   mk(157,'fuse6',0,0,'Trunk 6-slot fuse box — switched 12V from board 2',{1:'Board 1 trigger feed',2:'Starlights',3:'Valved mufflers'}),
+   mk(157,'fuse6',0,0,'Trunk 6-slot fuse box — physical slots and ratings unverified',{1:'Leash A+ switched feed · slot TBD',2:'Starlights feed · slot TBD',3:'Heater relay coil feed · slot TBD',4:'Unassigned · inspect',5:'Unassigned · inspect',6:'Unassigned · inspect'}),
    mk(158,'relay',0,0,'DME box ECU power relay'),
    mk(159,'load2',0,0,'Starlights'),
    mk(160,'pdb',0,0,'Trunk 12V distribution block'),
    mk(133,'ssr',950,820,'Nitrous SSR interface — verify model / load circuit'),
    mk(134,'fuse6',900,1020,'Auxiliary switched fuse box — nitrous SSR signal feed (upstream feed / fuse TBD)'),
-   mk(161,'dt6',0,0,'DT6 — TRUNK SIDE · fuel / nitrous / sensor',{0:'GPO2 → Leash A−',1:'GPO3 → Leash B−',2:'GPO7 → heater trigger',3:'AIN2 → pressure signal',4:'+5V sensor supply',5:'Sensor ground'}),
-   mk(162,'dt6',0,0,'DT6 — CABIN SIDE · 6-core pass-through',{0:'GPO2',1:'GPO3',2:'GPO7',3:'AIN2',4:'+5V',5:'Sensor ground'}),
+   mk(161,'dt6',0,0,'DT6 — TRUNK CONNECTOR · molded cavity mapping pending',{0:'GPO2 → Leash A− · cavity TBD',1:'GPO3 → Leash B− · cavity TBD',2:'GPO7 → heater trigger · cavity TBD',3:'AIN2 → pressure signal · cavity TBD',4:'+5V sensor supply · cavity TBD',5:'Sensor ground · cavity TBD'}),
    mk(163,'dt2',0,0,'Cabin DT2 #1 · fuel-pump triggers',{0:'GPO2',1:'GPO3'}),
    mk(164,'dt2',0,0,'Cabin DT2 #2 · heater trigger / pressure signal',{0:'GPO7',1:'AIN2'}),
    mk(165,'dt2',0,0,'Cabin DT2 #3 · sensor power',{0:'+5V',1:'Sensor ground'}),
@@ -444,7 +443,7 @@ function e90ProjectStarter(){
   wire(107,1,101,0,'Switched +12V → ignition coils branch',14,'YEL');
   wire(107,3,112,1,'Switched fuse-box output → 8HP pin 2 switched +12V',14,'RED');
   wire(107,5,111,2,'Switched +12V → CAN keypad',20,'ORG');
-  wire(110,0,109,2,'EKP trigger → Leash C+ (confirm voltage / polarity / board terminal)',20,'ORG');
+  wire(110,0,109,2,'BMW EKP wiring from DME box → Leash single-board trigger (terminal / wire details TBD)',0,'');
   // CAN bus is kept separate from BMW chassis CAN. A hub is a drawing/topology aid, not a mandatory component.
   wire(103,0,113,3,'MaxxECU CAN Low → CAN hub port 1',20,'PNK',{tw:900});
   wire(103,1,113,2,'MaxxECU CAN High → CAN hub port 1',20,'GRY',{tw:900});
@@ -456,8 +455,8 @@ function e90ProjectStarter(){
   wire(114,3,103,2,'BMW X60001 pin 38 brake switch → MaxxECU Brake DIN1',20,'BLK');
   wire(102,7,114,2,'Radiator fan PWM / GPO5 → BMW X60001 pin 20 (verify electrical compatibility)',20,'PUR');
   // Pump output and ground topology; high-current cable sizing remains a separate design decision.
-  wire(104,1,105,0,'FP1 relay output → surge pump 1 + (Walbro 535)',10,'RED',{amps:20,fuse:'FP1',fa:30});
-  wire(104,2,105,2,'FP2 relay output → surge pump 2 + (Walbro 525)',10,'BLU',{amps:20,fuse:'FP2',fa:30});
+  wire(104,1,105,0,'Leash output A → Walbro 535 positive (40A board fuse reported)',10,'RED',{amps:0,fuse:'BOARD_A',fa:40});
+  wire(104,2,105,2,'Leash output B → Walbro 525 positive (40A board fuse reported)',10,'RED',{amps:0,fuse:'BOARD_B',fa:40});
   wire(105,1,106,1,'Surge pump 1 ground → trunk ground bus',10,'BLK');
   wire(105,3,106,2,'Surge pump 2 ground → trunk ground bus',10,'BLK');
   // Sensor signal and sensor ground are intentionally not tied to chassis ground.
@@ -505,7 +504,7 @@ function e90ProjectStarter(){
   wire(166,3,147,0,'Nitrous heater relay pin 87 → heater + (wire/fuse size TBD)',0,'RED',{fuse:'HEATER_CONTACT_TBD',fa:0});
   wire(157,4,166,2,'Fused switched +12V → nitrous heater relay pin 86',18,'RED',{amps:0.2,fuse:'HEATER_COIL',fa:3});
   wire(109,3,106,6,'Leash single relay board trigger− → trunk ground bus',0,'BLK');
-  wire(161,2,166,1,'DT6 trunk pin 3 (GPO7) → nitrous heater relay pin 85',20,'PUR',{loom:991,circuitType:'signal'});
+  wire(161,2,166,1,'DT6 GPO7 function → heater relay terminal 85 (molded cavity TBD)',14,'ORG',{loom:991,circuitType:'signal'});
   [['TPS 1 signal (to maxx pin 3)',2,'BLU'],['TPS 2 signal (to maxx pin 6)',5,'WHT/YEL'],['5V reference (maxx pin 5)',4,'YEL/GRN'],['5V reference (maxx pin 4)',3,'YEL'],['Ground (maxx pin 2)',1,'BRN/GRN'],['Ground (maxx pin 1)',0,'BRN']].forEach(([n,i,c])=>wire(152,i,142,i,'DBW pedal '+n,0,c));
   wire(154,10,156,0,'Paddles X6021 pin 11 → sensor ground splice',0,'BRN');
   wire(154,11,102,2,'Paddles X6021 pin 12 → AIN1',0,'');
@@ -515,33 +514,31 @@ function e90ProjectStarter(){
   wire(161,5,156,0,'DT6 trunk pin 6 → trunk sensor-ground splice',20,'BLK',{loom:991,circuitType:'sensor-ground'});
   wire(156,0,125,1,'Sensor ground splice → fuel pressure sensor ground',20,'BLK',{circuitType:'sensor-ground'});
   wire(156,0,151,1,'Sensor ground splice → nitrous pressure sensor ground',20,'BLK',{circuitType:'sensor-ground'});
-  wire(161,3,151,2,'DT6 trunk pin 4 → nitrous pressure sensor signal (AIN2)',20,'WHT',{loom:991,circuitType:'signal'});
+  wire(161,3,151,2,'DT6 AIN2 function → nitrous pressure sensor signal (molded cavity TBD)',18,'PUR',{loom:991,circuitType:'signal'});
   wire(116,1,103,3,'Shifter DT4 pin 2 (black) → DIN2 shifter 1',0,'BLK');
   wire(116,0,103,4,'Shifter DT4 pin 1 (blue) → DIN4 shifter 2',0,'BLU');
   wire(116,2,156,0,'Shifter DT4 pin 3 (brown) → sensor ground splice',0,'BRN');
-  parts.find(p=>p.id===107).fa={1:20,2:15,3:7.5};
-  parts.find(p=>p.id===157).fa={1:3,4:3};
+  parts.find(p=>p.id===107).fa={1:20,2:15,3:7.5,4:5,5:7.5,6:3};
+  parts.find(p=>p.id===157).fa={};
   wire(149,0,158,0,'Small stud fused 12V → ECU power relay pin 30',0,'RED');
   wire(158,3,107,0,'ECU power relay pin 87 → DME fuse box input',0,'RED');
   wire(122,0,158,1,'Chassis ground → ECU power relay pin 85',0,'BLK');
-  wire(121,0,160,0,'Battery + → trunk distribution block (ANL fuse in the cable)',0,'RED');
+  wire(121,0,160,0,'Battery + → trunk 12V distribution block (main fuse rating/location unverified)',0,'RED',{amps:0,fuse:'MAIN_FUSE_TBD',fa:0});
   wire(160,1,104,0,'Distribution block → Leash board 1 battery in',0,'RED');
   wire(160,2,109,0,'Distribution block → Leash single relay board battery input',0,'RED');
   
   
   
   wire(109,1,157,0,'Leash single relay board output → trunk fuse box input',0,'RED');
-  wire(157,1,104,3,'Fuse box slot → Leash board 1 trigger A+',0,'RED');
-  wire(157,1,104,5,'Fuse box slot → Leash board 1 trigger B+ (jumpered with A+)',0,'RED');
-  wire(157,2,159,0,'Fuse box slot → starlights +',0,'RED');
+  wire(157,1,104,3,'Trunk fuse-box switched output, physical slot TBD → Leash dual board A+',0,'RED',{amps:0,fuse:'TRUNK_SLOT_TBD',fa:0});
+  wire(104,3,104,5,'Leash dual board A+ → B+ jumper',0,'RED');
+  wire(157,2,159,0,'Trunk fuse-box starlights feed (physical slot / inline-fuse branch topology TBD)',0,'RED',{amps:0,fuse:'STARLIGHTS_FEED_TBD',fa:0});
   wire(159,1,106,4,'Starlights − → trunk ground bus',0,'BLK');
-  wire(157,3,131,0,'Fuse box slot → valved mufflers control +',0,'RED');
-  wire(131,1,106,5,'Valved mufflers control − → trunk ground bus',0,'BLK');
   // Cabin-side DT2 pigtails route the six loose ECU conductors to the DT6 pass-through.
-  wire(140,2,163,0,'MaxxECU GPO2 → cabin DT2 #1 pin 1',20,'GRN',{circuitType:'signal'});
-  wire(140,4,163,1,'MaxxECU GPO3 → cabin DT2 #1 pin 2',20,'BLU',{circuitType:'signal'});
-  wire(141,6,164,0,'MaxxECU GPO7 / DIN3 → cabin DT2 #2 pin 1',20,'PUR',{circuitType:'signal'});
-  wire(141,3,164,1,'MaxxECU AIN2 → cabin DT2 #2 pin 2',20,'WHT',{circuitType:'signal'});
+  wire(140,2,163,0,'MaxxECU GPO2 → cabin DT2-A pin 1 (separate ECU-side run)',14,'GRN',{circuitType:'signal'});
+  wire(140,4,163,1,'MaxxECU GPO3 → cabin DT2-A pin 2 (separate ECU-side run)',14,'YEL',{circuitType:'signal'});
+  wire(141,6,164,0,'MaxxECU GPO7 → cabin DT2-B pin 1 (separate ECU-side run; verify ECU output assignment)',14,'ORG',{circuitType:'signal'});
+  wire(141,3,164,1,'MaxxECU AIN2 → cabin DT2-B pin 2 (separate ECU-side run)',18,'PUR',{circuitType:'signal'});
   wire(141,0,167,0,'MaxxECU +5V sensor supply → cabin +5V branch splice',20,'RED',{circuitType:'sensor-power'});
   wire(167,0,102,0,'Cabin +5V splice → DT8 analog harness +5V',20,'RED',{circuitType:'sensor-power'});
   wire(167,0,165,0,'Cabin +5V splice → cabin DT2 #3 pin 1',20,'RED',{circuitType:'sensor-power'});
@@ -558,7 +555,22 @@ function e90ProjectStarter(){
   wire(104,6,161,1,'Leash dual B− → trunk DT6 pin 2 (GPO3)',20,'BLU',{circuitType:'signal'});
   [['GPO2 trigger','GRN','signal'],['GPO3 trigger','BLU','signal'],['GPO7 heater trigger','PUR','signal'],['AIN2 pressure signal','WHT','signal'],['+5V sensor supply','RED','sensor-power'],['Sensor ground','BLK','sensor-ground']].forEach((q,i)=>wire(162,i,161,i,'DT6 cabin pin '+(i+1)+' ↔ trunk pin '+(i+1)+' · '+q[0],20,q[1],{loom:993,circuitType:q[2]}));
   W.forEach(w=>{if(/^ECU 16-pin/.test(w.sig))return;if(/CAN L(ow)?\b/i.test(w.sig))w.color='PUR';else if(/CAN H(igh)?\b/i.test(w.sig))w.color='BLU'});
-  return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'},{id:993,name:'Trunk-to-cabin DT6 · 6-core',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
+  // Approved trunk topology baseline: one trunk-side DT6 with three cabin DT2s.
+  // Physical cavity numbers, total boundary count, route lengths, and fuse assignments remain unverified.
+  W.splice(0,W.length,...W.filter(w=>w.a.p!==162&&w.b.p!==162&&!w.sig.startsWith('Fuse box slot → valved mufflers control +')&&!w.sig.startsWith('Valved mufflers control − → trunk ground bus')));
+  const cabinDt6PartIndex=parts.findIndex(p=>p.id===162);
+  if(cabinDt6PartIndex>=0)parts.splice(cabinDt6PartIndex,1);
+  wire(163,0,161,0,'DT6 GPO2 conductor → cabin DT2-A pin 1 (molded cavity mapping TBD)',16,'GRN',{loom:993,circuitType:'signal'});
+  wire(163,1,161,1,'DT6 GPO3 conductor → cabin DT2-A pin 2 (molded cavity mapping TBD)',16,'YEL',{loom:993,circuitType:'signal'});
+  wire(164,0,161,2,'DT6 GPO7 conductor → cabin DT2-B pin 1 (molded cavity mapping TBD)',14,'ORG',{loom:993,circuitType:'signal'});
+  wire(164,1,161,3,'DT6 AIN2 conductor → cabin DT2-B pin 2 (molded cavity mapping TBD)',18,'PUR',{loom:993,circuitType:'signal'});
+  wire(165,0,161,4,'DT6 +5V conductor → cabin DT2-C pin 1 (molded cavity mapping TBD)',18,'RED',{loom:993,circuitType:'sensor-power'});
+  wire(165,1,161,5,'DT6 sensor-ground conductor → cabin DT2-C pin 2 (molded cavity mapping TBD)',18,'BLK',{loom:993,circuitType:'sensor-ground'});
+  parts.find(p=>p.id===106).name='Trunk chassis ground point — ring-terminal stack';
+  parts.find(p=>p.id===110).name='BMW EKP control wire — DME-box source cavity TBD';
+  parts.find(p=>p.id===131).name='Valved mufflers — paired motors / MaxxECU reversing outputs (protection TBD)';
+  parts.find(p=>p.id===157).name='Trunk 6-slot fuse box — physical slots and ratings unverified';
+  return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'},{id:993,name:'Trunk DT6 to three cabin DT2s · lengths TBD',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
 }
 
 let S=Object.assign({scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'project'},e90ProjectStarter());
@@ -939,7 +951,7 @@ S.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});
 const E90ZONES=[
  ['Engine bay','#ff8a1f',[112,118,119,120,122,125,126,127,128,129,133,144,149]],
  ['DME box','#e0b13a',[101,102,103,107,158,108,110,114,115,117,145,146,148,154]],
- ['Cabin','#4a86e8',[140,141,142,143,152,111,116,113,123,130,162,163,164,165,167,168]],
+ ['Cabin','#4a86e8',[140,141,142,143,152,111,116,113,123,130,163,164,165,167,168]],
  ['Trunk','#3fae6a',[104,105,106,109,121,124,131,134,147,151,155,156,157,159,160,161,166,169]]];
 function e90Layout(force=false){
   if(!S.lay&&!force)return;S.lay=0;S.zones=[];const GAP=36,PAD=30,TOP=70,MAXH=1500;let x=0;
@@ -1498,17 +1510,27 @@ function rSave(){
 
 /* ---------- linked harness book: owner-confirmed records, editable and exportable ---------- */
 const BOOK_SEED=[
- {id:'DT6-TRUNK-CABIN',kind:'Connector',name:'DT6 trunk-to-cabin',from:'Trunk',to:'Cabin / ECU area',cavity:'1–6',wire:'6 circuits',status:'Owner confirmed; cavity order verify',notes:'Splits in cabin into three DT2 connectors.'},
- {id:'DT2-A',kind:'Connector',name:'DT2-A pump outputs',from:'DT6 cavities 1–2',to:'MaxxECU Race 12-pin',cavity:'1=GPO2; 2=GPO3',wire:'1 green 14 AWG; 2 yellow 14 AWG',status:'Owner confirmed',notes:'DT2-A cavity assignments confirmed by owner.'},
- {id:'DT2-B',kind:'Connector',name:'DT2-B nitrous control / pressure',from:'DT6 cavities 3–4',to:'MaxxECU Race 16-pin',cavity:'1=GPO7; 2=AIN2',wire:'1 orange 14 AWG; 2 purple 20 AWG',status:'Owner confirmed',notes:'GPO7 ground-triggers a relay; AIN2 is nitrous pressure signal.'},
- {id:'DT2-C',kind:'Connector',name:'DT2-C sensor supply',from:'DT6 cavities 5–6',to:'MaxxECU Race 16-pin + shared sensors',cavity:'1=+5V; 2=sensor ground',wire:'1 red 20 AWG; 2 black 20 AWG',status:'Owner confirmed; splice details pending',notes:'Both circuits splice to other sensors. Sensor ground must remain ECU sensor ground, not chassis.'},
+ {id:'DT6-TRUNK-CABIN',kind:'Connector',name:'DT6 trunk connector → three cabin DT2s',from:'Trunk near power/relay area',to:'Cabin side-sill / rocker route → DT2-A, DT2-B, DT2-C',cavity:'Six logical functions; molded cavity-number mapping not yet provided',wire:'Six assigned conductors; total boundary count estimated 7–8 and unverified',status:'Topology approved; physical cavity map / total conductor count unverified',notes:'One trunk-side DT6; the opposite cable end breaks out to three DT2 connectors, not a second DT6. Approximate route/lengths not provided. EKP and muffler conductors also route in this area, but exact boundary crossings are unverified.'},
+ {id:'DT2-A',kind:'Connector',name:'DT2-A pump triggers',from:'DT6 trunk connector',to:'Cabin DT2-A → separate MaxxECU 12-pin runs',cavity:'DT2 pin 1=GPO2; pin 2=GPO3; DT6 molded cavity mapping TBD',wire:'DT6-to-DT2: 16 AWG green/yellow; ECU-side runs: 14 AWG green/yellow',status:'Logical functions confirmed; DT6 molded cavity mapping pending',notes:'GPO2 triggers Leash dual-board output A / Walbro 535. GPO3 triggers output B / Walbro 525. These are low-side relay-board triggers, not pump-power conductors.'},
+ {id:'DT2-B',kind:'Connector',name:'DT2-B heater trigger / pressure signal',from:'DT6 trunk connector',to:'Cabin DT2-B → separate MaxxECU-side runs',cavity:'DT2 pin 1=GPO7; pin 2=AIN2; DT6 molded cavity mapping TBD',wire:'DT6-to-DT2: 14 AWG orange / 18 AWG purple',status:'Logical functions confirmed; physical cavity mapping pending',notes:'GPO7 is reported as a low-side heater-relay coil trigger; verify ECU output assignment/configuration and relay suppression. AIN2 is the nitrous pressure sensor signal.'},
+ {id:'DT2-C',kind:'Connector',name:'DT2-C sensor supply / return',from:'DT6 trunk connector',to:'Cabin DT2-C → ECU sensor supply / ground branches',cavity:'DT2 pin 1=+5V; pin 2=ECU sensor ground; DT6 molded cavity mapping TBD',wire:'DT6-to-DT2: 18 AWG red/black',status:'Logical functions confirmed; branch details pending',notes:'Both circuits branch to other sensors in the cabin. Sensor ground must remain ECU sensor ground and must not be tied to chassis.'},
  {id:'ECU-12-3',kind:'ECU cavity',name:'GPO2',from:'MaxxECU 12-pin pin 3',to:'DT2-A cavity 1',cavity:'12-pin / 3',wire:'Green / 14 AWG',status:'Owner confirmed',notes:'Low-side output; relay trigger, not pump power.'},
  {id:'ECU-12-5',kind:'ECU cavity',name:'GPO3',from:'MaxxECU 12-pin pin 5',to:'DT2-A cavity 2',cavity:'12-pin / 5',wire:'Yellow / 14 AWG',status:'Owner confirmed',notes:'Low-side output; relay trigger, not pump power.'},
  {id:'ECU-16-7',kind:'ECU cavity',name:'GPO7',from:'MaxxECU 16-pin pin 7',to:'DT2-B cavity 1',cavity:'16-pin / 7',wire:'Orange / 14 AWG',status:'Owner confirmed',notes:'Ground trigger for relay circuit. Confirm relay coil and output-side protection.'},
  {id:'ECU-16-4',kind:'ECU cavity',name:'AIN2 nitrous pressure',from:'MaxxECU 16-pin pin 4',to:'DT2-B cavity 2',cavity:'16-pin / 4',wire:'Purple / 20 AWG',status:'Owner confirmed',notes:'Signal input.'},
  {id:'ECU-16-1',kind:'ECU cavity',name:'Sensor +5V',from:'MaxxECU 16-pin pin 1',to:'DT2-C cavity 1 + sensor splice',cavity:'16-pin / 1',wire:'Red / 20 AWG',status:'Owner confirmed; splice detail pending',notes:'Shared sensor supply; document each branch separately when known.'},
  {id:'ECU-16-2',kind:'ECU cavity',name:'Sensor ground',from:'MaxxECU 16-pin pin 2',to:'DT2-C cavity 2 + sensor splice',cavity:'16-pin / 2',wire:'Black / 20 AWG',status:'Owner confirmed; splice detail pending',notes:'Dedicated ECU sensor ground; do not tie to chassis.'},
- {id:'EXH-VALVE-PAIR',kind:'Load / branch',name:'Valved mufflers — motors paired',from:'MaxxECU Motor 2 + / −',to:'Muffler 1 + Muffler 2',cavity:'Motor 2 + / −',wire:'Joined positive pair + joined negative pair; outgoing gauge unknown',status:'Owner confirmed topology; protection / gauge / route unverified',notes:'Original control box bypassed. User joined both muffler positives and both negatives; one outgoing wire for each polarity. User says Motor 2 handles direction and CAN keypad controls it. Confirm max Motor 2 current, fuse protection, wire gauge and route before powering.'}
+ {id:'EXH-VALVE-PAIR',kind:'Load / branch',name:'Valved mufflers — paired motors',from:'MaxxECU GPO13/GPO14 reported as dedicated polarity-reversing outputs',to:'Two two-wire muffler motors wired in parallel',cavity:'Motor output pair + / −',wire:'Two conductors to parallel motor pair; gauge/color/length unknown',status:'Topology confirmed; protection and exact terminals unverified',notes:'Both motors run through the cabin/side-sill route. User reports direct MaxxECU reversing-output control with no separate controller. Verify ECU output configuration, maximum combined motor current, output protection, wire gauge, and exact connectors before relying on the drawing for fabrication.'},
+ ,{id:'TRUNK-POWER',kind:'Power distribution',name:'Trunk battery and distribution block',from:'OEM right-side trunk battery',to:'Leash dual board, Leash single board, heater relay terminal 30',cavity:'Distribution-block output positions TBD',wire:'Battery-to-block cable gauge TBD; main fuse listed as 80A in current project but not physically verified',status:'Topology confirmed; main fuse / cable details pending',notes:'Represent battery → main fuse (rating/location unverified) → trunk 12V distribution block. Separate branches feed both Leash boards and heater relay terminal 30 through its inline fuse.'},
+ {id:'TRUNK-GROUND',kind:'Ground',name:'Trunk chassis ground point',from:'Ring-terminal stack / chassis point',to:'Battery negative, both surge-pump negatives, heater negative, Leash single-board ground, starlights ground',cavity:'Ground-point terminal positions TBD',wire:'Pump grounds are 10 AWG black; other gauges unknown',status:'Ground connections confirmed by owner; terminal positions pending',notes:'Show battery-negative cable and chassis bond separately. Do not assume the Leash dual-board ground or muffler motor return is on this point until verified.'},
+ {id:'LEASH-DUAL',kind:'Relay board',name:'Leash dual fuel-pump board',from:'Trunk distribution block + switched control supply',to:'Walbro 535 (A) and Walbro 525 (B)',cavity:'Battery input; A/B power outputs; A−/B− triggers; A+/B+ control power',wire:'Pump positive and negative cables: 10 AWG; positives red, grounds black; 40A board fuses reported',status:'Topology confirmed; terminal labels / actual fuse inspection pending',notes:'GPO2 triggers A/535, GPO3 triggers B/525. Switched +12V goes to A+ with a jumper from A+ to B+. Verify the board terminal labels against the installed board.'},
+ {id:'LEASH-SINGLE',kind:'Relay board',name:'Leash single relay board',from:'Trunk 12V distribution block; BMW EKP control from DME box',to:'Trunk 6-slot fuse-box input',cavity:'Battery input, switched output, EKP trigger, ground terminal IDs TBD',wire:'Control-wire color/gauge not provided',status:'Topology confirmed; exact terminal details pending',notes:'EKP signal is one working conductor from BMW EKP wiring in the DME box. Do not assign an exact source cavity or wire gauge until inspected.'},
+ {id:'TRUNK-FUSEBOX',kind:'Fuse block',name:'Trunk 6-slot switched fuse box',from:'Leash single-board switched output',to:'Leash A+ switched feed, starlights, heater relay coil switched +12V; other circuits TBD',cavity:'Physical slot assignments TBD',wire:'Fuse ratings and wire gauges unknown',status:'Needs physical inspection',notes:'Keep separate from the DME-box fuse block. Do not assign slot numbers or fuse ratings from the current placeholder drawing.'},
+ {id:'HEATER-RELAY',kind:'Relay / load',name:'Nitrous bottle heater relay',from:'Trunk distribution block → inline fuse → terminal 30; GPO7 low-side coil trigger',to:'Terminal 87 → heater positive; heater negative → trunk chassis ground point',cavity:'30=fused battery +; 85=GPO7 low-side; 86=switched +12V; 87=heater +; 87a unused',wire:'Fuse rating and wire gauge TBD',status:'Partially wired; topology approved, protection details pending',notes:'Terminal 86 is switched +12V from the trunk fuse box, but physical slot/fuse rating are not yet known. Confirm relay coil suppression and GPO7 configuration.'},
+ {id:'STARLIGHTS',kind:'Load / branch',name:'Starlights power and ground',from:'Trunk switched-power area; inline fuse and fuse-box branch reported',to:'Starlights positive and trunk chassis ground point',cavity:'Splice / fuse-holder terminals TBD',wire:'Wire gauge, fuse rating, and exact branch direction unknown',status:'Connection concept confirmed; physical branch topology pending',notes:'One feed branches to an inline fuse and a fuse-box feed per owner. Do not draw a specific branch point or fuse path as final until inspected.'},
+ {id:'MAIN-FUSE',kind:'Protection',name:'Battery-to-trunk-distribution main fuse',from:'OEM trunk battery positive',to:'Trunk 12V distribution block',cavity:'Fuse holder terminals / location TBD',wire:'80A shown in project notes; actual installed rating not confirmed',status:'Needs physical inspection',notes:'Do not treat the existing 80A placeholder as verified physical hardware.'},
+ {id:'BOUNDARY-COUNT',kind:'Harness boundary',name:'Trunk-to-cabin conductor count',from:'Trunk DT6 and additional circuits',to:'Cabin side-sill / rocker harness',cavity:'DT6 carries six assigned logical circuits',wire:'Estimated 7–8 total conductors; not counted',status:'Unverified estimate',notes:'EKP is one additional conductor. Muffler motors use a paired two-conductor run through the cabin/side sill; exact pass-through relationship is not yet known.'}
+
 ];
 function ensureBook(){if(!Array.isArray(S.circuitBook)||!S.circuitBook.length)S.circuitBook=JSON.parse(JSON.stringify(BOOK_SEED));}
 function rBook(){
