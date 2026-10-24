@@ -190,14 +190,15 @@ a{color:var(--accent)}
 <section id="t-build" hidden></section>
 <section id="t-checks" hidden></section>
 <section id="t-electrical" hidden></section>
+<section id="t-ecu" hidden></section>
 <section id="t-notes" hidden></section>
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.7.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.8.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.7.0';
+const APP_VERSION='0.8.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1109,6 +1110,24 @@ function rPins(){
       const info=ws.map(w=>{const o=(w.a.p===p.id&&w.a.i===i)?w.b:w.a;return `${t.bulk?`<span class="tag">${faceOf(w,p.id,i)==='L'?'engine':'cabin'}</span> `:''}${dotColor(w.color)} ${esc(w.sig||'(unnamed)')} <span class="nt">${w.awg} AWG → ${esc(endName(o))}</span>`}).join('<br>');
       return `<tr><td class="mono">${esc(t.pins[i].p)}</td><td>${esc(t.node?'':plabel(p,i))}</td><td colspan="2">${info||'<span class="nt">empty</span>'}</td></tr>`}).join('')}</tbody></table></div></div>`}).join('')+`<div class="row"><button class="btn" data-copy="pins">Copy all pinouts as CSV</button></div>`;
 }
+/* MaxxECU pin reference transcribed from user-provided notes. Verify exact model and official documentation before wiring. */
+const MAXXECU_MAIN=[["A1","GPO 5","-","GPO 4"],["A2","IGN 1","IGN 1","IGN 1"],["A3","IGN 2","IGN 2","IGN 2"],["A4","GPO 8/TACHO","GPO 8/TACHO","GPO 8/TACHO"],["B1","GPO 6","-","GPO 5"],["B2","IGN 3","IGN 3","IGN 3"],["B3","IGN 4","IGN 4","IGN 4"],["B4","GPO 1","GPO 1","GPO 1"],["C1","GPO 7","-","AIN 5 (0–5 V)"],["C2","IGN 5","IGN 5","IGN 5"],["C3","IGN 6","IGN 6","IGN 6"],["C4","GPO 2","GPO 2","GPO 2"],["D1","WBO2 Heater−","WBO2 Heater−","WBO2 Heater−"],["D2","IGN 7","-","AIN 6 (0–5 V)"],["D3","IGN 8","-","AIN 7 (0–5 V)"],["D4","GPO 3","GPO 3","GPO 3"],["E1","CAN H","CAN H","CAN H"],["E2","CAN L","CAN L","CAN L"],["E3","GND Shield","GND Shield","GND Shield"],["E4","GPO 4","-","AIN 8 (0–5 V)"],["F1","CLT","CLT","CLT"],["F2","IAT","IAT","IAT"],["F3","WBO2 VREF","WBO2 VREF","WBO2 VREF"],["F4","WBO2 VS","WBO2 VS","WBO2 VS"],["G1","+5V sensor supply (peak 0.5 A, max 150 mA)","+5V sensor supply (peak 0.5 A, max 150 mA)","+5V sensor supply (peak 0.5 A, max 150 mA)"],["G2","TPS/AIN","TPS/AIN","TPS/AIN"],["G3","WBO2 IP","WBO2 IP","WBO2 IP"],["G4","WBO2 RCAL","WBO2 RCAL","WBO2 RCAL"],["H1","Sensor GND","Sensor GND","Sensor GND"],["H2","Trigger GND","Trigger GND","Trigger GND"],["H3","TRIGGER","TRIGGER","TRIGGER"],["H4","HOME","HOME","HOME"],["J1","AIN 1 (Temperature)","AIN 1 (Temperature)","AIN 1 (Temperature)"],["J2","AIN 2 (Temperature)","AIN 2 (Temperature)","AIN 2 (Temperature)"],["J3","AIN 3 (0–5 V)","AIN 3 (0–5 V)","AIN 3 (0–5 V)"],["J4","AIN 4 (0–5 V)","AIN 4 (0–5 V)","AIN 4 (0–5 V)"],["K1","INJ 1","INJ 1","INJ 1"],["K2","INJ 2","INJ 2","INJ 2"],["K3","DIN/VR 1","DIN 1","DIN 1"],["K4","DIN/VR 2","DIN 2","DIN 2"],["L1","INJ 8","-","GPO 11/Motor 1−"],["L2","INJ 7","-","GPO 12/Motor 1+"],["L3","INJ 6","INJ 6","INJ 6"],["L4","Engine GND","Engine GND","Engine GND"],["M1","INJ 3","INJ 3","INJ 3"],["M2","INJ 4","INJ 4","INJ 4"],["M3","INJ 5","INJ 5","INJ 5"],["M4","+12V ECU power supply","+12V ECU power supply","+12V ECU power supply"]];
+const MAXXECU_AUX=[["A1","EGT 5+"],["A2","EGT 6+"],["A3","EGT 7+"],["A4","EGT 8+"],["B1","EGT 5−"],["B2","EGT 6−"],["B3","EGT 7−"],["B4","EGT 8−"],["C1","EGT 1+"],["C2","EGT 2+"],["C3","EGT 3+"],["C4","EGT 4+"],["D1","EGT 1−"],["D2","EGT 2−"],["D3","EGT 3−"],["D4","EGT 4−"],["E1","Knock GND"],["E2","Knock 1"],["E3","Knock 2"],["E4","AIN 6 (0–5 V)"],["F1","AIN 7 (0–5 V)"],["F2","AIN 8 (0–5 V)"],["F3","DIN/VR 4"],["F4","DIN/VR 5"],["G1","GPO 15 (+12 V)"],["G2","GPO 16 (+12 V)"],["G3","AIN 5 (0–5 V)"],["G4","Engine Ground"],["H1","Motor 2+"],["H2","Motor 1−"],["H3","Motor 2−"],["H4","Motor 1+"]];
+function ecuVariant(){return S.ecuVariant||'race'}
+function setEcuVariant(v){S.ecuVariant=v;save();rEcu()}
+function setEcuSearch(v){const a=document.activeElement,pos=a&&typeof a.selectionStart==='number'?a.selectionStart:String(v||'').length;S.ecuSearch=v;rEcu();const i=document.querySelector('#t-ecu input[oninput]');if(i){i.focus();try{i.setSelectionRange(pos,pos)}catch(_){}}}
+function rEcu(){
+ const el=document.getElementById('t-ecu');if(!el)return;
+ const variant=ecuVariant(),vi={race:1,street:2,sport:3}[variant]||1,q=(S.ecuSearch||'').trim().toLowerCase(),selected=S.ecuSelected||'main:A1';
+ const filtered=(rows,type)=>rows.filter(r=>!q||(type+' '+r[0]+' '+r.slice(1).join(' ')).toLowerCase().includes(q));
+ const mr=filtered(MAXXECU_MAIN,'48-pin main'),ar=filtered(MAXXECU_AUX,'32-pin black');
+ const fn=(r,t)=>t==='main'?r[vi]:r[1];
+ const grid=(rows,type)=>'<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px">'+rows.map(r=>{const pos=r[0],f=fn(r,type),sel=selected===type+':'+pos;return '<button class="card" style="padding:9px 5px;min-width:0;text-align:center;border:1px solid '+(sel?'var(--accent)':'var(--line)')+'" data-ecu-pin="'+type+':'+pos+'"><b class="mono">'+pos+'</b><div style="font-size:11px;margin-top:5px;overflow-wrap:anywhere">'+esc(f)+'</div></button>'}).join('')+'</div>';
+ const table=(rows,type)=>'<div class="table-wrap"><table><thead><tr><th>Position</th><th>'+(type==='main'?'Selected variant function':'RACE Connector 2 function')+'</th></tr></thead><tbody>'+rows.map(r=>'<tr><td class="mono"><button class="btn small" data-ecu-pin="'+type+':'+r[0]+'">'+r[0]+'</button></td><td>'+esc(fn(r,type))+'</td></tr>').join('')+'</tbody></table></div>';
+ const [st,sp]=selected.split(':'),sr=(st==='aux'?MAXXECU_AUX:MAXXECU_MAIN).find(r=>r[0]===sp),sf=sr?fn(sr,st):'';
+ el.innerHTML='<div class="dashboard-hero"><div class="eyebrow">ECU REFERENCE · 48-PIN + 32-PIN</div><h2>MaxxECU RACE pinout</h2><p>Search by cavity or function, select a pin, and switch the main connector’s ECU variant.</p><div class="row"><label><span>48-pin main connector variant</span><select onchange="setEcuVariant(this.value)"><option value="race" '+(variant==='race'?'selected':'')+'>V1 / RACE / PRO</option><option value="street" '+(variant==='street'?'selected':'')+'>STREET</option><option value="sport" '+(variant==='sport'?'selected':'')+'>SPORT</option></select></label><label style="flex:1;min-width:220px"><span>Search position or function</span><input value="'+esc(S.ecuSearch||'')+'" placeholder="e.g. A1, CAN H, AIN 6, EGT…" oninput="setEcuSearch(this.value)"></label><button class="btn" data-copy="ecu">Copy pinout CSV</button></div></div><div class="card"><div class="hd"><b>Selected cavity</b><span class="pill">'+(st==='aux'?'32-pin black · Connector 2':'48-pin main')+'</span></div><h3 class="mono">'+esc(sp||'—')+'</h3><p>'+esc(sf||'Select a cavity in either connector map.')+'</p></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:14px"><div class="card"><div class="hd"><b>48-pin main Molex</b><span class="pill">12 × 4 cavities</span></div><p class="muted">Pin functions follow the selected variant. Connector face is schematic. The source notes mention a 660 Ω pull-up for GPO 8/TACHO; confirm applicability for your exact ECU.</p>'+grid(mr,'main')+'<details style="margin-top:12px"><summary>Open main connector table ('+mr.length+' matches)</summary>'+table(mr,'main')+'</details></div><div class="card"><div class="hd"><b>32-pin black · Connector 2</b><span class="pill">8 × 4 cavities</span></div><p class="muted">RACE Connector 2 functions transcribed from the supplied list.</p>'+grid(ar,'aux')+'<details style="margin-top:12px"><summary>Open Connector 2 table ('+ar.length+' matches)</summary>'+table(ar,'aux')+'</details></div></div><div class="card"><b>Before wiring</b><p>Transcribed reference only. Verify the exact ECU model, cavity numbering, connector orientation, contact side, wire-side/mating-face view, and functions against official documentation. The maps are schematic and are not a verified manufacturer drawing.</p></div>';
+}
+
 function bomRows(){
   const rows=[],by={};
   S.parts.forEach(p=>{
@@ -1453,10 +1472,10 @@ function calcElectrical(){
 }
 
 /* ---------- tabs ---------- */
-const TABS=[['project','Dashboard'],['draw','Harness Designer'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
-const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
+const TABS=[['project','Dashboard'],['draw','Harness Designer'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
+const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
-const TAB_GROUP={project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
+const TAB_GROUP={project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
 let lastTabGroup='';
 tabsEl.innerHTML=TABS.map(([k,l])=>{const g=TAB_GROUP[k]||'Workspace',head=g!==lastTabGroup?'<div class="nav-label">'+g+'</div>':'';lastTabGroup=g;return head+'<button role="tab" data-tab="'+k+'">'+l+'</button>'}).join('');
 function showTab(k){
@@ -1502,6 +1521,7 @@ async function copy(text,anchor){
 const CSVS={
  wires:()=>csv([['#','Signal','From','To','AWG','Color','Length (in)']].concat(wireRows())),
  cut:()=>csv([['#','Signal','From','To','AWG','Color','Cut (in)']].concat(S.wires.map((w,i)=>[i+1,w.sig,endName(w.a),endName(w.b),w.awg,w.color,cutLen(w).toFixed(1)]))),
+ ecu:()=>csv([['Connector','Position','V1/RACE/PRO function','STREET function','SPORT function'],...MAXXECU_MAIN.map(r=>['48-pin main',...r]),...MAXXECU_AUX.map(r=>['32-pin black Connector 2',r[0],r[1],r[1],r[1]])]),
  pins:()=>csv([['Part','Pin','Function','Signal','Color','AWG','Goes to']].concat(S.parts.flatMap(p=>{const t=T[p.t];return(t.node?[0]:t.pins.map((_,i)=>i)).flatMap(i=>{const ws=usedOn(p.id,i);return ws.length?ws.map(w=>[p.name,t.pins[i].p,t.node?'':plabel(p,i),w.sig,w.color,w.awg,endName((w.a.p===p.id&&w.a.i===i)?w.b:w.a)]):[[p.name,t.pins[i].p,t.node?'':plabel(p,i),'','','','']]})}))),
  bom:()=>csv([['Item','Qty','Unit','Note']].concat(bomRows()))
 };
@@ -1535,6 +1555,7 @@ document.addEventListener('click',e=>{
   if(d.add)return addPart(d.add);
   if(d.sw){const w=S.wires.find(x=>x.id===(selection&&selection.id));if(w){commit();w.color=d.sw;save();renderInsp();draw()}return}
   if(d.copy)return copy(CSVS[d.copy](),b);
+  if(d.ecuPin){S.ecuSelected=d.ecuPin;save();rEcu();return;}
   if(d.edit){selection={type:'wire',id:+d.edit};showTab('draw');return}
   if(d.auditWire){selection={type:'wire',id:+d.auditWire};showTab('draw');return}
   switch(d.act){
