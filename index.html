@@ -4,6 +4,145 @@
 
 
 .dashboard-hero{padding:18px;background:linear-gradient(120deg,var(--panel),var(--panel2));border-left:4px solid var(--accent)}.eyebrow{font:500 11px var(--mono);letter-spacing:.14em;color:var(--accent);margin-bottom:8px}.dashboard-hero h2{font-size:clamp(24px,4vw,36px);margin-bottom:8px}.dashboard-hero p{max-width:780px;margin-bottom:12px}.dash-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.stat{padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}.stat>span{font:500 10px var(--mono);color:var(--mute);letter-spacing:.08em}.stat>b{font:700 clamp(18px,3vw,28px) var(--display);overflow-wrap:anywhere}.stat small{font-size:11px;color:var(--mute)}.status-warn{color:var(--warn)!important;font-size:17px!important}.system-map{padding:16px;display:flex;flex-direction:column;align-items:center;gap:7px}.sys-node{display:flex;flex-direction:column;gap:3px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:12px;min-width:0;width:100%;max-width:310px}.sys-node b{font:700 14px var(--display);letter-spacing:.06em;color:var(--accent)}.sys-node span{font-size:12px;color:var(--mute)}.sys-node.power{border-color:#d69a31}.sys-node.ecu{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel2))}.sys-arrow{font-size:23px;color:var(--accent);line-height:1}.sys-split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;align-items:start}.sys-branch{display:flex;align-items:center;flex-direction:column;gap:7px;min-width:0}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid2 .card{min-width:0}@media(max-width:700px){.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.sys-split{grid-template-columns:1fr}.sys-branch{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center}.sys-branch .sys-node{max-width:none}.sys-arrow{transform:none}}
+</style><style>
+/* HARNESS BENCH — PROFESSIONAL ENGINEERING THEME */
+:root {
+  --hb-bg: #0b0e13;
+  --hb-panel: #121720;
+  --hb-panel-2: #191f2a;
+  --hb-border: #2b3442;
+  --hb-text: #e7edf5;
+  --hb-muted: #91a0b5;
+  --hb-accent: #56a6ff;
+  --hb-green: #4bd6a0;
+  --hb-yellow: #f4c66a;
+  --hb-red: #ff747c;
+}
+body {
+  background: var(--hb-bg);
+  color: var(--hb-text);
+}
+.hb-panel {
+  background: var(--hb-panel);
+  border: 1px solid var(--hb-border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.hb-panel h2,
+.hb-panel h3 {
+  margin-top: 0;
+  color: var(--hb-text);
+}
+.hb-muted {
+  color: var(--hb-muted);
+}
+.hb-button {
+  background: var(--hb-panel-2);
+  color: var(--hb-text);
+  border: 1px solid var(--hb-border);
+  padding: 9px 13px;
+  border-radius: 7px;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color .15s, background .15s;
+}
+.hb-button:hover {
+  border-color: var(--hb-accent);
+  background: #202a38;
+}
+.hb-button-primary {
+  background: var(--hb-accent);
+  border-color: var(--hb-accent);
+  color: #07111e;
+  font-weight: 700;
+}
+.hb-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px;
+  border: 1px solid var(--hb-border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.hb-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.hb-ok { color: var(--hb-green); }
+.hb-warning { color: var(--hb-yellow); }
+.hb-danger { color: var(--hb-red); }
+.hb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.hb-table th,
+.hb-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--hb-border);
+}
+.hb-table th {
+  color: var(--hb-muted);
+  font-weight: 600;
+}
+.hb-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--hb-bg);
+  color: var(--hb-text);
+  border: 1px solid var(--hb-border);
+  border-radius: 7px;
+  padding: 9px;
+}
+.hb-input:focus {
+  outline: 1px solid var(--hb-accent);
+  border-color: var(--hb-accent);
+}
+.hb-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.hb-metric {
+  background: var(--hb-panel-2);
+  border: 1px solid var(--hb-border);
+  border-radius: 9px;
+  padding: 13px;
+}
+.hb-metric-label {
+  color: var(--hb-muted);
+  font-size: 12px;
+}
+.hb-metric-value {
+  font-size: 22px;
+  font-weight: 750;
+  margin-top: 6px;
+}
+.hb-notice {
+  border-left: 3px solid var(--hb-yellow);
+  background: #211e16;
+  padding: 11px 13px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+@media (max-width: 700px) {
+  .hb-grid {
+    grid-template-columns: 1fr;
+  }
+  .hb-panel {
+    padding: 12px;
+  }
+  .hb-table {
+    font-size: 12px;
+  }
+}
 </style></head><body>
 <title>Harness Bench</title>
 <meta name="claude:viewport-fit-sides" content="cover">
