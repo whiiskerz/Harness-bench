@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.1 — 2026-10-24
+- Replaced crowded circular pin labels with compact per-insert order numbers inside the cavity markers.
+- Added a readable pin-order table showing order number, pin ID, contact size, and function/label in the inspector and Connector Studio.
+- Clarified that the order numbers are a navigation aid only and do not represent verified manufacturer cavity numbering.
+
+
 ## v0.5.0 — 2026-10-24
 - Added DEUTSCH HD30 shell-size-24 insert presets for 24-9, 24-21, 24-14, 24-23, 24-7, 24-19, 24-16, 24-29, 24-18, and 24-31.
 - Added circular schematic cavity layouts with contact-size-dependent cavity diameters.
