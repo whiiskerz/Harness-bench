@@ -1,6 +1,16 @@
 # Harness Bench — E90 LS Example
 
+**Current version:** v0.2.0 · **Built by:** @whiiskerzbuilt
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
+
 Standalone browser-based wiring harness planner. Open `index.html` locally or publish the folder with GitHub Pages.
+
+## v0.2.0 additions
+- Added Electrical Checker as a tab in the main navigation (no separate URL needed).
+- Added a version/creator footer and `CHANGELOG.md`.
+- Electrical Checker estimates voltage drop, load voltage and wire power loss from entered values. It does not validate ampacity or certify safety.
 
 ## Update 7 additions
 - **Harness Book** tab with editable circuit/connector records seeded from owner-confirmed DT6 → three DT2 → MaxxECU details.

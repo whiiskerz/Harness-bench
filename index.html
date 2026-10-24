@@ -4,145 +4,6 @@
 
 
 .dashboard-hero{padding:18px;background:linear-gradient(120deg,var(--panel),var(--panel2));border-left:4px solid var(--accent)}.eyebrow{font:500 11px var(--mono);letter-spacing:.14em;color:var(--accent);margin-bottom:8px}.dashboard-hero h2{font-size:clamp(24px,4vw,36px);margin-bottom:8px}.dashboard-hero p{max-width:780px;margin-bottom:12px}.dash-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.stat{padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}.stat>span{font:500 10px var(--mono);color:var(--mute);letter-spacing:.08em}.stat>b{font:700 clamp(18px,3vw,28px) var(--display);overflow-wrap:anywhere}.stat small{font-size:11px;color:var(--mute)}.status-warn{color:var(--warn)!important;font-size:17px!important}.system-map{padding:16px;display:flex;flex-direction:column;align-items:center;gap:7px}.sys-node{display:flex;flex-direction:column;gap:3px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:12px;min-width:0;width:100%;max-width:310px}.sys-node b{font:700 14px var(--display);letter-spacing:.06em;color:var(--accent)}.sys-node span{font-size:12px;color:var(--mute)}.sys-node.power{border-color:#d69a31}.sys-node.ecu{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel2))}.sys-arrow{font-size:23px;color:var(--accent);line-height:1}.sys-split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;align-items:start}.sys-branch{display:flex;align-items:center;flex-direction:column;gap:7px;min-width:0}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid2 .card{min-width:0}@media(max-width:700px){.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.sys-split{grid-template-columns:1fr}.sys-branch{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center}.sys-branch .sys-node{max-width:none}.sys-arrow{transform:none}}
-</style><style>
-/* HARNESS BENCH — PROFESSIONAL ENGINEERING THEME */
-:root {
-  --hb-bg: #0b0e13;
-  --hb-panel: #121720;
-  --hb-panel-2: #191f2a;
-  --hb-border: #2b3442;
-  --hb-text: #e7edf5;
-  --hb-muted: #91a0b5;
-  --hb-accent: #56a6ff;
-  --hb-green: #4bd6a0;
-  --hb-yellow: #f4c66a;
-  --hb-red: #ff747c;
-}
-body {
-  background: var(--hb-bg);
-  color: var(--hb-text);
-}
-.hb-panel {
-  background: var(--hb-panel);
-  border: 1px solid var(--hb-border);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 14px;
-}
-.hb-panel h2,
-.hb-panel h3 {
-  margin-top: 0;
-  color: var(--hb-text);
-}
-.hb-muted {
-  color: var(--hb-muted);
-}
-.hb-button {
-  background: var(--hb-panel-2);
-  color: var(--hb-text);
-  border: 1px solid var(--hb-border);
-  padding: 9px 13px;
-  border-radius: 7px;
-  cursor: pointer;
-  font: inherit;
-  transition: border-color .15s, background .15s;
-}
-.hb-button:hover {
-  border-color: var(--hb-accent);
-  background: #202a38;
-}
-.hb-button-primary {
-  background: var(--hb-accent);
-  border-color: var(--hb-accent);
-  color: #07111e;
-  font-weight: 700;
-}
-.hb-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 9px;
-  border: 1px solid var(--hb-border);
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-}
-.hb-status::before {
-  content: "";
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-}
-.hb-ok { color: var(--hb-green); }
-.hb-warning { color: var(--hb-yellow); }
-.hb-danger { color: var(--hb-red); }
-.hb-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.hb-table th,
-.hb-table td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid var(--hb-border);
-}
-.hb-table th {
-  color: var(--hb-muted);
-  font-weight: 600;
-}
-.hb-input {
-  width: 100%;
-  box-sizing: border-box;
-  background: var(--hb-bg);
-  color: var(--hb-text);
-  border: 1px solid var(--hb-border);
-  border-radius: 7px;
-  padding: 9px;
-}
-.hb-input:focus {
-  outline: 1px solid var(--hb-accent);
-  border-color: var(--hb-accent);
-}
-.hb-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-.hb-metric {
-  background: var(--hb-panel-2);
-  border: 1px solid var(--hb-border);
-  border-radius: 9px;
-  padding: 13px;
-}
-.hb-metric-label {
-  color: var(--hb-muted);
-  font-size: 12px;
-}
-.hb-metric-value {
-  font-size: 22px;
-  font-weight: 750;
-  margin-top: 6px;
-}
-.hb-notice {
-  border-left: 3px solid var(--hb-yellow);
-  background: #211e16;
-  padding: 11px 13px;
-  border-radius: 4px;
-  font-size: 13px;
-}
-@media (max-width: 700px) {
-  .hb-grid {
-    grid-template-columns: 1fr;
-  }
-  .hb-panel {
-    padding: 12px;
-  }
-  .hb-table {
-    font-size: 12px;
-  }
-}
 </style></head><body>
 <title>Harness Bench</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -262,6 +123,8 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 ul.tight{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
 a{color:var(--accent)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--accent);color:var(--accent-ink);padding:8px 14px;border-radius:6px;font-weight:600;z-index:20}
+.app-footer{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;padding:18px 12px 24px;color:var(--mute);font:11px var(--mono);border-top:1px solid var(--line);margin-top:22px}.app-footer b{color:var(--fg)}.app-footer a{color:var(--accent)}
+.echeck-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.echeck-grid .card{min-width:0}.echeck-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.echeck-metric{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--panel2)}.echeck-metric span{display:block;color:var(--mute);font:10px var(--mono);text-transform:uppercase;letter-spacing:.08em}.echeck-metric b{display:block;font-size:20px;margin-top:5px;overflow-wrap:anywhere}@media(max-width:700px){.echeck-grid,.echeck-results{grid-template-columns:1fr}}
 </style>
 
 <div class="wrap">
@@ -303,12 +166,16 @@ a{color:var(--accent)}
 <section id="t-bom" hidden></section>
 <section id="t-build" hidden></section>
 <section id="t-checks" hidden></section>
+<section id="t-electrical" hidden></section>
 <section id="t-notes" hidden></section>
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
+<footer class="app-footer"><span>Harness Bench <b id="appVersion">v0.2.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
+const APP_VERSION='0.2.0';
+const CREATOR_HANDLE='@whiiskerzbuilt';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const KEY='harness-bench-v2';
 
@@ -1258,9 +1125,39 @@ function rBook(){
 function bookCSV(){ensureBook();const cols=['id','kind','name','from','to','cavity','wire','status','notes'];return csv([cols].concat(S.circuitBook.map(x=>cols.map(k=>x[k]||''))));}
 function bookPrint(){ensureBook();const w=window.open('','_blank');if(!w){toast('Allow pop-ups to print');return}const rows=S.circuitBook.map(x=>`<tr>${['id','kind','name','from','to','cavity','wire','status','notes'].map(k=>`<td>${esc(x[k]||'')}</td>`).join('')}</tr>`).join('');w.document.write(`<!doctype html><html><head><title>Harness Bench Circuit Register</title><style>body{font:11px Arial;margin:18px}h1{font-size:20px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #aaa;padding:5px;text-align:left;vertical-align:top}th{background:#eee}p{font-size:11px}</style></head><body><h1>Harness Bench — E90 LS Circuit Register</h1><p>Owner-supplied design notes. Verify all pinouts, current ratings and protection before fabrication or energizing.</p><table><thead><tr>${['ID','Type','Circuit','From','To','Cavities / pins','Wire details','Status','Notes'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></body></html>`);w.document.close();setTimeout(()=>{w.focus();w.print()},300)}
 
+/* ---------- electrical checker v0.2.0 ---------- */
+function rElectrical(){
+ const el=document.getElementById('t-electrical');
+ el.innerHTML=`<h2>Electrical Checker</h2><p class="muted">Quick first-pass voltage-drop and fuse/load sanity check. This calculator is separate from the drawing for now; it does not yet read a selected wire from your project.</p>
+ <div class="echeck-grid"><div class="card"><h3>Circuit inputs</h3><div class="row"><label><span>System voltage (V)</span><input id="ecVoltage" type="number" min="1" step="0.1" value="14" oninput="calcElectrical()"></label><label><span>Load current (A)</span><input id="ecCurrent" type="number" min="0" step="0.1" value="20" oninput="calcElectrical()"></label></div><div class="row"><label><span>One-way wire length (ft)</span><input id="ecLength" type="number" min="0" step="0.1" value="10" oninput="calcElectrical()"></label><label><span>Copper wire gauge</span><select id="ecAwg" onchange="calcElectrical()">${[4,6,8,10,12,14,16,18,20,22,24].map(g=>`<option value="${g}" ${g===14?'selected':''}>${g} AWG</option>`).join('')}</select></label></div><div class="row"><label><span>Fuse rating (A)</span><input id="ecFuse" type="number" min="0" step="1" value="25" oninput="calcElectrical()"></label><label><span>Max target voltage drop (%)</span><input id="ecTarget" type="number" min="0.1" max="20" step="0.1" value="3" oninput="calcElectrical()"></label></div><p class="muted">Uses approximate copper resistance at 20°C and round-trip length. Real wire runs heat up and installation/bundling affects allowable current.</p></div>
+ <div class="card"><h3>Calculated estimate</h3><div class="echeck-results"><div class="echeck-metric"><span>Voltage drop</span><b id="ecDrop">—</b></div><div class="echeck-metric"><span>Load voltage</span><b id="ecLoadV">—</b></div><div class="echeck-metric"><span>Wire loss</span><b id="ecLoss">—</b></div></div><div id="ecWarnings" class="call" style="margin-top:12px">Enter circuit values to calculate.</div></div></div>
+ <div class="card" style="margin-top:12px"><h3>Safety boundary</h3><p>This is an educational screening tool, not a certified electrical design. It does <b>not</b> validate wire ampacity, fuse interrupt rating, terminal/connector ratings, ECU output limits, temperature, bundling, or automotive standards. Confirm manufacturer data and protection requirements before building or energizing a circuit.</p></div>`;
+ calcElectrical();
+}
+function calcElectrical(){
+ const val=id=>Number(document.getElementById(id)?.value);
+ const v=val('ecVoltage'),a=val('ecCurrent'),ft=val('ecLength'),g=val('ecAwg'),f=val('ecFuse'),target=val('ecTarget');
+ const r1000={4:.2485,6:.3951,8:.6282,10:.9989,12:1.588,14:2.525,16:4.016,18:6.385,20:10.15,22:16.14,24:25.67};
+ const valid=[v,a,ft,g,f,target].every(Number.isFinite)&&v>0&&a>=0&&ft>=0&&f>=0&&target>0;
+ const dropEl=document.getElementById('ecDrop');if(!dropEl)return;
+ if(!valid){dropEl.textContent='Check inputs';return}
+ const ohm=(r1000[g]||0)*2*ft/1000,drop=a*ohm,pct=drop/v*100,loadV=v-drop,loss=a*a*ohm;
+ document.getElementById('ecDrop').textContent=`${drop.toFixed(2)} V (${pct.toFixed(2)}%)`;
+ document.getElementById('ecLoadV').textContent=`${loadV.toFixed(2)} V`;
+ document.getElementById('ecLoss').textContent=`${loss.toFixed(1)} W`;
+ const warnings=[];
+ if(pct>target)warnings.push(`<li class="bd">Voltage drop ${pct.toFixed(2)}% exceeds your ${target.toFixed(2)}% target.</li>`);
+ else warnings.push(`<li class="ok">Voltage drop is within the entered target.</li>`);
+ if(f<a)warnings.push(`<li class="bd">Fuse rating is below the entered load current. A fuse must be selected to protect the circuit and wire, not simply match the load.</li>`);
+ else warnings.push(`<li class="wn">Fuse is not below the entered load current, but this does not confirm the fuse is correctly sized.</li>`);
+ if(loadV<=0)warnings.push(`<li class="bd">Calculated drop is at least the supply voltage; check the inputs and circuit design.</li>`);
+ warnings.push(`<li class="wn">AWG ${g} ampacity is not validated here. Check wire insulation, ambient temperature, bundling, run conditions, connector ratings and manufacturer guidance.</li>`);
+ document.getElementById('ecWarnings').innerHTML=`<b>Screening results</b><ul class="tight">${warnings.join('')}</ul>`;
+}
+
 /* ---------- tabs ---------- */
-const TABS=[['project','Dashboard · E90 Example'],['studio','Connector Studio'],['draw','Draw'],['mock','Mockup'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts list'],['checks','Checks'],['build','Build tracker'],['notes','Notes'],['save','Backup']];
-const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,build:rBuild,notes:rNotes,save:rSave};
+const TABS=[['project','Dashboard · E90 Example'],['studio','Connector Studio'],['draw','Draw'],['mock','Mockup'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts list'],['checks','Checks'],['electrical','Electrical Checker'],['build','Build tracker'],['notes','Notes'],['save','Backup']];
+const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
 tabsEl.innerHTML=TABS.map(([k,l])=>`<button role="tab" data-tab="${k}">${l}</button>`).join('');
 function showTab(k){
