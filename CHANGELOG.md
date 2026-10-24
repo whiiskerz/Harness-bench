@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — E90 wiring accuracy corrections
+- Corrected the CAN hub library pinout: every 4-port or 6-port hub port repeats pin 1 CAN H, pin 2 CAN L, pin 3 switched 12V VDD, and pin 4 GND.
+- Kept the CAN hub as a planned library option; the E90 example now uses the installed 1-in / 3-out DT twisted splitter instead.
+- Replaced the MaxxECU 12-pin / 16-pin connector instances in the example with the owner-terminated DT12 breakout and two DT8 breakouts as the displayed wiring endpoints.
+- Corrected the BMW X126 A/C pressure input to a signal-only tap on the black/white OEM wire to MaxxECU AIN7; removed the invented sensor +5V and ground branches from this tapped circuit.
+- Split the trunk layout into left and right zones: surge tank and wiring/electronics on the left; OEM battery and nitrous bottle on the right trunk plate.
+- Updated the DT8 analog breakout pin 7 label to GPO7 / DIN3.
+
 ## v0.15.0 — 2026-10-24
 - Linked the Electrical Checker to the active drawing: load a selected wire's current, length, gauge and fuse values, then explicitly apply reviewed values back to that wire.
 - Added reusable voltage-drop calculation logic, support for large copper gauges in the calculator, and an explicit warning when a loaded circuit has no fuse rating entered.
