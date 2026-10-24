@@ -202,10 +202,10 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.14.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.15.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.14.0';
+const APP_VERSION='0.15.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1395,10 +1395,27 @@ function readinessAudit(){
  }
  return {findings,openWires:openWires.length,pendingRecords:pending.length,wireCount:S.wires.length,partCount:S.parts.length};
 }
+function runProjectSelfTests(){
+ const results=[];const test=(name,pass,detail='')=>results.push({name,pass:!!pass,detail});
+ const ids=new Set(),duplicates=[];S.parts.forEach(p=>{if(ids.has(String(p.id)))duplicates.push(p.id);ids.add(String(p.id));});
+ test('Part IDs are unique',duplicates.length===0,duplicates.length?'Duplicate IDs: '+duplicates.join(', '):S.parts.length+' parts checked');
+ const byId=new Map(S.parts.map(p=>[String(p.id),p])),badEndpoints=[],badPins=[];
+ S.wires.forEach((w,i)=>{for(const [side,e] of [['from',w.a],['to',w.b]]){const p=e&&byId.get(String(e.p));if(!p){badEndpoints.push('Wire '+(w.id??i)+' '+side);continue;}const t=T[p.t],max=t?.node?1:(t?.pins?.length||0);if(!Number.isInteger(Number(e.i))||Number(e.i)<0||Number(e.i)>=max)badPins.push('Wire '+(w.id??i)+' '+side+' pin '+e.i);}});
+ test('Every wire endpoint resolves',badEndpoints.length===0,badEndpoints.slice(0,10).join('; ')||S.wires.length+' wires checked');
+ test('Every endpoint pin is in range',badPins.length===0,badPins.slice(0,10).join('; ')||'All endpoint indices valid');
+ const wireIds=new Set(),dupW=[];S.wires.forEach(w=>{if(wireIds.has(String(w.id)))dupW.push(w.id);wireIds.add(String(w.id));});test('Wire IDs are unique',dupW.length===0,dupW.length?'Duplicate IDs: '+dupW.join(', '):S.wires.length+' wires checked');
+ const malformed=S.wires.filter(w=>!Number.isInteger(+w.awg)||+w.awg<0||+w.awg>24||!Number.isFinite(+w.len)||+w.len<0||!Number.isFinite(+w.amps)||+w.amps<0||!Number.isFinite(+w.fa)||+w.fa<0);
+ test('Wire electrical fields are numeric and in expected ranges',malformed.length===0,malformed.length+' malformed wire records');
+ const est=electricalEstimate(14,20,10,14);test('Voltage-drop calculation reference',!!est&&Math.abs(est.drop-1.01)<0.0001&&Math.abs(est.pct-7.2142857)<0.01,est?'14 V / 20 A / 10 ft one-way / 14 AWG → '+est.drop.toFixed(3)+' V, '+est.pct.toFixed(2)+'%':'No estimate');
+ const csvSample=csv([['a','b'],['comma,value','say "hi"']]);test('CSV quoting round-trip shape',csvSample.includes('"comma,value"')&&csvSample.includes('"say ""hi"""'),csvSample.replace(/\n/g,' / '));
+ test('Starter topology builder exists',typeof e90ProjectStarter==='function','E90 example builder available');
+ const passed=results.filter(x=>x.pass).length;return {timestamp:new Date().toISOString(),passed,total:results.length,ok:passed===results.length,results};
+}
+function downloadReadinessReport(){const report={appVersion:APP_VERSION,project:{parts:S.parts.length,wires:S.wires.length},readiness:readinessAudit(),tests:runProjectSelfTests(),generatedAt:new Date().toISOString(),notice:'Documentation/consistency report only; not an electrical safety certification.'};downloadTextFile('wireforge-readiness-report.json',JSON.stringify(report,null,2),'application/json;charset=utf-8');}
 function renderReadinessAudit(){
  const a=readinessAudit(),counts={bd:a.findings.filter(x=>x.level==='bd').length,wn:a.findings.filter(x=>x.level==='wn').length};
  const rows=a.findings.map(x=>'<li class="'+x.level+'">'+esc(x.text)+'</li>').join('');
- return '<div class="card"><div class="hd"><b>Project readiness audit</b><span class="pill '+(counts.bd?'bd':(counts.wn||a.openWires||a.pendingRecords)?'wn':'ok')+'">'+(counts.bd?'Errors found':(counts.wn||a.openWires||a.pendingRecords)?'Review needed':'No open flags')+'</span></div><div class="row"><span class="pill">'+a.partCount+' parts</span><span class="pill">'+a.wireCount+' wire segments</span><span class="pill '+(a.openWires?'wn':'ok')+'">'+a.openWires+' wires with incomplete documentation</span><span class="pill '+(a.pendingRecords?'wn':'ok')+'">'+a.pendingRecords+' register records pending</span></div><p class="muted">This is a documentation and consistency screen, not an electrical safety certification. Unknown information is intentionally reported as unresolved rather than guessed.</p>'+(rows?'<ul class="tight">'+rows+'</ul>':'<p class="ok">No endpoint or known source-conflict flags found.</p>')+'</div>';
+ return '<div class="card"><div class="hd"><b>Project readiness audit</b><span class="pill '+(counts.bd?'bd':(counts.wn||a.openWires||a.pendingRecords)?'wn':'ok')+'">'+(counts.bd?'Errors found':(counts.wn||a.openWires||a.pendingRecords)?'Review needed':'No open flags')+'</span></div><div class="row"><span class="pill">'+a.partCount+' parts</span><span class="pill">'+a.wireCount+' wire segments</span><span class="pill '+(a.openWires?'wn':'ok')+'">'+a.openWires+' wires with incomplete documentation</span><span class="pill '+(a.pendingRecords?'wn':'ok')+'">'+a.pendingRecords+' register records pending</span></div><p class="muted">This is a documentation and consistency screen, not an electrical safety certification. Unknown information is intentionally reported as unresolved rather than guessed.</p><div class="row"><button class="btn primary" data-act="runSelfTests">Run project self-tests</button><button class="btn" data-act="downloadAudit">Download readiness report</button></div>'+(window.__wireForgeTestReport?'<div class="call"><b>Latest self-test run</b><pre>'+esc(JSON.stringify(window.__wireForgeTestReport,null,2))+'</pre></div>':'')+(rows?'<ul class="tight">'+rows+'</ul>':'<p class="ok">No endpoint or known source-conflict flags found.</p>')+'</div>';
 }
 function rChecks(){
   const issues=[];
@@ -1525,7 +1542,7 @@ function rSave(){
   document.getElementById('t-save').innerHTML=`<h2>Backup</h2>
    <p class="muted">Your drawing saves in this browser only. Copy the backup text and keep it somewhere safe. To restore, paste it below and press Load.</p>
    <textarea id="bk" placeholder="Paste a backup here to load it"></textarea>
-   <div class="row"><button class="btn primary" data-act="bkCopy">Copy backup</button><button class="btn" data-act="bkLoad">Load from box</button></div>
+   <div class="row"><button class="btn primary" data-act="bkCopy">Copy backup</button><button class="btn" data-act="bkDownload">Download JSON backup</button><button class="btn" data-act="bkLoad">Load from box</button></div>
    <h3>Saved designs</h3>
    <p class="muted">Save the drawing under a name, like "Current build" or "Bulkhead rebuild". Designs stay in this browser.</p>
    <div class="row"><input id="dsn" placeholder="Design name" style="flex:1"><button class="btn primary" data-act="designSave">Save design</button></div>
@@ -1573,11 +1590,33 @@ function bookPrint(){ensureBook();const w=window.open('','_blank');if(!w){toast(
 /* ---------- electrical checker v0.2.0 ---------- */
 function rElectrical(){
  const el=document.getElementById('t-electrical');
- el.innerHTML=`<h2>Electrical Checker</h2><p class="muted">Quick first-pass voltage-drop and fuse/load sanity check. This calculator is separate from the drawing for now; it does not yet read a selected wire from your project.</p>
- <div class="echeck-grid"><div class="card"><h3>Circuit inputs</h3><div class="row"><label><span>System voltage (V)</span><input id="ecVoltage" type="number" min="1" step="0.1" value="14" oninput="calcElectrical()"></label><label><span>Load current (A)</span><input id="ecCurrent" type="number" min="0" step="0.1" value="20" oninput="calcElectrical()"></label></div><div class="row"><label><span>One-way wire length (ft)</span><input id="ecLength" type="number" min="0" step="0.1" value="10" oninput="calcElectrical()"></label><label><span>Copper wire gauge</span><select id="ecAwg" onchange="calcElectrical()">${[4,6,8,10,12,14,16,18,20,22,24].map(g=>`<option value="${g}" ${g===14?'selected':''}>${g} AWG</option>`).join('')}</select></label></div><div class="row"><label><span>Fuse rating (A)</span><input id="ecFuse" type="number" min="0" step="1" value="25" oninput="calcElectrical()"></label><label><span>Max target voltage drop (%)</span><input id="ecTarget" type="number" min="0.1" max="20" step="0.1" value="3" oninput="calcElectrical()"></label></div><p class="muted">Uses approximate copper resistance at 20°C and round-trip length. Real wire runs heat up and installation/bundling affects allowable current.</p></div>
+ el.innerHTML=`<h2>Electrical Checker</h2><p class="muted">First-pass voltage-drop screening linked to your drawing. Select a wire to load its current, route length, gauge and fuse details; apply edits back to that wire when ready.</p><div class="card"><div class="row"><label style="flex:1;min-width:220px"><span>Wire from active drawing</span><select id="ecWireSelect">${S.wires.map((w,i)=>`<option value="${w.id}" ${selection?.type==='wire'&&selection.id===w.id?'selected':i===0?'':''}>${esc(w.sig||'Wire #'+(i+1))} · ${esc(endName(w.a))} → ${esc(endName(w.b))}</option>`).join('')}</select></label><button class="btn" type="button" onclick="loadElectricalWire()">Load wire values</button><button class="btn primary" type="button" onclick="applyElectricalToWire()">Apply values to wire</button></div><p id="ecWireNote" class="muted">Applying values edits the selected wire in the drawing. Review the fields first.</p></div>
+ <div class="echeck-grid"><div class="card"><h3>Circuit inputs</h3><div class="row"><label><span>System voltage (V)</span><input id="ecVoltage" type="number" min="1" step="0.1" value="14" oninput="calcElectrical()"></label><label><span>Load current (A)</span><input id="ecCurrent" type="number" min="0" step="0.1" value="20" oninput="calcElectrical()"></label></div><div class="row"><label><span>One-way wire length (ft)</span><input id="ecLength" type="number" min="0" step="0.1" value="10" oninput="calcElectrical()"></label><label><span>Copper wire gauge</span><select id="ecAwg" onchange="calcElectrical()">${[0,1,2,3,4,6,8,10,12,14,16,18,20,22,24].map(g=>`<option value="${g}" ${g===14?'selected':''}>${g===0?'0 AWG (large conductor)':g+' AWG'}</option>`).join('')}</select></label></div><div class="row"><label><span>Fuse rating (A)</span><input id="ecFuse" type="number" min="0" step="1" value="25" oninput="calcElectrical()"></label><label><span>Max target voltage drop (%)</span><input id="ecTarget" type="number" min="0.1" max="20" step="0.1" value="3" oninput="calcElectrical()"></label></div><p class="muted">Uses approximate copper resistance at 20°C and round-trip length. Real wire runs heat up and installation/bundling affects allowable current.</p></div>
  <div class="card"><h3>Calculated estimate</h3><div class="echeck-results"><div class="echeck-metric"><span>Voltage drop</span><b id="ecDrop">—</b></div><div class="echeck-metric"><span>Load voltage</span><b id="ecLoadV">—</b></div><div class="echeck-metric"><span>Wire loss</span><b id="ecLoss">—</b></div></div><div id="ecWarnings" class="call" style="margin-top:12px">Enter circuit values to calculate.</div></div></div>
  <div class="card" style="margin-top:12px"><h3>Safety boundary</h3><p>This is an educational screening tool, not a certified electrical design. It does <b>not</b> validate wire ampacity, fuse interrupt rating, terminal/connector ratings, ECU output limits, temperature, bundling, or automotive standards. Confirm manufacturer data and protection requirements before building or energizing a circuit.</p></div>`;
  calcElectrical();
+}
+function electricalEstimate(voltage,current,oneWayFeet,gauge){
+ const resistancePer1000={0:.0983,1:.1239,2:.1563,3:.197,4:.2485,6:.3951,8:.6282,10:.9989,12:1.588,14:2.525,16:4.016,18:6.385,20:10.15,22:16.14,24:25.67};
+ const r=resistancePer1000[Number(gauge)];if(![voltage,current,oneWayFeet].every(Number.isFinite)||!r||voltage<=0||current<0||oneWayFeet<0)return null;
+ const ohm=r*2*oneWayFeet/1000,drop=current*ohm;return {ohm,drop,pct:drop/voltage*100,loadV:voltage-drop,loss:current*current*ohm};
+}
+function loadElectricalWire(){
+ const id=Number(document.getElementById('ecWireSelect')?.value),w=S.wires.find(x=>x.id===id);if(!w)return toast('Choose a wire from the drawing first');
+ document.getElementById('ecCurrent').value=Number.isFinite(+w.amps)&&+w.amps>0?w.amps:'';
+ document.getElementById('ecLength').value=(+w.len>0?+w.len:wlen(w))/12;
+ document.getElementById('ecAwg').value=String(w.awg||14);
+ document.getElementById('ecFuse').value=+w.fa>0?w.fa:'';
+ document.getElementById('ecWireNote').textContent='Loaded '+(w.sig||'wire #'+w.id)+'. Length uses the entered route length or drawing estimate; confirm the physical run before relying on results.';
+ calcElectrical();
+}
+function applyElectricalToWire(){
+ const id=Number(document.getElementById('ecWireSelect')?.value),w=S.wires.find(x=>x.id===id);if(!w)return toast('Choose a wire from the drawing first');
+ const amps=Number(document.getElementById('ecCurrent')?.value),ft=Number(document.getElementById('ecLength')?.value),awg=Number(document.getElementById('ecAwg')?.value),fuse=Number(document.getElementById('ecFuse')?.value);
+ if(![amps,ft,awg,fuse].every(Number.isFinite)||amps<0||ft<0||fuse<0||!Number.isInteger(awg))return toast('Check current, length, gauge and fuse values');
+ commit();w.amps=amps;w.len=ft*12;w.awg=awg;w.fa=fuse;save();draw();
+ document.getElementById('ecWireNote').textContent='Applied current, route length, gauge and fuse rating to '+(w.sig||'wire #'+w.id)+'. Values are saved in this browser project.';
+ toast('Electrical values applied to wire');calcElectrical();
 }
 function calcElectrical(){
  const val=id=>Number(document.getElementById(id)?.value);
@@ -1586,7 +1625,7 @@ function calcElectrical(){
  const valid=[v,a,ft,g,f,target].every(Number.isFinite)&&v>0&&a>=0&&ft>=0&&f>=0&&target>0;
  const dropEl=document.getElementById('ecDrop');if(!dropEl)return;
  if(!valid){dropEl.textContent='Check inputs';return}
- const ohm=(r1000[g]||0)*2*ft/1000,drop=a*ohm,pct=drop/v*100,loadV=v-drop,loss=a*a*ohm;
+ const est=electricalEstimate(v,a,ft,g);if(!est){dropEl.textContent='Gauge unavailable';return}const {ohm,drop,pct,loadV,loss}=est;
  document.getElementById('ecDrop').textContent=`${drop.toFixed(2)} V (${pct.toFixed(2)}%)`;
  document.getElementById('ecLoadV').textContent=`${loadV.toFixed(2)} V`;
  document.getElementById('ecLoss').textContent=`${loss.toFixed(1)} W`;
@@ -1596,6 +1635,7 @@ function calcElectrical(){
  if(f<a)warnings.push(`<li class="bd">Fuse rating is below the entered load current. A fuse must be selected to protect the circuit and wire, not simply match the load.</li>`);
  else warnings.push(`<li class="wn">Fuse is not below the entered load current, but this does not confirm the fuse is correctly sized.</li>`);
  if(loadV<=0)warnings.push(`<li class="bd">Calculated drop is at least the supply voltage; check the inputs and circuit design.</li>`);
+ if(a>0&&f===0)warnings.push(`<li class="bd">No fuse rating entered for a loaded circuit. Confirm required overcurrent protection before building.</li>`);
  warnings.push(`<li class="wn">AWG ${g} ampacity is not validated here. Check wire insulation, ambient temperature, bundling, run conditions, connector ratings and manufacturer guidance.</li>`);
  document.getElementById('ecWarnings').innerHTML=`<b>Screening results</b><ul class="tight">${warnings.join('')}</ul>`;
 }
@@ -1663,6 +1703,15 @@ const CSVS={
  bom:()=>csv([['Item','Qty','Unit','Note']].concat(bomRows()))
 };
 
+function downloadTextFile(filename,content,type='text/plain;charset=utf-8'){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('Downloaded '+filename)}
+function downloadBackup(){downloadTextFile('wireforge-project-backup.json',JSON.stringify(S,null,2),'application/json;charset=utf-8')}
+function validateBackupObject(o){
+ const errors=[];if(!o||!Array.isArray(o.parts)||!Array.isArray(o.wires))return {errors:['Backup must contain parts and wires arrays']};
+ const ids=new Set();o.parts.forEach((p,i)=>{if(!p||p.id===undefined||typeof p.t!=='string')errors.push('Part '+(i+1)+' is malformed');else if(ids.has(String(p.id)))errors.push('Duplicate part ID '+p.id);else ids.add(String(p.id));if(p&&typeof p.t==='string'&&!T[p.t])makeCustom(p.t);if(p&&typeof p.t==='string'&&!T[p.t])errors.push('Unknown connector type '+p.t+' on part '+p.id);});
+ const parts=new Map((o.parts||[]).map(p=>[String(p?.id),p]));const wids=new Set();
+ (o.wires||[]).forEach((w,i)=>{if(!w||w.id===undefined||!w.a||!w.b){errors.push('Wire '+(i+1)+' is malformed');return;}if(wids.has(String(w.id)))errors.push('Duplicate wire ID '+w.id);wids.add(String(w.id));for(const [side,e] of [['from',w.a],['to',w.b]]){const p=parts.get(String(e?.p));if(!p){errors.push('Wire '+w.id+' has a missing '+side+' part');continue;}const t=T[p.t],max=t?.node?1:(t?.pins?.length||0);if(!Number.isInteger(Number(e.i))||Number(e.i)<0||Number(e.i)>=max)errors.push('Wire '+w.id+' has an invalid '+side+' pin index');}});
+ return {errors};
+}
 function downloadCsvFile(filename,content){const blob=new Blob(['\uFEFF'+content],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('Downloaded '+filename)}
 function printPinouts(){
  const rows=S.parts.map(p=>{const t=T[p.t],pins=t.node?[0]:t.pins.map((_,i)=>i);return `<section><h2>${esc(p.name)} <small>— ${esc(t.name)}</small></h2><table><thead><tr><th>Pin / cavity</th><th>Function</th><th>Wire / signal</th><th>Gauge</th><th>Color</th><th>Other endpoint</th></tr></thead><tbody>${pins.map(i=>{const ws=usedOn(p.id,i);return (ws.length?ws:[null]).map(w=>{const o=w?((w.a.p===p.id&&w.a.i===i)?w.b:w.a):null;return `<tr><td>${esc(t.pins[i].p)}</td><td>${esc(t.node?'':plabel(p,i))}</td><td>${esc(w?.sig||'—')}</td><td>${esc(w?String(w.awg)+' AWG':'—')}</td><td>${esc(w?.color||'—')}</td><td>${esc(o?endName(o):'—')}</td></tr>`}).join('')}).join('')}</tbody></table></section>`}).join('');
@@ -1707,6 +1756,9 @@ document.addEventListener('click',e=>{
    case'newZone':{commit();S.zones=S.zones||[];const id='zone-custom-'+Date.now();S.zones.push({id,name:'New work zone',col:'#4a86e8',x:snap(toWorld(rectOf().left+rectOf().width/2,rectOf().top+rectOf().height/2).x),y:snap(toWorld(rectOf().left+rectOf().width/2,rectOf().top+rectOf().height/2).y),w:520,h:420});selection={type:'zone',id};save();draw();renderInsp();toast('Zone added — drag border to move, corner to resize');break;}
    case'delZone':{if(selection?.type==='zone'){commit();S.zones=(S.zones||[]).filter(z=>z.id!==selection.id);selection=null;save();draw();renderInsp()}break;}
    case'zoneDone':{selection=null;save();draw();renderInsp();break;}
+   case'bkDownload':downloadBackup();break;
+   case'runSelfTests':{const report=runProjectSelfTests();window.__wireForgeTestReport=report;showTab('checks');toast(report.passed+'/'+report.total+' project self-tests passed');break;}
+   case'downloadAudit':downloadReadinessReport();break;
    case'downloadWires':downloadCsvFile('harness-wire-list.csv',CSVS.wires());break;
    case'downloadCut':downloadCsvFile('harness-wire-cut-list.csv',CSVS.cut());break;
    case'downloadPins':downloadCsvFile('harness-connector-pinouts.csv',CSVS.pins());break;
@@ -1769,9 +1821,8 @@ document.addEventListener('click',e=>{
    case'bookPrint':bookPrint();break;
    case'bookReset':if(confirm('Restore the starter harness records? This replaces the current Harness Book records only.')){S.circuitBook=JSON.parse(JSON.stringify(BOOK_SEED));save();showTab('book');}break;
    case'bkCopy':copy(JSON.stringify(S),b);break;
-   case'bkLoad':{try{const o=JSON.parse(document.getElementById('bk').value);if(!o||!Array.isArray(o.parts)||!Array.isArray(o.wires))throw 0;
-     o.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});
-     S=Object.assign(S,o,{examples:false,tab:'save'});S.parts=S.parts.filter(p=>T[p.t]);S.nid=Math.max(S.nid||1,...S.parts.map(p=>p.id),...S.wires.map(w=>w.id))+1;selection=null;save();toast('Loaded')}catch(x){toast('That is not a valid backup')}break}
+   case'bkLoad':{try{const o=JSON.parse(document.getElementById('bk').value);const check=validateBackupObject(o);if(check.errors.length)throw new Error(check.errors.slice(0,3).join('; '));
+     S=Object.assign(S,o,{examples:false,tab:'save'});S.parts=S.parts.filter(p=>T[p.t]);S.nid=Math.max(S.nid||1,...S.parts.map(p=>+p.id||0),...S.wires.map(w=>+w.id||0))+1;selection=null;save();toast('Backup loaded and validated')}catch(x){toast('Backup not loaded: '+(x?.message||'invalid backup'))}break}
   }
 });
 document.addEventListener('input',e=>{

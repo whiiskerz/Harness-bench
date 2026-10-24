@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.15.0 — 2026-10-24
+- Linked the Electrical Checker to the active drawing: load a selected wire's current, length, gauge and fuse values, then explicitly apply reviewed values back to that wire.
+- Added reusable voltage-drop calculation logic, support for large copper gauges in the calculator, and an explicit warning when a loaded circuit has no fuse rating entered.
+- Added in-app project self-tests for duplicate IDs, missing wire endpoints, pin-index validity, numeric wire fields, CSV quoting and a known voltage-drop calculation.
+- Added a downloadable JSON readiness report and one-click JSON project backup.
+- Validated backups before loading; malformed parts, duplicate IDs, missing endpoints, invalid pin indices and unknown connector types are rejected without replacing the active drawing.
+- Added Node.js smoke tests and a GitHub Actions workflow to run them on pull requests and pushes to main.
+
 ## v0.14.0 — 2026-10-24
 - Added a Project Readiness audit for duplicate part IDs, missing wire endpoints, invalid pin indices, incomplete wire documentation, and unresolved Harness Book records.
 - Flagged the valved-muffler output assignment conflict instead of treating GPO13/GPO14 as verified: the supplied Race LS wiring reference maps Motor 2 +/− to 12-pin K/L and does not establish GPO13/GPO14 as the reversing pair.
