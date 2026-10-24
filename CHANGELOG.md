@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.0 — 2026-10-23
+- Added live wire screening to the wire inspector: estimated length, voltage drop, percentage drop, approximate resistive loss, and warnings for missing current/fuse details.
+- Added the E90 example’s battery-positive, starter B+, alternator B+, engine-ground and trunk-ground topology as planning-level wire runs.
+- High-current example runs explicitly retain TBD gauge/protection/current values; the app does not imply these are engineered or safe.
+- Updated version label and release notes.
+
 ## v0.2.0 — 2026-10-23
 - Added an Electrical Checker tab to the main Harness Bench navigation.
 - Added approximate copper-wire voltage-drop, load-voltage and wire-loss estimates.

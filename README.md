@@ -27,3 +27,12 @@ Standalone browser-based wiring harness planner. Open `index.html` locally or pu
 
 ## Important
 This is documentation and design software, not a certified electrical design. Confirm connector face/orientation, cavity numbers, manufacturer specifications, output ratings, fuse placement, wire sizing and circuit behavior before fabrication or energizing. MaxxECU low-side outputs are control signals, not load power supplies. Keep ECU sensor ground separate from chassis ground.
+
+
+## v0.3.0 updates
+
+- Selecting a wire now shows a live, preliminary voltage-drop and resistive-loss estimate in the inspector. It uses the drawing length estimate unless a measured length is entered.
+- The E90 LS example now sketches the battery, starter, alternator and major ground connections as a topology reminder. High-current sizing, protection and termination remain marked TBD and must be engineered/verified before use.
+- App version and creator credit: **Built by @whiiskerzbuilt**.
+
+The screening calculations are educational aids only; they do not certify wire ampacity, fuse coordination, connector ratings, or vehicle safety.

@@ -171,10 +171,10 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>Harness Bench <b id="appVersion">v0.2.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>Harness Bench <b id="appVersion">v0.3.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.2.0';
+const APP_VERSION='0.3.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const KEY='harness-bench-v2';
@@ -363,6 +363,13 @@ function e90ProjectStarter(){
   wire(102,0,115,0,'MaxxECU sensor +5V → flex fuel sensor supply (verify sensor spec)',20,'RED');
   wire(102,1,115,2,'MaxxECU sensor ground → flex fuel sensor ground (sensor ground only)',20,'BLK');
   wire(115,1,102,5,'Flex fuel signal → MaxxECU DIN5',20,'YEL');
+  // Planning-only high-current topology. Cable size, protection, routing,
+  // crimp specification and torque are intentionally marked TBD.
+  wire(121,0,119,0,'Battery positive → BMW big-stud junction (high-current cable; size/protection TBD)',0,'RED',{amps:0,fuse:'MAIN_FEED_TBD',fa:0});
+  wire(119,0,120,0,'BMW big-stud junction → starter B+ (high-current cable; size/protection TBD)',0,'RED',{amps:0,fuse:'STARTER_FEED_TBD',fa:0});
+  wire(118,0,119,0,'Alternator B+ → BMW big-stud junction (charge cable; size/protection TBD)',0,'RED',{amps:0,fuse:'ALT_FEED_TBD',fa:0});
+  wire(122,0,121,1,'Engine ground point → battery negative (ground strap; size/termination TBD)',0,'BLK',{amps:0,fuse:'GROUND_STRAP_TBD',fa:0});
+  wire(106,0,121,1,'Trunk accessory ground bus → battery negative (ground cable; size/termination TBD)',0,'BLK',{amps:0,fuse:'TRUNK_GROUND_TBD',fa:0});
   return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
 }
 
@@ -664,6 +671,22 @@ function loomPanel(){
   const L=S.looms||[];
   return `<h3>Looms</h3>`+(L.map(l=>`<div class="lcard"><input data-lm="name" data-lid="${l.id}" value="${esc(l.name)}" aria-label="Loom name"><div class="row"><select data-lm="cover" data-lid="${l.id}">${COVERS.map(c=>`<option ${l.cover===c?'selected':''}>${c}</option>`).join('')}</select><input type="color" data-lm="color" data-lid="${l.id}" value="${l.color}" aria-label="Loom color"><span class="muted">${S.wires.filter(w=>w.loom===l.id).length} wires</span><button class="btn danger" data-act="delLoom" data-lid="${l.id}">Remove</button></div></div>`).join('')||'<p class="muted">No looms yet. Tap a wire and pick a loom, or add one here.</p>')+`<div class="row"><button class="btn" data-act="newLoom">+ New loom</button></div>`;
 }
+function wireAuditHTML(w){
+ const g=+w.awg, amps=+w.amps||0, inches=+w.len>0?+w.len:autoLen(w), ft=Math.max(0,inches/12);
+ const r={4:.2485,6:.3951,8:.6282,10:.9989,12:1.588,14:2.525,16:4.016,18:6.385,20:10.15,22:16.14,24:25.67}[g];
+ const v=14,ohm=(r||0)*2*ft/1000,drop=ohm*amps,pct=drop/v*100,fuse=+w.fa||0,rule=AMPS[g]||0;
+ const notes=[];
+ if(!w.amps)notes.push('<span class="wn">Current not entered — voltage-drop estimate is informational only.</span>');
+ if(!w.len)notes.push('<span class="muted">Length uses the drawing estimate; confirm routed length and service loops.</span>');
+ if(fuse&&rule&&fuse>rule)notes.push('<span class="bd">Fuse exceeds this app’s rough gauge rule-of-thumb; verify actual ampacity and protection.</span>');
+ if(fuse&&amps&&fuse<amps)notes.push('<span class="wn">Fuse rating is below entered load current; investigate before build.</span>');
+ if(amps&&pct>3)notes.push('<span class="wn">Estimated voltage drop exceeds a 3% reference target.</span>');
+ if(!fuse)notes.push('<span class="wn">No fuse value entered (or protection not documented).</span>');
+ if(!r)notes.push('<span class="wn">Gauge is TBD; no voltage-drop or gauge reference can be calculated.</span>');
+ return `<div class="grid2"><div><small>Length used</small><br><b>${inches.toFixed(1)} in</b></div><div><small>Estimated drop @ 14 V</small><br><b>${amps&&r?drop.toFixed(3)+' V ('+pct.toFixed(2)+'%)':'—'}</b></div><div><small>Approx. wire loss</small><br><b>${amps&&r?(amps*amps*ohm).toFixed(2)+' W':'—'}</b></div><div><small>App reference only</small><br><b>${rule?rule+' A rough guide':'No gauge guide'}</b></div></div><ul class="tight">${notes.map(n=>'<li>'+n+'</li>').join('')}</ul>`;
+}
+function refreshWireAudit(){const el=document.getElementById('wireLiveAudit');if(selection&&selection.type==='wire'&&el){const w=wireById(selection.id);if(w)el.innerHTML=wireAuditHTML(w)}}
+
 function renderInsp(){
   const el=document.getElementById('insp');
   if(selection&&selection.type==='part'){
@@ -676,7 +699,7 @@ function renderInsp(){
      <div class="row"><button class="btn" data-act="flip">Flip pin side</button><button class="btn" data-act="dupPart">Duplicate</button><button class="btn danger" data-act="delPart">Delete part</button></div>`;
   }else if(selection&&selection.type==='wire'){
     const w=S.wires.find(x=>x.id===selection.id);if(!w){selection=null;return renderInsp()}
-    const gs=Object.keys(AMPS).sort((a,b)=>b-a).map(g=>`<option value="${g}" ${+w.awg===+g?'selected':''}>${g} AWG</option>`).join('');
+    const gs=`<option value="0" ${+w.awg===0?'selected':''}>TBD / not sized</option>`+Object.keys(AMPS).sort((a,b)=>b-a).map(g=>`<option value="${g}" ${+w.awg===+g?'selected':''}>${g} AWG</option>`).join('');
     el.innerHTML=`<h2>Wire</h2>
      <p class="nt">${esc(endName(w.a))}<br>→ ${esc(endName(w.b))}</p>
      <label><span>Signal / what it does</span><input data-wi="sig" value="${esc(w.sig)}"></label>
@@ -688,6 +711,7 @@ function renderInsp(){
       <label><span>Fuse group</span><input data-wi="fuse" value="${esc(w.fuse)}" placeholder="ECU"></label>
       <label><span>Fuse size (A)</span><input data-wi="fa" type="number" min="0" step="0.5" inputmode="decimal" value="${w.fa||''}"></label>
      </div>
+     <div class="call"><b>Live wire screening</b><div id="wireLiveAudit">${wireAuditHTML(w)}</div><p class="muted">Preliminary estimate only: copper at 20°C, 14 V supply, and round-trip length of twice the entered/estimated run. This does not establish safe ampacity or fuse selection.</p></div>
      <div class="sw">${['RED','BLK','GRN','YEL','BLU','ORG','PUR','WHT','BRN','GRY','PNK'].map(c=>`<button class="swb" data-sw="${c}" title="${c}" aria-label="${c}" style="background:${COLORS[c]}"></button>`).join('')}</div>
      <div class="two">
       <label><span>Loom</span><select data-loom="1"><option value="">None</option>${(S.looms||[]).map(l=>`<option value="${l.id}" ${w.loom===l.id?'selected':''}>${esc(l.name)}</option>`).join('')}<option value="new">+ New loom</option></select></label>
@@ -1045,6 +1069,7 @@ function rProject(){
  <div class="dash-stats"><div class="card stat"><span>COMPONENTS</span><b>${partCount}</b><small>in active drawing</small></div><div class="card stat"><span>WIRE RUNS</span><b>${wireCount}</b><small>drawn connections</small></div><div class="card stat"><span>CONNECTED PARTS</span><b>${connected}</b><small>touching a wire</small></div><div class="card stat"><span>DESIGN STATUS</span><b class="status-warn">IN PROGRESS</b><small>verify before fabrication</small></div></div>
  <h3>Example harness architecture</h3><p class="muted">A quick visual orientation for the build. This is a system overview, not a pin-accurate schematic. Use Draw, Pinouts and Checks for detailed work.</p>
  <div class="system-map card"><div class="sys-node power"><b>TRUNK POWER</b><span>Battery · main protection</span><span>Switched fuse distribution</span></div><div class="sys-arrow">↓</div><div class="sys-node ecu"><b>MAXXECU RACE</b><span>DT12 power / GPOs</span><span>DT8 analog + control</span></div><div class="sys-split"><div class="sys-branch"><div class="sys-arrow">↙</div><div class="sys-node"><b>FUEL SYSTEM</b><span>Leash dual relay board</span><span>535 lift / 525 staged pump</span></div></div><div class="sys-branch"><div class="sys-arrow">↓</div><div class="sys-node"><b>DRIVER / TRANS</b><span>CAN keypad · 8HP</span><span>Keep chassis CAN separate</span></div></div><div class="sys-branch"><div class="sys-arrow">↘</div><div class="sys-node"><b>ENGINE / BODY</b><span>Coils · A/C · fan interface</span><span>Flex fuel · nitrous SSR</span></div></div></div></div>
+ <div class="call"><b>v0.3.0 example update:</b> the drawing includes a planning-level battery / starter / alternator / engine-ground / trunk-ground topology. High-current cable gauge, fuse strategy, routing, crimp specification and torque are marked TBD—not validated design values.</div>
  <div class="grid2"><div class="card"><div class="hd"><b>Confirmed from your notes</b><span class="pill ok">Owner supplied</span></div><ul class="tight"><li>MaxxECU Race Gen 1.</li><li>DT12: GPO2 fuel pump 1, GPO3 fuel pump 2, GPO6 A/C clutch, ECU switched +12V; alternator excite unused for the self-exciting Speedway alternator.</li><li>DT8 analog: +5V, dedicated sensor ground, paddle AIN1, fuel-pressure signal, A/C-pressure signal and fan PWM/GPO5.</li><li>DT8 CAN/control: CAN L/H, brake DIN1, shifter inputs, flex-fuel DIN5, nitrous GPO4 to SSR.</li><li>BMW X60001 interface: pin 20 fan-PWM interface, pin 38 brake switch, pins 7/8 chassis CAN L/H.</li><li>CAN keypad and owner-mapped six-position 8HP interface.</li></ul></div>
  <div class="card"><div class="hd"><b>Critical design rules</b><span class="pill wn">Verify first</span></div><ul class="tight"><li>ECU GPOs are low-side triggers; they do not power pumps or other loads directly.</li><li>Keep MaxxECU sensor ground isolated from chassis/engine ground.</li><li>Do not bridge BMW chassis CAN into the standalone CAN bus without verified topology and compatibility.</li><li>8HP cavity orientation, Leash terminal behavior, fuse sizes, wire gauges and high-current paths remain to be verified.</li><li>Do not treat the drawing as a production-ready harness until every pinout, current load, protection device and endpoint has been checked.</li></ul></div></div>
  <div class="card"><div class="hd"><b>Recommended workflow</b><span class="pill">Design → verify → build</span></div><ol class="tight"><li><b>Draw:</b> place components and connect actual cavities.</li><li><b>Pinouts:</b> inspect every endpoint, signal, color and gauge.</li><li><b>Checks:</b> resolve duplicate pins, missing details and fuse-sizing warnings.</li><li><b>Wire list / Cut list / Parts list:</b> export shop paperwork from the same design.</li><li><b>Backup:</b> save a JSON snapshot before major changes.</li></ol><div class="row"><button class="btn primary" data-act="goDraw">Start drawing</button><button class="btn" data-act="exportDiagram">Export current SVG</button><button class="btn" data-act="bkQuick">Copy project backup</button></div></div>`;
@@ -1280,7 +1305,7 @@ document.addEventListener('input',e=>{
     commitOnce('wi'+d.wi);const w=S.wires.find(x=>x.id===selection.id),k=d.wi;
     w[k]=['awg','len','amps','fa'].includes(k)?(t.value===''?0:+t.value):t.value;
     if(k==='color'){const c=t.closest('.cw').querySelector('.chip');c.style.background=colorOf(t.value)}
-    save();draw();
+    save();draw();refreshWireAudit();
   }
 });
 
