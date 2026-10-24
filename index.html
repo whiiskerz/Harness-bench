@@ -87,7 +87,14 @@ textarea{font:12px var(--mono);min-height:110px}
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
 .bar label{width:96px}
 .lib{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;max-height:340px;overflow:auto}
-.lib .grp{display:flex;flex-direction:column;gap:6px}
+.lib  .grp{display:flex;flex-direction:column;gap:6px}
+.lib details.catalog-group{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--panel);margin:8px 0}
+.lib details.catalog-group>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;font:700 13px var(--display);letter-spacing:.04em;text-transform:uppercase}
+.lib details.catalog-group>summary::-webkit-details-marker{display:none}
+.lib details.catalog-group>summary:after{content:'+';color:var(--accent);font-size:18px}
+.lib details.catalog-group[open]>summary:after{content:'−'}
+.lib details.catalog-group>summary small{margin-left:auto;color:var(--mute);font:10px var(--mono);text-transform:none;letter-spacing:0}
+.lib details.catalog-group[open]>summary{padding-bottom:8px;border-bottom:1px solid var(--line)}
 .lib .grp>b{font:600 12px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
 .lib .items{display:flex;gap:6px;flex-wrap:wrap}
 .main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}
@@ -195,10 +202,10 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.8.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.10.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.8.0';
+const APP_VERSION='0.10.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -274,10 +281,10 @@ group('Fuel & nitrous',[
 const MV={8:'8x12ga',20:'18x20ga, 2x16ga',21:'21x20ga',16:'16x12ga',29:'4x12ga, 19x16ga, 6x20ga',35:'3x16ga, 32x20ga',47:'5x16ga, 42x20ga'};
 function maven(id,name,shell,ns){
   const pins=[];ns.forEach((n,bi)=>{for(let i=1;i<=n;i++)pins.push({p:(ns.length>1?'AB'[bi]:'')+i,l:'',blk:bi})});
-  return {id,name,seal:true,fam:'bulk',bulk:true,sub:'Maven · shell '+shell,pn:'',desc:ns.map(n=>n+'-pin: '+MV[n]).join('  +  '),pins};
+  return {id,name,seal:true,fam:'maven',bulk:true,sub:ns.length>1?'Maven · dual insert configuration':'Maven · shell '+shell,pn:'',desc:ns.map(n=>n+'-way: '+MV[n]).join('  +  '),pins};
 }
-group('Maven bulkheads (single)',[[18,8],[18,20],[18,21],[24,16],[24,29],[24,35],[24,47]].map(([sh,n])=>maven('mv'+sh+'_'+n,'Maven '+n+'-pin (shell '+sh+')',sh,[n])));
-group('Maven bulkheads (dual)',[[29,29],[35,29],[47,29],[35,35],[35,47],[47,47],[16,16],[47,16],[35,16],[29,16]].map(([a,b])=>maven('mvd_'+a+'_'+b,'Maven dual '+a+' + '+b,24,[a,b])));
+group('Maven connectors · single',[[18,8],[18,20],[18,21],[24,16],[24,29],[24,35],[24,47]].map(([sh,n])=>maven('mv'+sh+'_'+n,'Maven '+n+'-way · shell '+sh,sh,[n])));
+group('Maven connectors · dual',[[29,29],[35,29],[47,29],[35,35],[35,47],[47,47],[16,16],[47,16],[35,16],[29,16]].map(([a,b])=>maven('mvd_'+a+'_'+b,'Maven dual '+a+' + '+b+' way',null,[a,b])));
 group('Power & starting',[
  lab('starter','Starter motor',[['B+','Battery + (big stud, constant)'],['S','Ignition + (small stud)']],'pwr','Starter'),
  lab('bmwbig','BMW big stud (unfused 12V)',[['B+','Unfused 12V (starter, alternator, main feed)']],'pwr','OEM BMW'),
@@ -372,7 +379,7 @@ function e90ProjectStarter(){
    mk(106,'gbus12',200,-70,'Trunk ground bus'),
    mk(107,'fuse6',-140,40,'Switched fuse box — ECU / coils / 8HP / flex / keypad / A/C',{1:'Coils',2:'ECU',3:'8HP',4:'Flex fuel',5:'CAN keypad',6:'A/C relay'}),
    mk(108,'relay',-140,270,'A/C compressor relay'),
-   mk(109,'e90leash1',-140,470,'Leash single board — switched accessory / heater branch'),
+   mk(109,'e90leash1',-140,470,'Leash single relay board — switched trunk fuse-box feed'),
    mk(110,'ekptrig',-400,500,'EKP trigger (signal endpoint)'),
    mk(111,'e90keypad',240,320,'CAN keypad sub-harness'),
    mk(112,'e908hp',240,160,'8HP harness — 6-position map supplied'),
@@ -405,7 +412,7 @@ function e90ProjectStarter(){
    mk(147,'heater',0,0,'Nitrous bottle heater'),
    mk(148,'relay',0,0,'Nitrous purge relay (86 from GPO15)'),
    mk(149,'bmwsmall',0,0,'Small stud — fused 12V (engine bay)'),
-   mk(150,'dual',0,0,'Leash dual board 2 — heater on B'),
+   
    mk(151,'sens3',0,0,'Nitrous pressure sensor — AIN2'),
    mk(152,'dt6',0,0,'OEM BMW pedal (DBW) — pin numbers match MaxxECU pedal plug'),
    mk(154,'dt12',0,0,'BMW X6021 — paddles'),
@@ -416,13 +423,21 @@ function e90ProjectStarter(){
    mk(159,'load2',0,0,'Starlights'),
    mk(160,'pdb',0,0,'Trunk 12V distribution block'),
    mk(133,'ssr',950,820,'Nitrous SSR interface — verify model / load circuit'),
-   mk(134,'fuse6',900,1020,'Auxiliary switched fuse box — nitrous SSR signal feed (upstream feed / fuse TBD)')
+   mk(134,'fuse6',900,1020,'Auxiliary switched fuse box — nitrous SSR signal feed (upstream feed / fuse TBD)'),
+   mk(161,'dt6',0,0,'DT6 — TRUNK SIDE · fuel / nitrous / sensor',{0:'GPO2 → Leash A−',1:'GPO3 → Leash B−',2:'GPO7 → heater trigger',3:'AIN2 → pressure signal',4:'+5V sensor supply',5:'Sensor ground'}),
+   mk(162,'dt6',0,0,'DT6 — CABIN SIDE · 6-core pass-through',{0:'GPO2',1:'GPO3',2:'GPO7',3:'AIN2',4:'+5V',5:'Sensor ground'}),
+   mk(163,'dt2',0,0,'Cabin DT2 #1 · fuel-pump triggers',{0:'GPO2',1:'GPO3'}),
+   mk(164,'dt2',0,0,'Cabin DT2 #2 · heater trigger / pressure signal',{0:'GPO7',1:'AIN2'}),
+   mk(165,'dt2',0,0,'Cabin DT2 #3 · sensor power',{0:'+5V',1:'Sensor ground'}),
+   mk(166,'relay',0,0,'Nitrous bottle heater relay · 85 = GPO7',{0:'30 · fused battery +',1:'85 · GPO7 low-side',2:'86 · switched +12V',3:'87 · heater +',4:'87a · unused'}),
+   mk(167,'splice',0,0,'Cabin +5V branch splice'),
+   mk(169,'inl',0,0,'Dedicated nitrous heater contact fuse · rating TBD'),
+   mk(168,'splice',0,0,'Cabin sensor-ground branch splice')
   ];
   const W=[];let wid=300;
   const wire=(ap,ai,bp,bi,sig,awg,color,extra={})=>{const low=sig.toLowerCase();const loom=low.includes('can ')?992:((low.includes('pump')||low.includes('fp1')||low.includes('fp2')||low.includes('ekp')||low.includes('trunk'))?991:990);W.push(mkW({p:ap,i:ai},{p:bp,i:bi},{id:wid++,sig,awg,color,loom,...extra}));};
   // Signal and relay control wiring from the supplied termination map.
-  wire(101,2,104,4,'GPO2 → FP1 relay low-side trigger',18,'GRN');
-  wire(101,4,104,6,'GPO3 → FP2 relay low-side trigger',18,'BLU');
+  // Fuel-pump low-side triggers are routed through the trunk-to-cabin DT6 sub-harness below.
   wire(101,3,108,1,'GPO6 → A/C relay coil − (ground-switching output)',18,'PUR');
   wire(107,6,108,2,'Fused switched +12V → A/C relay coil +',18,'RED');
   wire(107,2,101,6,'Switched +12V → ECU power branch',14,'RED');
@@ -469,9 +484,9 @@ function e90ProjectStarter(){
   wire(122,0,121,1,'Engine ground point → battery negative (ground strap; size/termination TBD)',0,'BLK',{amps:0,fuse:'GROUND_STRAP_TBD',fa:0});
   wire(106,0,121,1,'Trunk accessory ground bus → battery negative (ground cable; size/termination TBD)',0,'BLK',{amps:0,fuse:'TRUNK_GROUND_TBD',fa:0});
   const d12=['Coils +12V','Engine ground','GPO2 fuel pump 1','GPO6 A/C clutch','GPO3 fuel pump 2','Starter input','ECU switched +12V','GPO8','GPO15','Motor 2 +','Motor 2 −','Alternator'];
-  d12.forEach((n,i)=>wire(140,i,101,i,'ECU 12-pin '+'ABCDEFGHJKLM'[i]+' → DT12 pin '+(i+1)+' · '+n+' (pin-for-pin by function, verify)',0,''));
+  d12.forEach((n,i)=>{if(i===2||i===4)return;wire(140,i,101,i,'ECU 12-pin '+'ABCDEFGHJKLM'[i]+' → DT12 pin '+(i+1)+' · '+n+' (pin-for-pin by function, verify)',0,'')});
   const d8=['+5V sensors','Sensor ground','AIN1 paddles','AIN2 nitrous pressure','AIN6 fuel pressure','AIN7 A/C pressure','GPO7 / DIN3','GPO5 fan PWM'];
-  d8.forEach((n,i)=>wire(141,i,102,i,'ECU 16-pin '+(i+1)+' → DT8 analog pin '+(i+1)+' · '+n+' (verify)',0,''));
+  d8.forEach((n,i)=>{if([0,1,3,6].includes(i))return;wire(141,i,102,i,'ECU 16-pin '+(i+1)+' → DT8 analog pin '+(i+1)+' · '+n+' (verify)',0,'')});
   const c8=['CAN L','CAN H','DIN1 brake','DIN2 shifter 1','DIN4 shifter 2','DIN5 flex fuel','GPO4 nitrous SSR','Not used'];
   c8.forEach((n,i)=>{if(i<7)wire(141,8+i,103,i,'ECU 16-pin '+(9+i)+' → DT8 CAN/control pin '+(i+1)+' · '+n+' (verify)',0,i===0?'PNK':i===1?'GRY':'',i<2?{tw:7001}:{})});
   wire(133,0,145,0,'Nitrous SSR output → nitrous solenoid +',0,'RED');
@@ -485,40 +500,65 @@ function e90ProjectStarter(){
   drop(102,0,125,0);drop(102,1,125,1);
   wire(149,0,148,0,'Small stud fused 12V → purge relay pin 30',0,'RED');
   wire(149,0,133,3,'Small stud fused 12V → SSR battery pin',0,'RED');
-  wire(150,2,147,0,'Leash board 2 output B (relay 87) → nitrous heater +',0,'RED');
-  wire(101,7,150,6,'GPO8 → Leash board 2 trigger B− (trunk line)',0,'');
+  wire(160,3,169,0,'Battery distribution → dedicated nitrous heater fuse holder input (rating TBD)',0,'RED',{fuse:'HEATER_CONTACT_TBD',fa:0});
+  wire(169,1,166,0,'Dedicated heater fuse holder output → relay pin 30',0,'RED',{fuse:'HEATER_CONTACT_TBD',fa:0});
+  wire(166,3,147,0,'Nitrous heater relay pin 87 → heater + (wire/fuse size TBD)',0,'RED',{fuse:'HEATER_CONTACT_TBD',fa:0});
+  wire(157,4,166,2,'Fused switched +12V → nitrous heater relay pin 86',18,'RED',{amps:0.2,fuse:'HEATER_COIL',fa:3});
+  wire(109,3,106,6,'Leash single relay board trigger− → trunk ground bus',0,'BLK');
+  wire(161,2,166,1,'DT6 trunk pin 3 (GPO7) → nitrous heater relay pin 85',20,'PUR',{loom:991,circuitType:'signal'});
   [['TPS 1 signal (to maxx pin 3)',2,'BLU'],['TPS 2 signal (to maxx pin 6)',5,'WHT/YEL'],['5V reference (maxx pin 5)',4,'YEL/GRN'],['5V reference (maxx pin 4)',3,'YEL'],['Ground (maxx pin 2)',1,'BRN/GRN'],['Ground (maxx pin 1)',0,'BRN']].forEach(([n,i,c])=>wire(152,i,142,i,'DBW pedal '+n,0,c));
   wire(154,10,156,0,'Paddles X6021 pin 11 → sensor ground splice',0,'BRN');
   wire(154,11,102,2,'Paddles X6021 pin 12 → AIN1',0,'');
-  wire(102,0,155,0,'MaxxECU +5V → 5V sensor splice',0,'RED');
-  wire(155,0,125,0,'5V splice → fuel pressure sensor 5V',0,'RED');
-  wire(155,0,151,0,'5V splice → nitrous pressure sensor 5V',0,'RED');
-  wire(102,1,156,0,'MaxxECU sensor ground → sensor ground splice',0,'BLK');
-  wire(156,0,125,1,'Sensor ground splice → fuel pressure sensor ground',0,'BLK');
-  wire(156,0,151,1,'Sensor ground splice → nitrous pressure sensor ground',0,'BLK');
-  wire(102,3,151,2,'AIN2 → nitrous pressure signal',0,'');
+  wire(161,4,155,0,'DT6 trunk pin 5 → trunk +5V sensor splice',20,'RED',{loom:991,circuitType:'sensor-power'});
+  wire(155,0,125,0,'5V splice → fuel pressure sensor 5V',20,'RED',{circuitType:'sensor-power'});
+  wire(155,0,151,0,'5V splice → nitrous pressure sensor 5V',20,'RED',{circuitType:'sensor-power'});
+  wire(161,5,156,0,'DT6 trunk pin 6 → trunk sensor-ground splice',20,'BLK',{loom:991,circuitType:'sensor-ground'});
+  wire(156,0,125,1,'Sensor ground splice → fuel pressure sensor ground',20,'BLK',{circuitType:'sensor-ground'});
+  wire(156,0,151,1,'Sensor ground splice → nitrous pressure sensor ground',20,'BLK',{circuitType:'sensor-ground'});
+  wire(161,3,151,2,'DT6 trunk pin 4 → nitrous pressure sensor signal (AIN2)',20,'WHT',{loom:991,circuitType:'signal'});
   wire(116,1,103,3,'Shifter DT4 pin 2 (black) → DIN2 shifter 1',0,'BLK');
   wire(116,0,103,4,'Shifter DT4 pin 1 (blue) → DIN4 shifter 2',0,'BLU');
   wire(116,2,156,0,'Shifter DT4 pin 3 (brown) → sensor ground splice',0,'BRN');
   parts.find(p=>p.id===107).fa={1:20,2:15,3:7.5};
+  parts.find(p=>p.id===157).fa={1:3,4:3};
   wire(149,0,158,0,'Small stud fused 12V → ECU power relay pin 30',0,'RED');
   wire(158,3,107,0,'ECU power relay pin 87 → DME fuse box input',0,'RED');
   wire(122,0,158,1,'Chassis ground → ECU power relay pin 85',0,'BLK');
   wire(121,0,160,0,'Battery + → trunk distribution block (ANL fuse in the cable)',0,'RED');
   wire(160,1,104,0,'Distribution block → Leash board 1 battery in',0,'RED');
-  wire(160,2,150,0,'Distribution block → Leash board 2 battery in',0,'RED');
-  wire(110,0,150,3,'EKP wire (key-on 12V) → Leash board 2 trigger A+',0,'GRN');
-  wire(150,3,150,5,'Jumper A+ to B+ on board 2',0,'');
-  wire(150,4,106,6,'Leash board 2 trigger A− → chassis ground',0,'BLK');
-  wire(150,1,157,0,'Leash board 2 output A → trunk fuse box input',0,'RED');
+  wire(160,2,109,0,'Distribution block → Leash single relay board battery input',0,'RED');
+  
+  
+  
+  wire(109,1,157,0,'Leash single relay board output → trunk fuse box input',0,'RED');
   wire(157,1,104,3,'Fuse box slot → Leash board 1 trigger A+',0,'RED');
   wire(157,1,104,5,'Fuse box slot → Leash board 1 trigger B+ (jumpered with A+)',0,'RED');
   wire(157,2,159,0,'Fuse box slot → starlights +',0,'RED');
   wire(159,1,106,4,'Starlights − → trunk ground bus',0,'BLK');
   wire(157,3,131,0,'Fuse box slot → valved mufflers control +',0,'RED');
   wire(131,1,106,5,'Valved mufflers control − → trunk ground bus',0,'BLK');
+  // Cabin-side DT2 pigtails route the six loose ECU conductors to the DT6 pass-through.
+  wire(140,2,163,0,'MaxxECU GPO2 → cabin DT2 #1 pin 1',20,'GRN',{circuitType:'signal'});
+  wire(140,4,163,1,'MaxxECU GPO3 → cabin DT2 #1 pin 2',20,'BLU',{circuitType:'signal'});
+  wire(141,6,164,0,'MaxxECU GPO7 / DIN3 → cabin DT2 #2 pin 1',20,'PUR',{circuitType:'signal'});
+  wire(141,3,164,1,'MaxxECU AIN2 → cabin DT2 #2 pin 2',20,'WHT',{circuitType:'signal'});
+  wire(141,0,167,0,'MaxxECU +5V sensor supply → cabin +5V branch splice',20,'RED',{circuitType:'sensor-power'});
+  wire(167,0,102,0,'Cabin +5V splice → DT8 analog harness +5V',20,'RED',{circuitType:'sensor-power'});
+  wire(167,0,165,0,'Cabin +5V splice → cabin DT2 #3 pin 1',20,'RED',{circuitType:'sensor-power'});
+  wire(141,1,168,0,'MaxxECU sensor ground → cabin ground branch splice',20,'BLK',{circuitType:'sensor-ground'});
+  wire(168,0,102,1,'Cabin ground splice → DT8 analog harness sensor ground',20,'BLK',{circuitType:'sensor-ground'});
+  wire(168,0,165,1,'Cabin ground splice → cabin DT2 #3 pin 2',20,'BLK',{circuitType:'sensor-ground'});
+  wire(163,0,162,0,'Cabin DT2 #1 pin 1 → cabin DT6 pin 1 (GPO2)',20,'GRN',{circuitType:'signal'});
+  wire(163,1,162,1,'Cabin DT2 #1 pin 2 → cabin DT6 pin 2 (GPO3)',20,'BLU',{circuitType:'signal'});
+  wire(164,0,162,2,'Cabin DT2 #2 pin 1 → cabin DT6 pin 3 (GPO7)',20,'PUR',{circuitType:'signal'});
+  wire(164,1,162,3,'Cabin DT2 #2 pin 2 → cabin DT6 pin 4 (AIN2)',20,'WHT',{circuitType:'signal'});
+  wire(165,0,162,4,'Cabin DT2 #3 pin 1 → cabin DT6 pin 5 (+5V)',20,'RED',{circuitType:'sensor-power'});
+  wire(165,1,162,5,'Cabin DT2 #3 pin 2 → cabin DT6 pin 6 (sensor ground)',20,'BLK',{circuitType:'sensor-ground'});
+  wire(104,4,161,0,'Leash dual A− → trunk DT6 pin 1 (GPO2)',20,'GRN',{circuitType:'signal'});
+  wire(104,6,161,1,'Leash dual B− → trunk DT6 pin 2 (GPO3)',20,'BLU',{circuitType:'signal'});
+  [['GPO2 trigger','GRN','signal'],['GPO3 trigger','BLU','signal'],['GPO7 heater trigger','PUR','signal'],['AIN2 pressure signal','WHT','signal'],['+5V sensor supply','RED','sensor-power'],['Sensor ground','BLK','sensor-ground']].forEach((q,i)=>wire(162,i,161,i,'DT6 cabin pin '+(i+1)+' ↔ trunk pin '+(i+1)+' · '+q[0],20,q[1],{loom:993,circuitType:q[2]}));
   W.forEach(w=>{if(/^ECU 16-pin/.test(w.sig))return;if(/CAN L(ow)?\b/i.test(w.sig))w.color='PUR';else if(/CAN H(igh)?\b/i.test(w.sig))w.color='BLU'});
-  return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
+  return {parts,wires:W,lay:1,zones:[],nid:1000,examples:false,view:null,mview:null,fw:null,tk:null,looms:[{id:990,name:'Engine bay / ECU branch',cover:'DR-25',color:'#ff8a1f'},{id:991,name:'Trunk power branch',cover:'Split loom',color:'#4a86e8'},{id:992,name:'CAN twisted pairs',cover:'DR-25',color:'#b07cf0'},{id:993,name:'Trunk-to-cabin DT6 · 6-core',cover:'DR-25',color:'#b07cf0'}],scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'draw'};
 }
 
 let S=Object.assign({scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'project'},e90ProjectStarter());
@@ -581,6 +621,7 @@ function dims(p){
   const t=T[p.t];if(t.node)return{w:24,h:24};
   const n=t.pins.length,rh=rowH(t),mb=Math.max(0,...t.pins.map(x=>x.blk||0));
   if(t.bulk){const b=bgeo(p);return{w:b.w,h:b.h}}
+  if(t.pinGridCols){const cols=t.pinGridCols,cw=t.gridCellW||78,grh=t.gridRowH||22,rows=Math.ceil(n/cols);return{w:24+cols*cw,h:HDR+rows*grh+16,grid:true,cols,cw,grh,rows}}
   const a=mockArt(p),sc=Math.min(1,(IW-14)/a.w);
   return{w:IW+pcol(p),h:HDR+Math.max(n*rh,a.h*sc+14)+16,a,sc};
 }
@@ -710,7 +751,15 @@ function partSVG(p){
   s.push(`<text class="t" x="${p.x+14}" y="${p.y+16}">${esc(p.name.length>28?p.name.slice(0,27)+'…':p.name)}</text>`);
   if(sub)s.push(`<text class="ps" x="${p.x+14}" y="${p.y+29}">${esc(sub.length>34?sub.slice(0,33)+'…':sub)}</text>`);
   const dot=(cx,y,ref,used)=>`<circle class="pd${pending===ref?' pend':used?' used':''}" cx="${cx}" cy="${y}" r="5"/><circle data-pin="${ref}" class="hit" cx="${cx}" cy="${y}" r="11"/>`;
-  if(t.bulk){
+  if(t.pinGridCols){
+    const cols=t.pinGridCols,cw=t.gridCellW||78,grh=t.gridRowH||22,x0=p.x+12,y0=p.y+HDR+7;
+    t.pins.forEach((pin,i)=>{const col=i%cols,row=Math.floor(i/cols),x=x0+col*cw,y=y0+row*grh,ref=p.id+':'+i,used=usedOn(p.id,i).length>0,pd=pending===ref,fn=plabel(p,i)||'Unassigned';
+      s.push(`<rect x="${x}" y="${y}" width="${cw-4}" height="${grh-3}" rx="3" fill="var(--panel2)" stroke="var(--line)" stroke-width="1"/>`);
+      s.push(`<text x="${x+5}" y="${y+8}" font-size="7.5" font-family="monospace" fill="var(--mute)">${esc(pin.p)}</text>`);
+      s.push(`<text x="${x+5}" y="${y+17}" font-size="8.5" fill="var(--fg)">${esc(fn.length>14?fn.slice(0,13)+'…':fn)}</text>`);
+      s.push(`<circle class="pd${pd?' pend':used?' used':''}" cx="${x+cw-13}" cy="${y+grh/2-1}" r="4.5"/><rect data-pin="${ref}" x="${x}" y="${y}" width="${cw-4}" height="${grh-3}" fill="transparent" style="cursor:pointer"/>`);
+    });
+  }else if(t.bulk){
     const bg=bgeo(p);
     bg.blocks.forEach(b=>{const cx=p.x+b.cx,cy=p.y+b.cy;
       s.push(`<circle cx="${cx}" cy="${cy}" r="${b.R+8}" fill="#3a4047" stroke="#8a919b" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="${b.R}" fill="#1b1e23" stroke="#9aa1ab" stroke-width="1.5"/>`);
@@ -853,14 +902,28 @@ function connectorCard(id){
  pins.forEach(pin=>{if(pin.size)sizes[pin.size]=(sizes[pin.size]||0)+1});
  const sizeText=Object.keys(sizes).sort((a,b)=>+a-+b).map(z=>sizes[z]+' × size '+z).join(', ');
  const rows=pins.map((pin,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(pin.p)+'</td><td>'+esc(pin.l||'Unassigned')+'</td><td>'+(pin.size?'Size '+esc(pin.size):'—')+'</td></tr>').join('');
- const search=(t.name+' '+id+' '+meta+' '+(t.desc||'')+' '+(t.fam||'')).toLowerCase();
+ const search=(t.name+' '+id+' '+meta+' '+(t.desc||'')+' '+(t.fam||'')+' '+pins.map(pin=>pin.p+' '+(pin.l||'')).join(' ')).toLowerCase();
  return '<article class="connector-card" data-card-name="'+esc(search)+'" data-family="'+esc(t.fam||'other')+'"><div class="connector-thumb">'+connectorThumb(id)+'</div><div class="connector-card-main"><div class="connector-card-title">'+esc(t.name||id)+'</div><div class="connector-card-meta">'+pins.length+' pins · '+esc(t.fam||'connector')+(meta?' · '+esc(meta):'')+'</div>'+(sizeText?'<div class="connector-card-meta">'+esc(sizeText)+'</div>':'')+'<div class="connector-card-actions"><button class="btn primary" data-add="'+id+'" data-name="'+esc(search)+'">Add to drawing</button></div><details><summary>View pinout ('+pins.length+')</summary><div class="connector-pin-table"><table><thead><tr><th>Order</th><th>Pin ID</th><th>Function</th><th>Contact</th></tr></thead><tbody>'+rows+'</tbody></table></div></details></div></article>';
 }
 function renderLib(){
  const el=document.getElementById('lib');
- const groups=GROUPS.map(g=>'<section class="grp"><b>'+esc(g.name)+'</b><div class="connector-catalog">'+g.ids.map(connectorCard).join('')+'</div></section>').join('');
- const families=[...new Set(Object.values(T).map(t=>t.fam||'other'))].sort().map(f=>'<option value="'+esc(f)+'">'+esc(f.toUpperCase())+'</option>').join('');
- el.innerHTML='<div class="catalog-tools"><label><span>Find a connector / part</span><input id="lq" placeholder="Search DT, HD30, MaxxECU, relay, sensor…"></label><label><span>Family</span><select id="libFamily"><option value="">All families</option>'+families+'</select></label></div><p class="muted">Previews are schematic, not manufacturer-approved cavity drawings. Open View pinout for the ordered pin/function list.</p>'+groups+'<section class="grp"><b>Custom firewall bulkhead</b><div class="row"><label style="width:110px"><span>Number of pins</span><input id="bn" type="number" min="1" max="60" value="24"></label><button class="btn" data-add="bulkc">Add bulkhead</button></div></section><section class="grp"><b>Custom connector</b><div class="row"><label style="width:110px"><span>Number of pins</span><input id="cn" type="number" min="1" max="60" value="6"></label><button class="btn" data-add="custom">Add custom connector</button></div></section>';
+ const ids=name=>(GROUPS.find(g=>g.name===name)||{ids:[]}).ids;
+ const uniq=a=>[...new Set(a)];
+ const catalog=[
+  {name:'MaxxECU Gen1 RACE · ECU connectors',ids:ids('MaxxECU Gen1 RACE connectors'),open:true},
+  {name:'Deutsch HD30 · shell 24 insert configurations',ids:ids('DEUTSCH HD30 · shell size 24'),open:true},
+  {name:'Maven circular connectors',ids:uniq([...ids('Maven connectors · single'),...ids('Maven connectors · dual')]),open:true},
+  {name:'Deutsch DT sealed connectors',ids:ids('Deutsch DT'),open:true},
+  {name:'LS engine-side connectors',ids:ids('Engine side (LS)'),open:false},
+  {name:'MaxxECU peripherals',ids:ids('MaxxECU LS harness').filter(id=>['mxpedal','mxwbo'].includes(id)),open:false},
+  {name:'Power, relays & protection',ids:uniq([...ids('Fuse boxes & relays'),...ids('Terminals & power'),...ids('Power & starting')]),open:false},
+  {name:'Fuel, nitrous, sensors & CAN',ids:uniq([...ids('Fuel & nitrous'),...ids('Sensors & loads'),...ids('CAN & data')]),open:false},
+  {name:'E90 LS interfaces',ids:ids('E90 LS project connectors'),open:false}
+ ].filter(g=>g.ids.length);
+ const groups=catalog.map((g,i)=>'<details class="grp catalog-group" '+(g.open?'open':'')+' data-group="'+i+'"><summary><span>'+esc(g.name)+'</span><small>'+g.ids.length+' parts</small></summary><div class="connector-catalog">'+g.ids.map(connectorCard).join('')+'</div></details>').join('');
+ const visibleIds=uniq(catalog.flatMap(g=>g.ids));
+ const families=[...new Set(visibleIds.map(id=>T[id]?.fam||'other'))].sort().map(f=>'<option value="'+esc(f)+'">'+esc(f.toUpperCase())+'</option>').join('');
+ el.innerHTML='<div class="catalog-tools"><label><span>Find a connector / part</span><input id="lq" placeholder="Search Gen1 RACE, DT, Maven, HD30, relay…"></label><label><span>Family</span><select id="libFamily"><option value="">All families</option>'+families+'</select></label></div><p class="muted">Compact catalog · expand a category to browse. ECU cavity functions and HD30 insert contact-size counts use the supplied reference data; cavity layouts are schematic, not manufacturer face-orientation drawings.</p>'+groups;
 }
 function addPart(id){
   let tid=id;
@@ -874,11 +937,11 @@ S.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});
 /* ---------- E90 example layout by zone ---------- */
 const E90ZONES=[
  ['Engine bay','#ff8a1f',[112,118,119,120,122,125,126,127,128,129,133,144,149]],
- ['DME box','#e0b13a',[101,102,103,107,158,108,110,114,115,117,145,146,148,154,155,156]],
- ['Cabin','#4a86e8',[140,141,142,143,152,111,116,113,123,130]],
- ['Trunk','#3fae6a',[104,105,106,109,121,124,131,134,147,150,151,157,159,160]]];
-function e90Layout(){
-  if(!S.lay)return;S.lay=0;S.zones=[];const GAP=36,PAD=30,TOP=70,MAXH=1500;let x=0;
+ ['DME box','#e0b13a',[101,102,103,107,158,108,110,114,115,117,145,146,148,154]],
+ ['Cabin','#4a86e8',[140,141,142,143,152,111,116,113,123,130,162,163,164,165,167,168]],
+ ['Trunk','#3fae6a',[104,105,106,109,121,124,131,134,147,151,155,156,157,159,160,161,166,169]]];
+function e90Layout(force=false){
+  if(!S.lay&&!force)return;S.lay=0;S.zones=[];const GAP=36,PAD=30,TOP=70,MAXH=1500;let x=0;
   E90ZONES.forEach(([name,col,ids])=>{
     const ps=ids.map(i=>part(i)).filter(Boolean);if(!ps.length)return;
     let cx=x+PAD,cy=TOP,colW=0,right=x;
@@ -904,13 +967,16 @@ function wireAuditHTML(w){
  const g=+w.awg, amps=+w.amps||0, inches=+w.len>0?+w.len:autoLen(w), ft=Math.max(0,inches/12);
  const r={4:.2485,6:.3951,8:.6282,10:.9989,12:1.588,14:2.525,16:4.016,18:6.385,20:10.15,22:16.14,24:25.67}[g];
  const v=14,ohm=(r||0)*2*ft/1000,drop=ohm*amps,pct=drop/v*100,fuse=+w.fa||0,rule=AMPS[g]||0;
- const notes=[];
- if(!w.amps)notes.push('<span class="wn">Current not entered — voltage-drop estimate is informational only.</span>');
+ const notes=[],signalOnly=w.circuitType==='signal'||/\b(GPO\d*|AIN\d*|DIN\d*|CAN|trigger|signal)\b/i.test(w.sig||''),sensorPower=w.circuitType==='sensor-power',sensorGround=w.circuitType==='sensor-ground';
+ if(!w.amps&&!signalOnly)notes.push('<span class="wn">Current not entered — gauge and voltage-drop suitability cannot be confirmed.</span>');
  if(!w.len)notes.push('<span class="muted">Length uses the drawing estimate; confirm routed length and service loops.</span>');
- if(fuse&&rule&&fuse>rule)notes.push('<span class="bd">Fuse exceeds this app’s rough gauge rule-of-thumb; verify actual ampacity and protection.</span>');
  if(fuse&&amps&&fuse<amps)notes.push('<span class="wn">Fuse rating is below entered load current; investigate before build.</span>');
  if(amps&&pct>3)notes.push('<span class="wn">Estimated voltage drop exceeds a 3% reference target.</span>');
- if(!fuse)notes.push('<span class="wn">No fuse value entered (or protection not documented).</span>');
+ if(!fuse&&!signalOnly&&!sensorPower&&!sensorGround)notes.push('<span class="wn">No fuse value entered (or protection not documented).</span>');
+ if(fuse&&rule&&fuse>rule)notes.push('<span class="wn">Fuse rating exceeds the app’s rough gauge ampacity reference.</span>');
+ if(signalOnly)notes.push('<span class="muted">Signal/control conductor: a separate inline fuse is not assumed; verify ECU/relay input protection and maximum current.</span>');
+ if(sensorPower)notes.push('<span class="muted">Sensor supply: verify sensor current draw and MaxxECU 5 V output limits; no separate fuse is assumed here.</span>');
+ if(sensorGround)notes.push('<span class="muted">Sensor return: use the ECU sensor-ground reference, not chassis ground; verify sensor current and conductor sizing.</span>');
  if(!r)notes.push('<span class="wn">Gauge is TBD; no voltage-drop or gauge reference can be calculated.</span>');
  return `<div class="grid2"><div><small>Length used</small><br><b>${inches.toFixed(1)} in</b></div><div><small>Estimated drop @ 14 V</small><br><b>${amps&&r?drop.toFixed(3)+' V ('+pct.toFixed(2)+'%)':'—'}</b></div><div><small>Approx. wire loss</small><br><b>${amps&&r?(amps*amps*ohm).toFixed(2)+' W':'—'}</b></div><div><small>App reference only</small><br><b>${rule?rule+' A rough guide':'No gauge guide'}</b></div></div><ul class="tight">${notes.map(n=>'<li>'+n+'</li>').join('')}</ul>`;
 }
@@ -1045,7 +1111,7 @@ function mockSVG(V){
       const m=pt(.5),mx=Math.max(...ws.map(wlen));chips.push(`<g><rect x="${m.x-62}" y="${m.y-34}" width="124" height="18" rx="9" fill="var(--panel)" stroke="${lm.color}"/><text x="${m.x}" y="${m.y-21}" text-anchor="middle" fill="var(--fg)" font-size="10" font-family="monospace">${esc(lm.name.slice(0,14))} · ${n}w · ${mx}in</text></g>`)}
   });
   S.parts.forEach(p=>{const i=info[p.id],a=i.a;
-    out.push(`<g transform="translate(${i.c.x-a.w*MS/2} ${i.c.y-a.h*MS/2}) scale(${MS})">${a.svg}</g><text x="${i.c.x}" y="${i.c.y+a.h*MS/2+16}" text-anchor="middle" fill="var(--fg)" font-size="12" font-weight="600" font-family="Barlow,system-ui,sans-serif">${esc(p.name)}</text>`);
+    out.push(`<g data-mpart="${p.id}" transform="translate(${i.c.x-a.w*MS/2} ${i.c.y-a.h*MS/2}) scale(${MS})">${a.svg}</g><text data-mpart="${p.id}" x="${i.c.x}" y="${i.c.y+a.h*MS/2+16}" text-anchor="middle" fill="var(--fg)" font-size="12" font-weight="600" font-family="Barlow,system-ui,sans-serif">${esc(p.name)}</text>`);
     if(p.mate&&info[p.mate]&&p.id<p.mate)out.push(`<line x1="${i.c.x}" y1="${i.c.y}" x2="${info[p.mate].c.x}" y2="${info[p.mate].c.y}" stroke="var(--mute)" stroke-dasharray="4 5"/>`)});
   out.push(chips.join(''),'</g>');
   return `<defs><pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="var(--grid)"/></pattern></defs>`+out.join('');
@@ -1061,12 +1127,19 @@ function mFit(){
   S.mview={k,x:(r.width-(x1-x0)*k)/2-x0*k,y:(r.height-(y1-y0)*k)/2-y0*k};save();drawMock();
 }
 function mZoom(f){const el=document.getElementById('mk'),V=mv(),r=el.getBoundingClientRect(),cx=r.width/2,cy=r.height/2,wx=(cx-V.x)/V.k,wy=(cy-V.y)/V.k,k=Math.max(.2,Math.min(3,V.k*f));V.k=k;V.x=cx-wx*k;V.y=cy-wy*k;drawMock();save()}
+function setMockWireField(id,field,val){const w=wireById(id);if(!w)return;commit();if(field==='awg')w.awg=+val||0;else if(field==='fa')w.fa=+val||0;else if(field==='amps')w.amps=Math.max(0,+val||0);else if(field==='len')w.len=Math.max(0,+val||0);save();rMock()}
+function setMockWireLoom(id,val){const w=wireById(id);if(!w)return;commit();if(val==='new')w.loom=newLoom().id;else w.loom=val?+val:null;save();rMock()}
+function filterMockWires(q){q=(q||'').toLowerCase();document.querySelectorAll('#mockWireRows tr[data-wire-name]').forEach(r=>r.hidden=!!q&&!r.dataset.wireName.includes(q))}
 function rMock(){
-  document.getElementById('t-mock').innerHTML=`<h2>Loom Studio</h2><div class="bar"><button class="btn" data-act="mfit">Fit</button><button class="btn" data-act="mzin" aria-label="Zoom in">+</button><button class="btn" data-act="mzout" aria-label="Zoom out">−</button></div><p class="muted">The same drawing as it would be built. Wires in a loom bundle into a sleeve. Wires with no loom run bare. Drag to pan, scroll or buttons to zoom. Move parts and routes on the Draw tab.</p><div class="stage"><svg id="mk" role="img" aria-label="Physical harness mockup"></svg></div>`;
-  const el=document.getElementById('mk');let drag=null;
-  el.addEventListener('pointerdown',e=>{try{el.setPointerCapture(e.pointerId)}catch(_){}drag={x:e.clientX,y:e.clientY,vx:mv().x,vy:mv().y}});
-  el.addEventListener('pointermove',e=>{if(!drag)return;const V=mv();V.x=drag.vx+e.clientX-drag.x;V.y=drag.vy+e.clientY-drag.y;drawMock()});
-  const end=()=>{if(drag){drag=null;save()}};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+ const loomOptions=id=>'<option value="" '+(!id?'selected':'')+'>No sleeve</option>'+(S.looms||[]).map(l=>'<option value="'+l.id+'" '+(id===l.id?'selected':'')+'>'+esc(l.name)+'</option>').join('')+'<option value="new">+ New loom…</option>';
+ const awgOptions=g=>[22,20,18,16,14,12,10,8].map(a=>'<option value="'+a+'" '+(+g===a?'selected':'')+'>'+a+' AWG</option>').join('')+'<option value="0" '+(!+g?'selected':'')+'>TBD</option>';
+ const fuseOptions=f=>[0,3,5,7.5,10,15,20,25,30,40,50,60,70,80,100].map(a=>'<option value="'+a+'" '+(+f===a?'selected':'')+'>'+(a?a+' A':'TBD / none')+'</option>').join('');
+ const wireTable=S.wires.map(w=>'<tr data-wire-name="'+esc((w.sig||'')+' '+endName(w.a)+' '+endName(w.b)).toLowerCase()+'"><td>'+esc(w.sig||'Unnamed wire')+'</td><td>'+esc(endName(w.a))+' → '+esc(endName(w.b))+'</td><td><select aria-label="Assign loom" onchange="setMockWireLoom('+w.id+',this.value)">'+loomOptions(w.loom)+'</select></td><td><select aria-label="Wire gauge" onchange="setMockWireField('+w.id+',\'awg\',this.value)">'+awgOptions(w.awg)+'</select></td><td><input aria-label="Load current amps" type="number" min="0" step=".1" value="'+(+w.amps||0)+'" onchange="setMockWireField('+w.id+',\'amps\',this.value)" style="width:72px"></td><td><select aria-label="Fuse rating amps" onchange="setMockWireField('+w.id+',\'fa\',this.value)">'+fuseOptions(w.fa)+'</select></td><td>'+wlen(w)+' in</td></tr>').join('');
+ document.getElementById('t-mock').innerHTML='<div class="dashboard-hero"><div class="eyebrow">PHYSICAL HARNESS WORKSPACE</div><h2>Loom Studio</h2><p class="muted">Edit the physical harness here: drag connector/component bodies to reposition them, drag empty space to pan, and assign wires to sleeves. Looms control the visible cover, colour and bundled runs. Gauge, entered current and fuse rating feed the validation checks.</p><div class="bar"><button class="btn" data-act="mfit">Fit layout</button><button class="btn" data-act="mzin" aria-label="Zoom in">+</button><button class="btn" data-act="mzout" aria-label="Zoom out">−</button><button class="btn primary" data-act="newLoom">+ New loom</button><button class="btn" data-act="tidyE90">Re-layout example by zone</button></div></div><div class="stage"><svg id="mk" role="img" aria-label="Editable physical harness loom layout"></svg></div><div class="card"><h3>Loom / sleeve definitions</h3>'+loomPanel()+'</div><div class="card"><div class="hd"><h3>Wire-to-loom assignment & protection inputs</h3><span class="pill">'+S.wires.length+' wires</span></div><input placeholder="Filter wires by signal or endpoint…" oninput="filterMockWires(this.value)" style="max-width:420px;margin-bottom:10px"><div class="table-wrap" style="max-height:480px;overflow:auto"><table><thead><tr><th>Signal</th><th>Route</th><th>Sleeve</th><th>Gauge</th><th>Load A</th><th>Fuse A</th><th>Length</th></tr></thead><tbody id="mockWireRows">'+wireTable+'</tbody></table></div><p class="muted">TBD is not a pass. Current draw, routed length, conductor ampacity, fuse type, temperature derating, bundling and source protection must be verified before fabrication.</p></div>';
+ const el=document.getElementById('mk');let drag=null;
+ el.addEventListener('pointerdown',e=>{const target=e.target.closest&&e.target.closest('[data-mpart]');try{el.setPointerCapture(e.pointerId)}catch(_){}if(target){const p=part(+target.dataset.mpart);if(p){commit();drag={mode:'part',id:p.id,x:e.clientX,y:e.clientY,px:p.x,py:p.y}}}else drag={mode:'pan',x:e.clientX,y:e.clientY,vx:mv().x,vy:mv().y}});
+ el.addEventListener('pointermove',e=>{if(!drag)return;const V=mv();if(drag.mode==='part'){const p=part(drag.id);if(p){p.x=drag.px+(e.clientX-drag.x)/V.k;p.y=drag.py+(e.clientY-drag.y)/V.k;drawMock()}}else{V.x=drag.vx+e.clientX-drag.x;V.y=drag.vy+e.clientY-drag.y;drawMock()}});
+ const end=()=>{if(drag){drag=null;save()}};el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
   el.addEventListener('wheel',e=>{e.preventDefault();const V=mv(),r=el.getBoundingClientRect(),k=Math.max(.2,Math.min(3,V.k*(e.deltaY<0?1.12:1/1.12))),wx=(e.clientX-r.left-V.x)/V.k,wy=(e.clientY-r.top-V.y)/V.k;V.k=k;V.x=e.clientX-r.left-wx*k;V.y=e.clientY-r.top-wy*k;drawMock()},{passive:false});
   if(!S.mview)mFit();else drawMock();
 }
@@ -1113,6 +1186,12 @@ function rPins(){
 /* MaxxECU pin reference transcribed from user-provided notes. Verify exact model and official documentation before wiring. */
 const MAXXECU_MAIN=[["A1","GPO 5","-","GPO 4"],["A2","IGN 1","IGN 1","IGN 1"],["A3","IGN 2","IGN 2","IGN 2"],["A4","GPO 8/TACHO","GPO 8/TACHO","GPO 8/TACHO"],["B1","GPO 6","-","GPO 5"],["B2","IGN 3","IGN 3","IGN 3"],["B3","IGN 4","IGN 4","IGN 4"],["B4","GPO 1","GPO 1","GPO 1"],["C1","GPO 7","-","AIN 5 (0–5 V)"],["C2","IGN 5","IGN 5","IGN 5"],["C3","IGN 6","IGN 6","IGN 6"],["C4","GPO 2","GPO 2","GPO 2"],["D1","WBO2 Heater−","WBO2 Heater−","WBO2 Heater−"],["D2","IGN 7","-","AIN 6 (0–5 V)"],["D3","IGN 8","-","AIN 7 (0–5 V)"],["D4","GPO 3","GPO 3","GPO 3"],["E1","CAN H","CAN H","CAN H"],["E2","CAN L","CAN L","CAN L"],["E3","GND Shield","GND Shield","GND Shield"],["E4","GPO 4","-","AIN 8 (0–5 V)"],["F1","CLT","CLT","CLT"],["F2","IAT","IAT","IAT"],["F3","WBO2 VREF","WBO2 VREF","WBO2 VREF"],["F4","WBO2 VS","WBO2 VS","WBO2 VS"],["G1","+5V sensor supply (peak 0.5 A, max 150 mA)","+5V sensor supply (peak 0.5 A, max 150 mA)","+5V sensor supply (peak 0.5 A, max 150 mA)"],["G2","TPS/AIN","TPS/AIN","TPS/AIN"],["G3","WBO2 IP","WBO2 IP","WBO2 IP"],["G4","WBO2 RCAL","WBO2 RCAL","WBO2 RCAL"],["H1","Sensor GND","Sensor GND","Sensor GND"],["H2","Trigger GND","Trigger GND","Trigger GND"],["H3","TRIGGER","TRIGGER","TRIGGER"],["H4","HOME","HOME","HOME"],["J1","AIN 1 (Temperature)","AIN 1 (Temperature)","AIN 1 (Temperature)"],["J2","AIN 2 (Temperature)","AIN 2 (Temperature)","AIN 2 (Temperature)"],["J3","AIN 3 (0–5 V)","AIN 3 (0–5 V)","AIN 3 (0–5 V)"],["J4","AIN 4 (0–5 V)","AIN 4 (0–5 V)","AIN 4 (0–5 V)"],["K1","INJ 1","INJ 1","INJ 1"],["K2","INJ 2","INJ 2","INJ 2"],["K3","DIN/VR 1","DIN 1","DIN 1"],["K4","DIN/VR 2","DIN 2","DIN 2"],["L1","INJ 8","-","GPO 11/Motor 1−"],["L2","INJ 7","-","GPO 12/Motor 1+"],["L3","INJ 6","INJ 6","INJ 6"],["L4","Engine GND","Engine GND","Engine GND"],["M1","INJ 3","INJ 3","INJ 3"],["M2","INJ 4","INJ 4","INJ 4"],["M3","INJ 5","INJ 5","INJ 5"],["M4","+12V ECU power supply","+12V ECU power supply","+12V ECU power supply"]];
 const MAXXECU_AUX=[["A1","EGT 5+"],["A2","EGT 6+"],["A3","EGT 7+"],["A4","EGT 8+"],["B1","EGT 5−"],["B2","EGT 6−"],["B3","EGT 7−"],["B4","EGT 8−"],["C1","EGT 1+"],["C2","EGT 2+"],["C3","EGT 3+"],["C4","EGT 4+"],["D1","EGT 1−"],["D2","EGT 2−"],["D3","EGT 3−"],["D4","EGT 4−"],["E1","Knock GND"],["E2","Knock 1"],["E3","Knock 2"],["E4","AIN 6 (0–5 V)"],["F1","AIN 7 (0–5 V)"],["F2","AIN 8 (0–5 V)"],["F3","DIN/VR 4"],["F4","DIN/VR 5"],["G1","GPO 15 (+12 V)"],["G2","GPO 16 (+12 V)"],["G3","AIN 5 (0–5 V)"],["G4","Engine Ground"],["H1","Motor 2+"],["H2","Motor 1−"],["H3","Motor 2−"],["H4","Motor 1+"]];
+/* Pinout-backed physical connectors for the user's Gen1 RACE ECU.
+   Main connector functions use the V1/RACE/PRO column of the existing reference table. */
+group('MaxxECU Gen1 RACE connectors',[
+ {id:'mxrace48',name:'MaxxECU Gen1 RACE · 48-pin main Molex',fam:'mxecu',sub:'V1 / RACE / PRO · main connector',pn:'48 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_MAIN.map(r=>({p:r[0],l:r[1]}))},
+ {id:'mxrace32',name:'MaxxECU Gen1 RACE · 32-pin black Connector 2',fam:'mxecu',sub:'Connector 2 · EGT / knock / I/O',pn:'32 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_AUX.map(r=>({p:r[0],l:r[1]}))}
+]);
 function ecuVariant(){return S.ecuVariant||'race'}
 function setEcuVariant(v){S.ecuVariant=v;save();rEcu()}
 function setEcuSearch(v){const a=document.activeElement,pos=a&&typeof a.selectionStart==='number'?a.selectionStart:String(v||'').length;S.ecuSearch=v;rEcu();const i=document.querySelector('#t-ecu input[oninput]');if(i){i.focus();try{i.setSelectionRange(pos,pos)}catch(_){}}}
@@ -1352,7 +1431,7 @@ function rProject(){
  <div class="dash-stats"><div class="card stat"><span>COMPONENTS</span><b>${partCount}</b><small>in active drawing</small></div><div class="card stat"><span>WIRE RUNS</span><b>${wireCount}</b><small>drawn connections</small></div><div class="card stat"><span>CONNECTED PARTS</span><b>${connected}</b><small>touching a wire</small></div><div class="card stat"><span>DESIGN STATUS</span><b class="status-warn">IN PROGRESS</b><small>verify before fabrication</small></div></div>
  <h3>Example harness architecture</h3><p class="muted">A quick visual orientation for the build. This is a system overview, not a pin-accurate schematic. Use Draw, Pinouts and Checks for detailed work.</p>
  <div class="system-map card"><div class="sys-node power"><b>TRUNK POWER</b><span>Battery · main protection</span><span>Switched fuse distribution</span></div><div class="sys-arrow">↓</div><div class="sys-node ecu"><b>MAXXECU RACE</b><span>DT12 power / GPOs</span><span>DT8 analog + control</span></div><div class="sys-split"><div class="sys-branch"><div class="sys-arrow">↙</div><div class="sys-node"><b>FUEL SYSTEM</b><span>Leash dual relay board</span><span>535 lift / 525 staged pump</span></div></div><div class="sys-branch"><div class="sys-arrow">↓</div><div class="sys-node"><b>DRIVER / TRANS</b><span>CAN keypad · 8HP</span><span>Keep chassis CAN separate</span></div></div><div class="sys-branch"><div class="sys-arrow">↘</div><div class="sys-node"><b>ENGINE / BODY</b><span>Coils · A/C · fan interface</span><span>Flex fuel · nitrous SSR</span></div></div></div></div>
- <div class="call"><b>v0.4.0 example update:</b> the drawing includes owner-described ECU control, flex-fuel, fuel-pressure, A/C-pressure, fan/nitrous control placeholders, plus planning-level battery / starter / alternator / engine-ground / trunk-ground topology. High-current cable gauge, fuse strategy, routing, crimp specification and torque are marked TBD—not validated design values.</div>
+ <div class="call"><b>v0.9.0 trunk-to-cabin DT6:</b> pin 1 = GPO2 → Leash fuel-pump A−; pin 2 = GPO3 → Leash fuel-pump B−; pin 3 = GPO7 → nitrous heater relay terminal 85; pin 4 = nitrous pressure signal → AIN2; pin 5 = +5 V sensor supply; pin 6 = ECU sensor ground. Cabin-side DT2s split these into GPO2/GPO3, GPO7/AIN2, and +5 V/sensor ground. The heater relay uses switched +12 V on 86, heater + on 87, and a dedicated contact fuse holder whose rating and load-wire gauge remain TBD.</div><div class="call"><b>Design status:</b> this is a cleaner zoned starter drawing, not a verified finished harness. High-current cable gauge, fuse strategy, sensor current draw, routed lengths, connector orientation, crimp specification and torque must be confirmed before fabrication.</div>
  <div class="grid2"><div class="card"><div class="hd"><b>Confirmed from your notes</b><span class="pill ok">Owner supplied</span></div><ul class="tight"><li>MaxxECU Race Gen 1.</li><li>DT12: GPO2 fuel pump 1, GPO3 fuel pump 2, GPO6 A/C clutch, ECU switched +12V; alternator excite unused for the self-exciting Speedway alternator.</li><li>DT8 analog: +5V, dedicated sensor ground, paddle AIN1, fuel-pressure signal, A/C-pressure signal and fan PWM/GPO5.</li><li>DT8 CAN/control: CAN L/H, brake DIN1, shifter inputs, flex-fuel DIN5, nitrous GPO4 to SSR.</li><li>BMW X60001 interface: pin 20 fan-PWM interface, pin 38 brake switch, pins 7/8 chassis CAN L/H.</li><li>CAN keypad and owner-mapped six-position 8HP interface.</li></ul></div>
  <div class="card"><div class="hd"><b>Critical design rules</b><span class="pill wn">Verify first</span></div><ul class="tight"><li>ECU GPOs are low-side triggers; they do not power pumps or other loads directly.</li><li>Keep MaxxECU sensor ground isolated from chassis/engine ground.</li><li>Do not bridge BMW chassis CAN into the standalone CAN bus without verified topology and compatibility.</li><li>8HP cavity orientation, Leash terminal behavior, fuse sizes, wire gauges and high-current paths remain to be verified.</li><li>Do not treat the drawing as a production-ready harness until every pinout, current load, protection device and endpoint has been checked.</li></ul></div></div>
  <div class="card"><div class="hd"><b>Recommended workflow</b><span class="pill">Design → verify → build</span></div><ol class="tight"><li><b>Draw:</b> place components and connect actual cavities.</li><li><b>Pinouts:</b> inspect every endpoint, signal, color and gauge.</li><li><b>Checks:</b> resolve duplicate pins, missing details and fuse-sizing warnings.</li><li><b>Wire list / Cut list / Parts list:</b> export shop paperwork from the same design.</li><li><b>Backup:</b> save a JSON snapshot before major changes.</li></ol><div class="row"><button class="btn primary" data-act="goDraw">Start drawing</button><button class="btn" data-act="exportDiagram">Export current SVG</button><button class="btn" data-act="bkQuick">Copy project backup</button></div></div>`;
@@ -1489,8 +1568,16 @@ const AWG_OHM_1000FT={22:16.14,20:10.15,18:6.385,16:4.016,14:2.525,12:1.588,10:0
 function simState(){S.sim=S.sim||{power:false,engine:false,voltage:12.6};return S.sim}
 function simMetrics(){
  const q=simState(),v=q.engine?14.2:(+q.voltage||12.6),rows=(S.wires||[]).map((w,i)=>{
-  const a=Math.max(0,+((w.simAmps!==undefined)?w.simAmps:w.amps)||0),f=+w.fa||0,g=+w.awg||0,len=Math.max(0,+w.len||0),cap=AMPS[g]||0,ohm=AWG_OHM_1000FT[g]||0,drop=a*ohm*(len/12)/1000*2,pct=v?drop/v*100:0,fp=f?a/f*100:0,flags=[];
-  if(a&&!f)flags.push('No fuse rating');if(f&&a>f)flags.push('Fuse overloaded');if(a&&!cap)flags.push('Gauge not rated');if(cap&&a>cap)flags.push('Wire overloaded');if(pct>3)flags.push('Voltage drop over 3%');
+  const a=Math.max(0,+((w.simAmps!==undefined)?w.simAmps:w.amps)||0),f=+w.fa||0,g=+w.awg||0,len=Math.max(0,+w.len>0?+w.len:autoLen(w)),cap=AMPS[g]||0,ohm=AWG_OHM_1000FT[g]||0,drop=a*ohm*(len/12)/1000*2,pct=v?drop/v*100:0,fp=f?a/f*100:0,flags=[];
+  const signalOnly=w.circuitType==='signal'||/\b(GPO\d*|AIN\d*|DIN\d*|CAN|trigger|signal)\b/i.test(w.sig||''),sensorPower=w.circuitType==='sensor-power',sensorGround=w.circuitType==='sensor-ground',fuseExpected=!signalOnly&&!sensorPower&&!sensorGround;
+  if(a&&!f&&fuseExpected)flags.push('No fuse rating');
+  if(f&&a>f)flags.push('Load exceeds fuse rating');
+  if(f&&cap&&f>cap)flags.push('Fuse exceeds rough wire ampacity');
+  if(a&&!cap)flags.push('Gauge not rated / gauge TBD');
+  if(cap&&a>cap)flags.push('Wire overloaded');
+  if(!a&&!signalOnly)flags.push('Load current TBD — cannot validate ampacity');
+  if(a&&f&&f>=a&&f<a*1.25)flags.push('Review fuse margin for continuous load / inrush');
+  if(pct>3)flags.push('Voltage drop over 3%');
   return {w,i,a,f,g,len,cap,drop,pct,fp,flags};
  });return {v,total:rows.reduce((n,r)=>n+r.a,0),rows,findings:rows.reduce((n,r)=>n+r.flags.length,0)};
 }
@@ -1571,7 +1658,8 @@ document.addEventListener('click',e=>{
    case'studioFlip':{const p=part(+(S.studioSelected||0));if(p){if(T[p.t]?.bulk){p.bulkFace=p.bulkFace==='wire'?'mating':'wire'}else{p.studioFace=p.studioFace==='wire'?'mating':'wire'}save();rStudio();draw();toast('View: '+((p.studioFace||p.bulkFace)==='wire'?'wire side (mirrored)':'mating face'))}break;}
    case'buildReset':if(confirm('Reset all Build Tracker checkboxes?')){S.buildChecks={};save();rBuild()}break;
    case'buildCopy':copy(buildReport(),b);break;
-   case'loadE90':{commit();S=e90ProjectStarter();e90Layout();selection=null;pending=null;canMode=false;canQ=[];save();showTab('draw');toast('E90 project mock-up loaded');break}
+   case'loadE90':{commit();S=e90ProjectStarter();e90Layout();selection=null;pending=null;canMode=false;canQ=[];save();showTab('draw');toast('E90 example loaded with zoned layout and DT6 trunk-to-cabin branch');break}
+   case'tidyE90':{commit();e90Layout(true);save();draw();renderInsp();showTab('draw');toast('Example re-laid out by vehicle zone');break}
    case'lib':{const l=document.getElementById('lib');l.hidden=!l.hidden;b.setAttribute('aria-pressed',!l.hidden);if(!l.hidden&&!l.children.length)renderLib();break}
    case'zin':zoom(1.25);break;case'zout':zoom(1/1.25);break;case'fit':fit();break;
    case'undo':doUndo();break;case'redo':doRedo();break;
@@ -1583,8 +1671,8 @@ document.addEventListener('click',e=>{
      const w2=Object.assign({},w,{id:nid(),a:{p:sp.id,i:0},tw:null});delete w2.v;w.b={p:sp.id,i:0};delete w.v;w.tw=null;
      S.wires.splice(S.wires.indexOf(w)+1,0,w2);selection={type:'part',id:sp.id};save();renderInsp();draw();hint();toast('Splice added. Tap its dot, then a pin, to run a new wire.');break}
    case'flip':{const p=part(selection&&selection.id);if(p){commit();p.flip=(SIDE[p.id]||'R')==='R'?'L':'R';save();draw()}break}
-   case'newLoom':{commit();newLoom();save();renderInsp();break}
-   case'delLoom':{commit();S.looms=S.looms.filter(l=>l.id!==+d.lid);S.wires.forEach(w=>{if(w.loom===+d.lid)w.loom=null});if(S.def.loom===+d.lid)S.def.loom=null;save();renderInsp();draw();break}
+   case'newLoom':{commit();newLoom();save();renderInsp();if(S.tab==='mock')rMock();break}
+   case'delLoom':{commit();S.looms=S.looms.filter(l=>l.id!==+d.lid);S.wires.forEach(w=>{if(w.loom===+d.lid)w.loom=null});if(S.def.loom===+d.lid)S.def.loom=null;save();renderInsp();draw();if(S.tab==='mock')rMock();break}
    case'mfit':mFit();break;case'mzin':mZoom(1.25);break;case'mzout':mZoom(.8);break;
    case'fw':{if(S.fw==null){const r=rectOf();S.fw=snap(toWorld(r.left+r.width/2,r.top).x)}else S.fw=null;save();syncBar();draw();break}
    case'delPart':{if(selection&&selection.type==='part'){commit();delPart(selection.id);selection=null;save();renderInsp();draw();hint()}break}
@@ -1636,7 +1724,7 @@ document.addEventListener('input',e=>{
   if(t.id==='bookQ'){const pos=t.selectionStart;rBook();const nq=document.getElementById('bookQ');if(nq){nq.focus();try{nq.setSelectionRange(pos,pos)}catch(_){}}return}
   if(d.book&&d.field){ensureBook();const rec=S.circuitBook.find(x=>x.id===d.book);if(rec&&d.field!=='id'){rec[d.field]=t.value;save()}return} 
 
-  if(t.id==='lq'||t.id==='libFamily'){const q=(document.getElementById('lq')?.value||'').toLowerCase(),fam=document.getElementById('libFamily')?.value||'';document.querySelectorAll('#lib .connector-card').forEach(x=>{x.hidden=(!!q&&!x.dataset.cardName.includes(q))||(!!fam&&x.dataset.family!==fam)});return}
+  if(t.id==='lq'||t.id==='libFamily'){const q=(document.getElementById('lq')?.value||'').toLowerCase(),fam=document.getElementById('libFamily')?.value||'';document.querySelectorAll('#lib .connector-card').forEach(x=>{x.hidden=(!!q&&!x.dataset.cardName.includes(q))||(!!fam&&x.dataset.family!==fam)});document.querySelectorAll('#lib .catalog-group').forEach(g=>{const cards=[...g.querySelectorAll('.connector-card')],shown=cards.some(x=>!x.hidden);g.hidden=!shown;if(q&&shown)g.open=true});return}
   if(t.id==='defAwg'){S.def.awg=+t.value;return save()}
   if(t.id==='defColor'){S.def.color=t.value;return save()}
   if(t.id==='scale'){S.scale=Math.max(.5,+t.value||4);save();return draw()}

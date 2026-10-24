@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.10.0 — 2026-10-24
+- Added physical, pinout-backed MaxxECU Gen1 RACE 48-pin main Molex and 32-pin black Connector 2 parts to the Parts Library and drawing canvas.
+- Rendered ECU cavities as a 4-column connector grid with cavity/function labels and clickable wire pins; library search now matches pin names and functions.
+- Reorganized Parts Library into compact collapsible categories focused on Gen1 RACE, HD30 shell-size-24 inserts, Maven circular connectors, Deutsch DT, and useful power/sensor/E90 components.
+- Removed generic custom bulkhead and custom connector builders from the visible catalog, and hid legacy generic 12-/16-pin ECU parts from the catalog while retaining their definitions for existing projects.
+- Clarified Maven single/dual configurations and removed the inaccurate fixed shell-size label from dual Maven configurations.
+
+## v0.9.0 — 2026-10-24
+- Reworked Loom Studio into an editing workspace: drag parts, manage loom covers/colours, assign wires to sleeves, and edit gauge/current/fuse inputs.
+- Added a trunk-to-cabin DT6 six-core example: pins 1–6 carry GPO2, GPO3, GPO7 heater-relay trigger, AIN2 pressure signal, +5 V and sensor ground, with three cabin DT2 pigtails.
+- Kept the Leash dual board dedicated to fuel-pump A−/B− triggers; GPO7 now drives a separate heater relay terminal 85. The heater contact fuse rating and load-wire gauge remain explicitly TBD.
+- Reorganized the E90 example into vehicle zones and added a re-layout control.
+- Expanded Test Sim / wire audit checks for fuse-to-wire ampacity mismatch, load-vs-fuse mismatch, missing current data, and voltage drop. These remain rough design-screening checks, not certification.
+
 ## v0.8.0 — 2026-10-24
 - Added a dedicated MaxxECU RACE pinout reference workspace for the supplied 48-pin main connector and 32-pin black Connector 2.
 - Added V1/RACE/PRO, STREET and SPORT variant selection, searchable cavity maps/tables, cavity selection, and CSV export.
