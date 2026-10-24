@@ -205,7 +205,7 @@ a{color:var(--accent)}
 <footer class="app-footer"><span>WireForge <b id="appVersion">v0.15.0</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.15.0';
+const APP_VERSION='0.16.0';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1164,10 +1164,27 @@ function wireRows(){return S.wires.map((w,i)=>[i+1,w.sig||(plabelOf(w.a)||plabel
 function plabelOf(r){const p=part(r.p);return p&&!T[p.t].node?plabel(p,r.i):''}
 const empty=(m)=>`<div class="call">${m}</div>`;
 function rWires(){
-  document.getElementById('t-wires').innerHTML=`<h2>Wire list</h2>
-   ${S.wires.length?`<div class="tw"><table><thead><tr><th>#</th><th>Signal</th><th>From</th><th>To</th><th>AWG</th><th>Color</th><th class="num">Length (in)</th><th></th></tr></thead><tbody>
-   ${S.wires.map((w,i)=>`<tr><td class="mono">${i+1}</td><td>${esc(w.sig||plabelOf(w.a)||plabelOf(w.b)||'(unnamed)')}</td><td>${esc(endName(w.a))}</td><td>${esc(endName(w.b))}</td><td class="mono">${w.awg}</td><td>${dotColor(w.color)} ${esc(w.color)}</td><td class="num mono">${wlen(w)}${+w.len>0?'':'<span class="nt"> auto</span>'}</td><td><button class="btn" data-edit="${w.id}">Edit</button></td></tr>`).join('')}</tbody></table></div>
-   <div class="row"><button class="btn" data-copy="wires">Copy wire list as CSV</button><button class="btn" data-act="downloadWires">Download wire list CSV</button></div>`:empty('No wires yet. Go to Draw and tap two pins.')}`;
+  const q=String(S.wireSearch||'').trim().toLowerCase(),filter=S.wireFilter||'all';
+  const filtered=S.wires.map((w,i)=>({w,i})).filter(({w})=>{const text=[w.id,w.sig,w.color,w.awg,w.fuse,w.fa,endName(w.a),endName(w.b)].join(' ').toLowerCase();if(q&&!text.includes(q))return false;if(filter==='missing')return !w.sig||!w.color||!(+w.len>0);if(filter==='powered')return (+w.amps||0)>0;return true});
+  document.getElementById('t-wires').innerHTML=`<h2>Wire list</h2><div class="row"><label style="flex:1;min-width:200px"><span>Search signals, parts, pins, color, gauge, fuse</span><input id="wireSearch" value="${esc(S.wireSearch||'')}" placeholder="e.g. GPO2, fuel pump, red, 10 AWG"></label><label><span>Filter</span><select id="wireFilter"><option value="all" ${filter==='all'?'selected':''}>All wires</option><option value="missing" ${filter==='missing'?'selected':''}>Missing name, color or entered length</option><option value="powered" ${filter==='powered'?'selected':''}>Has current value</option></select></label><span class="pill">${filtered.length} / ${S.wires.length} wires</span></div>
+   ${filtered.length?`<div class="tw"><table><thead><tr><th>#</th><th>Signal</th><th>From</th><th>To</th><th>AWG</th><th>Color</th><th class="num">Length (in)</th><th></th></tr></thead><tbody>
+   ${filtered.map(({w,i})=>`<tr><td class="mono">${i+1}</td><td>${esc(w.sig||plabelOf(w.a)||plabelOf(w.b)||'(unnamed)')}</td><td>${esc(endName(w.a))}</td><td>${esc(endName(w.b))}</td><td class="mono">${w.awg}</td><td>${dotColor(w.color)} ${esc(w.color)}</td><td class="num mono">${wlen(w)}${+w.len>0?'':'<span class="nt"> auto</span>'}</td><td><button class="btn" data-edit="${w.id}">Edit</button></td></tr>`).join('')}</tbody></table></div>
+   <div class="row"><button class="btn" data-copy="wires">Copy wire list as CSV</button><button class="btn" data-act="downloadWires">Download wire list CSV</button></div>`:empty(S.wires.length?'No wires match your filters.':'No wires yet. Go to Draw and tap two pins.')}`;
+}
+function rPower(){
+ const voltage=Number.isFinite(+S.powerVoltage)&&+S.powerVoltage>0?+S.powerVoltage:14,groups=new Map();
+ (S.wires||[]).forEach((w,i)=>{const amps=Math.max(0,+w.amps||0),fuse=Math.max(0,+w.fa||0),key=String(w.fuse||'').trim()||(fuse?'Fuse '+fuse+' A':'Unassigned fuse');const g=groups.get(key)||{key,segments:0,amps:0,fuseRatings:new Set(),wires:[],unknownCurrent:0,unknownFuse:0};g.segments++;g.amps+=amps;if(fuse)g.fuseRatings.add(fuse);if(!(amps>0))g.unknownCurrent++;if(!(fuse>0))g.unknownFuse++;g.wires.push({w,i});groups.set(key,g)});
+ const list=[...groups.values()].sort((a,b)=>a.key.localeCompare(b.key)),sum=list.reduce((n,g)=>n+g.amps,0),loaded=S.wires.filter(w=>+w.amps>0).length;
+ document.getElementById('t-power').innerHTML=`<div class="dashboard-hero"><div class="eyebrow">POWER DISTRIBUTION / LOAD ESTIMATE</div><h2>Power Budget</h2><p>Group wire segments by fuse label or entered fuse rating, identify missing load data, and screen entered values. This is a planning view—not fuse coordination, wire ampacity, relay rating, or safety certification.</p><div class="row"><label><span>System voltage for screening (V)</span><input id="powerVoltage" type="number" min="1" step="0.1" value="${voltage}"></label><button class="btn" data-act="savePowerVoltage">Apply voltage</button><button class="btn primary" data-act="downloadPower">Download power budget CSV</button><button class="btn" data-act="powerReport">Download project report JSON</button></div></div><div class="dash-stats"><div class="card stat"><span>WIRE SEGMENTS</span><b>${S.wires.length}</b><small>not unique circuits</small></div><div class="card stat"><span>SEGMENTS WITH CURRENT</span><b>${loaded}</b><small>${S.wires.length-loaded} need current data</small></div><div class="card stat"><span>SUM OF ENTERED CURRENT</span><b>${sum.toFixed(1)} A</b><small>may double-count loads</small></div><div class="card stat"><span>GROUPS</span><b>${list.length}</b><small>labels/fuse ratings, not proven circuits</small></div></div><div class="call"><b>Important:</b> current values are summed per wire segment, so the same load can be counted more than once. Use this to find missing data and review groups—not to size the main feed or claim simultaneous load.</div><h3>Fuse / circuit groups</h3><div class="tw"><table><thead><tr><th>Group label</th><th class="num">Segments</th><th class="num">Sum A*</th><th>Entered fuse rating(s)</th><th class="num">Missing current</th><th class="num">Missing fuse</th><th>Signals</th></tr></thead><tbody>${list.map(g=>`<tr><td>${esc(g.key)}</td><td class="num">${g.segments}</td><td class="num mono">${g.amps.toFixed(2)}</td><td>${[...g.fuseRatings].map(x=>x+' A').join(', ')||'—'}</td><td class="num ${g.unknownCurrent?'wn':''}">${g.unknownCurrent}</td><td class="num ${g.unknownFuse?'wn':''}">${g.unknownFuse}</td><td>${esc(g.wires.map(x=>x.w.sig||('Wire '+(x.w.id??x.i+1))).join(', '))}</td></tr>`).join('')||'<tr><td colspan="7">No wires in this project yet.</td></tr>'}</tbody></table></div><p class="muted">* Sum of entered current values across wire segments; it can double-count the same load. Validate fuse type/time-current curve, wire insulation, bundling, ambient temperature, connector limits, relay and ECU output ratings independently.</p>`;
+}
+function downloadPowerBudget(){
+ const rows=[['Group','Wire segments','Sum of entered current (A)','Fuse rating(s) entered','Missing current entries','Missing fuse entries','Signals']],groups={};
+ S.wires.forEach((w,i)=>{const k=String(w.fuse||'').trim()||(+w.fa>0?'Fuse '+w.fa+' A':'Unassigned fuse');const g=groups[k]||(groups[k]={n:0,a:0,fs:new Set(),missingA:0,missingF:0,signals:[]});g.n++;g.a+=Math.max(0,+w.amps||0);if(+w.fa>0)g.fs.add(+w.fa);else g.missingF++;if(!(+w.amps>0))g.missingA++;g.signals.push(w.sig||'Wire '+(w.id??i+1))});
+ Object.keys(groups).sort().forEach(k=>{const g=groups[k];rows.push([k,g.n,g.a.toFixed(2),[...g.fs].join(' / '),g.missingA,g.missingF,g.signals.join('; ')])});downloadCsvFile('wireforge-power-budget.csv',csv(rows))
+}
+function downloadProjectReport(){
+ const groups={};S.wires.forEach((w,i)=>{const k=String(w.fuse||'').trim()||(+w.fa>0?'Fuse '+w.fa+' A':'Unassigned fuse');const g=groups[k]||(groups[k]={segments:0,enteredCurrentSumA:0,missingCurrent:0,missingFuse:0});g.segments++;g.enteredCurrentSumA+=Math.max(0,+w.amps||0);if(!(+w.amps>0))g.missingCurrent++;if(!(+w.fa>0))g.missingFuse++});
+ const report={app:'WireForge',version:APP_VERSION,generatedAt:new Date().toISOString(),project:{partCount:S.parts.length,wireSegmentCount:S.wires.length,zoneCount:(S.zones||[]).length,loomCount:(S.looms||[]).length},readiness:readinessAudit(),selfTests:runProjectSelfTests(),powerBudget:{voltage:Number(S.powerVoltage)||14,groups},circuitBook:S.circuitBook||[],notice:'Documentation and screening only; not electrical safety certification. Wire-segment current sums may double-count the same circuit.'};downloadTextFile('wireforge-project-report.json',JSON.stringify(report,null,2),'application/json;charset=utf-8')
 }
 function rCut(){
   const groups={};
@@ -1604,7 +1621,7 @@ function electricalEstimate(voltage,current,oneWayFeet,gauge){
 function loadElectricalWire(){
  const id=Number(document.getElementById('ecWireSelect')?.value),w=S.wires.find(x=>x.id===id);if(!w)return toast('Choose a wire from the drawing first');
  document.getElementById('ecCurrent').value=Number.isFinite(+w.amps)&&+w.amps>0?w.amps:'';
- document.getElementById('ecLength').value=(+w.len>0?+w.len:wlen(w))/12;
+ document.getElementById('ecLength').value=(+w.len>0?+w.len:wlen(w))/12;document.getElementById('ecLength').dataset.source=(+w.len>0?'entered':'drawing-estimate');
  document.getElementById('ecAwg').value=String(w.awg||14);
  document.getElementById('ecFuse').value=+w.fa>0?w.fa:'';
  document.getElementById('ecWireNote').textContent='Loaded '+(w.sig||'wire #'+w.id)+'. Length uses the entered route length or drawing estimate; confirm the physical run before relying on results.';
@@ -1614,8 +1631,8 @@ function applyElectricalToWire(){
  const id=Number(document.getElementById('ecWireSelect')?.value),w=S.wires.find(x=>x.id===id);if(!w)return toast('Choose a wire from the drawing first');
  const amps=Number(document.getElementById('ecCurrent')?.value),ft=Number(document.getElementById('ecLength')?.value),awg=Number(document.getElementById('ecAwg')?.value),fuse=Number(document.getElementById('ecFuse')?.value);
  if(![amps,ft,awg,fuse].every(Number.isFinite)||amps<0||ft<0||fuse<0||!Number.isInteger(awg))return toast('Check current, length, gauge and fuse values');
- commit();w.amps=amps;w.len=ft*12;w.awg=awg;w.fa=fuse;save();draw();
- document.getElementById('ecWireNote').textContent='Applied current, route length, gauge and fuse rating to '+(w.sig||'wire #'+w.id)+'. Values are saved in this browser project.';
+ commit();w.amps=amps;if(document.getElementById('ecLength')?.dataset.source!=='drawing-estimate')w.len=ft*12;w.awg=awg;w.fa=fuse;save();draw();
+ document.getElementById('ecWireNote').textContent='Applied current, gauge and fuse rating to '+(w.sig||'wire #'+w.id)+(document.getElementById('ecLength')?.dataset.source==='drawing-estimate'?'. Kept route length as a drawing estimate; enter and apply a measured length separately.':', including entered route length.')+' Values are saved in this browser project.';
  toast('Electrical values applied to wire');calcElectrical();
 }
 function calcElectrical(){
@@ -1641,10 +1658,10 @@ function calcElectrical(){
 }
 
 /* ---------- tabs ---------- */
-const TABS=[['project','Dashboard'],['draw','Harness Designer'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
-const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
+const TABS=[['project','Dashboard'],['draw','Harness Designer'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
+const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
-const TAB_GROUP={project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
+const TAB_GROUP={project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
 let lastTabGroup='';
 tabsEl.innerHTML=TABS.map(([k,l])=>{const g=TAB_GROUP[k]||'Workspace',head=g!==lastTabGroup?'<div class="nav-label">'+g+'</div>':'';lastTabGroup=g;return head+'<button role="tab" data-tab="'+k+'">'+l+'</button>'}).join('');
 function showTab(k){
@@ -1759,6 +1776,9 @@ document.addEventListener('click',e=>{
    case'bkDownload':downloadBackup();break;
    case'runSelfTests':{const report=runProjectSelfTests();window.__wireForgeTestReport=report;showTab('checks');toast(report.passed+'/'+report.total+' project self-tests passed');break;}
    case'downloadAudit':downloadReadinessReport();break;
+   case'savePowerVoltage':{const n=Number(document.getElementById('powerVoltage')?.value);if(!Number.isFinite(n)||n<=0){toast('Enter a valid system voltage');break;}S.powerVoltage=n;save();rPower();toast('Power budget voltage saved');break;}
+   case'downloadPower':downloadPowerBudget();break;
+   case'powerReport':downloadProjectReport();break;
    case'downloadWires':downloadCsvFile('harness-wire-list.csv',CSVS.wires());break;
    case'downloadCut':downloadCsvFile('harness-wire-cut-list.csv',CSVS.cut());break;
    case'downloadPins':downloadCsvFile('harness-connector-pinouts.csv',CSVS.pins());break;
@@ -1836,6 +1856,7 @@ document.addEventListener('input',e=>{
   if(t.id==='bookQ'){const pos=t.selectionStart;rBook();const nq=document.getElementById('bookQ');if(nq){nq.focus();try{nq.setSelectionRange(pos,pos)}catch(_){}}return}
   if(d.book&&d.field){ensureBook();const rec=S.circuitBook.find(x=>x.id===d.book);if(rec&&d.field!=='id'){rec[d.field]=t.value;save()}return} 
 
+  if(t.id==='wireSearch'||t.id==='wireFilter'){if(t.id==='wireSearch')S.wireSearch=t.value;else S.wireFilter=t.value;const pos=t.selectionStart;rWires();const n=document.getElementById(t.id);if(n){n.focus();if(t.id==='wireSearch')try{n.setSelectionRange(pos,pos)}catch(_){}}return}
   if(t.id==='lq'||t.id==='libFamily'){const q=(document.getElementById('lq')?.value||'').toLowerCase(),fam=document.getElementById('libFamily')?.value||'';document.querySelectorAll('#lib .connector-card').forEach(x=>{x.hidden=(!!q&&!x.dataset.cardName.includes(q))||(!!fam&&x.dataset.family!==fam)});document.querySelectorAll('#lib .catalog-group').forEach(g=>{const cards=[...g.querySelectorAll('.connector-card')],shown=cards.some(x=>!x.hidden);g.hidden=!shown;if(q&&shown)g.open=true});return}
   if(t.id==='defAwg'){S.def.awg=+t.value;return save()}
   if(t.id==='defColor'){S.def.color=t.value;return save()}
