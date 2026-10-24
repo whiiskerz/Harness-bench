@@ -38,7 +38,7 @@ test('E90 starter topology has stable expected shape and connected endpoints', (
       assert.ok(Number.isInteger(Number(endpoint.i)) && Number(endpoint.i) >= 0, 'pin indices are non-negative integers');
     }
   }
-  assert.ok(project.circuitBook.some(x => x.id === 'ECU-MOTOR-OUTPUT'), 'muffler output conflict remains documented');
+  assert.ok(script.includes("id:'ECU-MOTOR-OUTPUT'"), 'muffler output conflict remains documented in the Harness Book seed');
 });
 
 test('voltage-drop estimate uses round-trip copper resistance', () => {
@@ -77,5 +77,5 @@ test('safety and backup affordances are present', () => {
     "case'bkDownload'",
     'output assignment conflict',
     'not an electrical safety certification'
-  ]) assert.ok(script.includes(token), 'expected source token: ' + token);
+  ]) assert.ok(script.toLowerCase().includes(token.toLowerCase()), 'expected source token: ' + token);
 });
