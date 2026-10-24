@@ -1376,6 +1376,7 @@ function renderCircuitAudit(){
  return `<div class="card"><div class="hd"><b>Circuit audit</b><span class="pill ${open.length?'wn':'ok'}">${open.length} wires need attention</span></div><p class="muted">Use “Inspect wire” to jump to the selected wire in Draw. Endpoint labels show the direct from/to connector and pin. “Verified” is a user review status, not an automated safety certification.</p><div class="row"><span class="pill">${rows.length} wire segments</span><span class="pill ok">${verified} fully reviewed</span><button class="btn" data-act="auditExport">Export audit CSV</button></div><div class="tw"><table><thead><tr><th>Circuit / wire</th><th>From → To</th><th>Status</th><th>Audit findings</th><th>Action</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.from)}<br>→ ${esc(r.to)}</td><td><span class="pill ${r.status==='Verified'?'ok':r.status==='Needs verification'?'wn':''}">${esc(r.status)}</span></td><td>${r.flags.length?esc(r.flags.join('; ')):'No basic audit flags'}</td><td><button class="btn" data-audit-wire="${r.id}">Inspect wire</button></td></tr>`).join('')}</tbody></table></div></div>`;
 }
 function readinessAudit(){
+ if(!Array.isArray(S.circuitBook)||!S.circuitBook.length)ensureBook();
  const findings=[],partIds=new Set();
  S.parts.forEach(p=>{if(partIds.has(p.id))findings.push({level:'bd',text:'Duplicate part ID '+p.id+' ('+p.name+').'});partIds.add(p.id);});
  S.wires.forEach((w,i)=>{
