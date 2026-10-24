@@ -177,6 +177,7 @@ a{color:var(--accent)}
     <button class="btn" data-act="fw" id="fwBtn" aria-pressed="false">Firewall line</button>
     <button class="btn" data-act="tk" id="tkBtn" aria-pressed="false">Trunk line</button>
     <button class="btn" data-act="can" id="canBtn" aria-pressed="false">CAN pair</button>
+    <button class="btn" data-act="toggleRoute" id="routeBtn">Routing: 90°</button>
     <label><span>New wire gauge</span><select id="defAwg"></select></label>
     <label><span>New wire color</span><input id="defColor" placeholder="RED"></label>
     <label><span>Scale (px per in)</span><input id="scale" type="number" min="0.5" step="0.5" inputmode="decimal"></label>
@@ -429,7 +430,7 @@ function e90ProjectStarter(){
    mk(163,'dt2',0,0,'Cabin DT2 #1 · fuel-pump triggers',{0:'GPO2',1:'GPO3'}),
    mk(164,'dt2',0,0,'Cabin DT2 #2 · heater trigger / pressure signal',{0:'GPO7',1:'AIN2'}),
    mk(165,'dt2',0,0,'Cabin DT2 #3 · sensor power',{0:'+5V',1:'Sensor ground'}),
-   mk(166,'relay',0,0,'Nitrous bottle heater relay · 85 = GPO7',{0:'30 · fused battery +',1:'85 · GPO7 low-side',2:'86 · switched +12V',3:'87 · heater +',4:'87a · unused'}),
+   mk(166,'relay4',0,0,'Nitrous bottle heater relay (4-pin) · 85 = GPO7',{0:'30 · fused battery +',1:'85 · GPO7 low-side',2:'86 · switched +12V',3:'87 · heater +'}),
    mk(167,'splice',0,0,'Cabin +5V branch splice'),
    mk(169,'inl',0,0,'Dedicated nitrous heater contact fuse · rating TBD'),
    mk(168,'splice',0,0,'Cabin sensor-ground branch splice')
@@ -608,11 +609,12 @@ function loomPlan(){
     const p1=ws[0].a.p,gs=ws.map(w=>geo(w));if(gs.some(g=>!g))return;
     const As=ws.map((w,i)=>w.a.p===p1?gs[i].A:gs[i].B),Bs=ws.map((w,i)=>w.a.p===p1?gs[i].B:gs[i].A),n=ws.length;
     const cA={x:As.reduce((a,q)=>a+q.x,0)/n,y:As.reduce((a,q)=>a+q.y,0)/n},cB={x:Bs.reduce((a,q)=>a+q.x,0)/n,y:Bs.reduce((a,q)=>a+q.y,0)/n};
-    const E={x:cA.x+As[0].dir*44,y:cA.y},X={x:cB.x+Bs[0].dir*44,y:cB.y},L=Math.hypot(X.x-E.x,X.y-E.y);if(L<50)return;
-    const u={x:(X.x-E.x)/L,y:(X.y-E.y)/L},nr={x:-u.y,y:u.x},Wt=Math.min(18,6+2*n);
-    ws.forEach((w,i)=>{const off=((i+.5)/n-.5)*(Wt-4),A=As[i],B=Bs[i],e={x:E.x+nr.x*off,y:E.y+nr.y*off},x={x:X.x+nr.x*off,y:X.y+nr.y*off};
-      const head=`M${A.x} ${A.y} C${A.x+A.dir*26} ${A.y} ${e.x-u.x*22} ${e.y-u.y*22} ${e.x} ${e.y}`,tail=`M${x.x} ${x.y} C${x.x+u.x*22} ${x.y+u.y*22} ${B.x+B.dir*26} ${B.y} ${B.x} ${B.y}`;
-      LM[w.id]={d:head+' '+tail,e,x}});
+    const Ty=(cA.y+cB.y)/2,E={x:cA.x+As[0].dir*(40+3.5*n),y:Ty},X={x:cB.x+Bs[0].dir*(40+3.5*n),y:Ty},L=Math.abs(X.x-E.x);if(L<50)return;
+    const Wt=Math.min(18,6+2*n),oa=ws.map((w,i)=>i).sort((i,j)=>As[i].y-As[j].y),ob=ws.map((w,i)=>i).sort((i,j)=>Bs[i].y-Bs[j].y);
+    const rr=pts=>{let p='M'+pts[0].x+' '+pts[0].y;for(let i=1;i<pts.length-1;i++){const a=pts[i-1],b=pts[i],c=pts[i+1],l1=Math.hypot(b.x-a.x,b.y-a.y)||1,l2=Math.hypot(c.x-b.x,c.y-b.y)||1,r=Math.min(8,l1/2,l2/2);p+=` L${b.x-(b.x-a.x)/l1*r} ${b.y-(b.y-a.y)/l1*r} Q${b.x} ${b.y} ${b.x+(c.x-b.x)/l2*r} ${b.y+(c.y-b.y)/l2*r}`}return p+` L${pts[pts.length-1].x} ${pts[pts.length-1].y}`};
+    ws.forEach((w,i)=>{const off=((i+.5)/n-.5)*(Wt-4),A=As[i],B=Bs[i],xa=A.x+A.dir*(16+3.5*oa.indexOf(i)),xb=B.x+B.dir*(16+3.5*ob.indexOf(i));
+      const e={x:E.x,y:Ty+off},x={x:X.x,y:Ty+off};
+      LM[w.id]={d:rr([A,{x:xa,y:A.y},{x:xa,y:e.y},e])+' '+rr([x,{x:xb,y:x.y},{x:xb,y:B.y},B]),e,x}});
     tubes.push({E,X,Wt,n,lm});
   });
   return{LM,tubes};
@@ -672,14 +674,61 @@ function anc(p,i,tx,s){
   if(t.bulk){const q=bgeo(p).pos[i];return{x:p.x+q.x,y,dir:left?-1:1}}
   return{x:left?p.x:p.x+w,y,dir:left?-1:1};
 }
+const ROUTE_R=9;
+function laneOf(w){
+  const lo=Math.min(w.a.p,w.b.p),hi=Math.max(w.a.p,w.b.p),g=S.wires.filter(x=>Math.min(x.a.p,x.b.p)===lo&&Math.max(x.a.p,x.b.p)===hi).sort((a,b)=>a.id-b.id);
+  const k=g.findIndex(x=>x.id===w.id);return (k-(g.length-1)/2)*7+(((lo*31+hi)%7)-3)*4;
+}
+let RSTAMP='',RCACHE={};
+function routeStamp(){const k=S.parts.map(p=>p.id+','+p.x+','+p.y).join(';')+'|'+S.wires.length+'|'+S.route;if(k!==RSTAMP){RSTAMP=k;RCACHE={}}}
+function obstacleHits(pts,ex){
+  let n=0;const rs=S.parts.filter(p=>!ex.includes(p.id)&&!T[p.t].node).map(p=>{const d=dims(p);return[p.x+3,p.y+3,p.x+d.w-3,p.y+d.h-3]});
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];const x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);
+    for(const r of rs){if(x1>r[0]&&x0<r[2]&&y1>r[1]&&y0<r[3])n++}}
+  return n;
+}
+let FASTROUTE=false;
+function pickRoute(build,base,step,ex){
+  if(FASTROUTE)return build(base);
+  let best=null,bn=1e9;
+  for(let k=0;k<=36;k++){for(const sg of(k?[1,-1]:[1])){const t=base+sg*k*step,pts=build(t),n=obstacleHits(pts,ex);if(n<bn){bn=n;best=pts;if(n===0)return best}}}
+  return best;
+}
+function orthoRoute(w,A,B,pa,pb){
+  routeStamp();const ck=w.id+'|'+A.x+','+A.y+','+B.x+','+B.y+'|'+(A.dir||0)+(B.dir||0);if(RCACHE[ck])return RCACHE[ck];
+  return RCACHE[ck]=orthoRoute0(w,A,B,pa,pb);
+}
+function orthoRoute0(w,A,B,pa,pb){
+  const ST=18,lane=laneOf(w),da=A.dir||(B.x>=A.x?1:-1),db=B.dir||(A.x>=B.x?1:-1);
+  const A1={x:A.x+da*ST,y:A.y},B1={x:B.x+db*ST,y:B.y};let pts;
+  const ex=[pa.id,pb.id];
+  if(da===1&&db===-1&&B1.x>A1.x+10)pts=pickRoute(X=>[A,{x:X,y:A.y},{x:X,y:B.y},B],(A1.x+B1.x)/2+lane,12,ex);
+  else if(da===db)pts=pickRoute(X=>[A,{x:X,y:A.y},{x:X,y:B.y},B],da===1?Math.max(A1.x,B1.x)+Math.abs(lane)+6:Math.min(A1.x,B1.x)-Math.abs(lane)-6,da*12,ex);
+  else{let ym=(A.y+B.y)/2+lane;if(Math.abs(A.y-B.y)<10)ym=A.y+36+lane;pts=pickRoute(Y=>[A,A1,{x:A1.x,y:Y},{x:B1.x,y:Y},B1,B],ym,12,ex)}
+  const q=[pts[0]];for(let i=1;i<pts.length;i++){const p=pts[i],l=q[q.length-1];if(Math.hypot(p.x-l.x,p.y-l.y)>.5)q.push(p)}
+  const segs=[],ln=(P,Q)=>[{x:P.x,y:P.y},{x:P.x+(Q.x-P.x)/3,y:P.y+(Q.y-P.y)/3},{x:P.x+2*(Q.x-P.x)/3,y:P.y+2*(Q.y-P.y)/3},{x:Q.x,y:Q.y}];
+  let path='M'+q[0].x+' '+q[0].y,cur=q[0],d=0;
+  for(let i=1;i<q.length;i++){
+    const P=q[i];
+    if(i<q.length-1){
+      const N=q[i+1],l1=Math.hypot(P.x-cur.x,P.y-cur.y),l2=Math.hypot(N.x-P.x,N.y-P.y),r=Math.min(ROUTE_R,l1/2,l2/2);
+      const u={x:(P.x-cur.x)/l1,y:(P.y-cur.y)/l1},v={x:(N.x-P.x)/l2,y:(N.y-P.y)/l2},S0={x:P.x-u.x*r,y:P.y-u.y*r},E0={x:P.x+v.x*r,y:P.y+v.y*r};
+      segs.push(ln(cur,S0));segs.push([S0,{x:S0.x+2/3*(P.x-S0.x),y:S0.y+2/3*(P.y-S0.y)},{x:E0.x+2/3*(P.x-E0.x),y:E0.y+2/3*(P.y-E0.y)},E0]);
+      path+=' L'+S0.x+' '+S0.y+' Q'+P.x+' '+P.y+' '+E0.x+' '+E0.y;d+=Math.hypot(S0.x-cur.x,S0.y-cur.y)+r*1.57;cur=E0;
+    }else{segs.push(ln(cur,P));path+=' L'+P.x+' '+P.y;d+=Math.hypot(P.x-cur.x,P.y-cur.y)}
+  }
+  let acc=0,mid=q[0];const half=d/2;for(let i=1;i<q.length;i++){const sl=Math.hypot(q[i].x-q[i-1].x,q[i].y-q[i-1].y);if(acc+sl>=half){const t=(half-acc)/(sl||1);mid={x:q[i-1].x+(q[i].x-q[i-1].x)*t,y:q[i-1].y+(q[i].y-q[i-1].y)*t};break}acc+=sl}
+  return{A,B,d,mid,segs,path};
+}
 function geo(w){
   const pa=part(w.a.p),pb=part(w.b.p);if(!pa||!pb)return null;
   const ca=ctr(pa),cb=ctr(pb),A=anc(pa,w.a.i,cb.x,w.a.s),B=anc(pb,w.b.i,ca.x,w.b.s);
+  if(S.route!=='curved'&&!w.v)return orthoRoute(w,A,B,pa,pb);
   const d0=Math.hypot(A.x-B.x,A.y-B.y),off=Math.max(30,Math.min(120,d0*.4));
   const c1={x:A.x+A.dir*off,y:A.y},c2={x:B.x+B.dir*off,y:B.y};
   let segs,d,mid,path;
   if(w.v){const V=w.v,tx=44*(B.x>=A.x?1:-1);segs=[[A,c1,{x:V.x-tx,y:V.y},V],[V,{x:V.x+tx,y:V.y},c2,B]];d=Math.hypot(A.x-V.x,A.y-V.y)+Math.hypot(V.x-B.x,V.y-B.y);mid=V}
-  else if(w.autoRoute){
+  else if(false&&w.autoRoute){
     // E90 starter routes use shared orthogonal channels instead of uncontrolled
     // pin-to-pin Beziers. A stable lane offset separates neighboring circuits.
     const lane=((Number(w.id)||0)%9-4)*9;
@@ -726,6 +775,7 @@ const faceUsed=(pid,i,s)=>usedOn(pid,i).some(w=>faceOf(w,pid,i)===s);
 const cv=document.getElementById('cv');
 const v=()=>S.view||(S.view={x:20,y:20,k:.8});
 function draw(){
+  const rb=document.getElementById('routeBtn');if(rb)rb.textContent='Routing: '+(S.route==='curved'?'Curved':'90°');
   computeSides();ERR=errSets();const V=v(),out=[];
   out.push(`<defs><pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="var(--grid)"/></pattern></defs>`);
   out.push(`<g transform="translate(${V.x} ${V.y}) scale(${V.k})"><rect data-bg="1" x="-5000" y="-5000" width="10000" height="10000" fill="url(#g)"/>`);
@@ -837,7 +887,7 @@ cv.addEventListener('pointerdown',e=>{
 cv.addEventListener('pointermove',e=>{
   if(!ptrs.has(e.pointerId))return;
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(!G)return;const V=v();
+  if(!G)return;const V=v();FASTROUTE=!!(G.moved&&(G.kind==='part'||G.kind==='zone'||G.kind==='zoneResize'));
   if(G.kind==='pinch'){
     if(ptrs.size<2)return;const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,r=rectOf();
     const k=Math.max(.2,Math.min(3,G.k*d/G.d)),wx=(G.cx-r.left-G.vx)/G.k,wy=(G.cy-r.top-G.vy)/G.k;
@@ -862,7 +912,7 @@ function up(e){
   if(!G)return;
   if(G.kind==='pinch'){if(ptrs.size===0)G=null;save();return}
   const g=G;G=null;
-  if(g.moved){save();return}
+  if(g.moved){FASTROUTE=false;RSTAMP='';save();draw();return}
   if(g.kind==='fw'||g.kind==='tk'||g.kind==='vh'||g.kind==='zone'||g.kind==='zoneResize') { if(g.kind==='zone'||g.kind==='zoneResize'){save();renderInsp()} return; }
   if(g.kind==='pin')return pinTap(g.pin);
   if(g.kind==='wire'){pending=null;if(g.shift){if(!MSEL.size&&selection&&selection.type==='wire')MSEL.add(selection.id);if(MSEL.has(g.wire))MSEL.delete(g.wire);else MSEL.add(g.wire)}else MSEL.clear();selection={type:'wire',id:g.wire};renderInsp();draw();hint();return}
@@ -1849,6 +1899,7 @@ document.addEventListener('click',e=>{
    case'designLoad':{const x=designList()[+b.dataset.i];if(!x)break;commit();const o=JSON.parse(x.data);o.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});S=Object.assign(S,o,{tab:'save'});S.parts=S.parts.filter(p=>T[p.t]);selection=null;pending=null;save();rSave();toast('Loaded "'+x.name+'"');break}
    case'designDel':{const a=designList();a.splice(+b.dataset.i,1);designPut(a);rSave();break}
    case'clearWires':{if(!S.wires.length){toast('There are no wires to delete');break}if(!confirm('Delete all '+S.wires.length+' wires? Parts, connector pinouts, zones, and loom definitions will be kept. This cannot be undone after you leave the current session.'))break;commit();const count=S.wires.length;S.wires=[];selection=null;pending=null;canMode=false;canQ=[];save();draw();renderInsp();syncBar();toast('Deleted '+count+' wires; parts and zones kept');break}
+   case'toggleRoute':{S.route=S.route==='curved'?'ortho':'curved';save();draw();toast(S.route==='curved'?'Curved wires':'90° routing');break}
    case'clearAll':{commit();S.parts=[];S.wires=[];S.zones=[];S.examples=false;selection=null;pending=null;S.view=null;save();showTab(S.tab);break}
    case'loadEx':{commit();Object.assign(S,starter());S.zones=[];selection=null;pending=null;save();showTab('draw');break}
    case'bookAdd':{ensureBook();let id='NEW-'+(Date.now().toString().slice(-6));while(S.circuitBook.some(x=>x.id===id))id+='X';S.circuitBook.push({id,kind:'Circuit',name:'New circuit',from:'',to:'',cavity:'',wire:'',status:'Planned / unverified',notes:''});save();showTab('book');toast('Record added');break;}
