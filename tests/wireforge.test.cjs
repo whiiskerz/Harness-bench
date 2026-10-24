@@ -20,7 +20,7 @@ test('inline application JavaScript parses', () => {
 });
 
 test('E90 starter topology has stable expected shape and connected endpoints', () => {
-  const source = functionSource('e90ProjectStarter', '\\nlet S=');
+  const source = functionSource('e90ProjectStarter', String.fromCharCode(10) + 'let S=');
   const mkW = (a, b, options) => Object.assign({
     id: 0, a, b, sig: '', awg: 18, color: '', len: 0, amps: 0, fuse: '', fa: 0
   }, options);
@@ -42,7 +42,7 @@ test('E90 starter topology has stable expected shape and connected endpoints', (
 });
 
 test('voltage-drop estimate uses round-trip copper resistance', () => {
-  const source = functionSource('electricalEstimate', '\\nfunction loadElectricalWire');
+  const source = functionSource('electricalEstimate', String.fromCharCode(10) + 'function loadElectricalWire');
   const estimate = new Function(source + '; return electricalEstimate;')();
   const result = estimate(14, 20, 10, 14);
   assert.ok(result);
@@ -58,12 +58,12 @@ test('voltage-drop estimate uses round-trip copper resistance', () => {
 
 test('CSV formatter escapes commas, quotes and newlines', () => {
   const start = script.indexOf('const csv=rows=>');
-  const end = script.indexOf('\\nconst dotColor', start);
+  const end = script.indexOf(String.fromCharCode(10) + 'const dotColor', start);
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const csv = new Function(script.slice(start, end).trim() + '; return csv;')();
-  assert.equal(csv([['header'], ['comma,value'], ['say "hi"'], ['two\\nlines']]),
-    'header\\n"comma,value"\\n"say ""hi"""\\n"two\\nlines"');
+  assert.equal(csv([['header'], ['comma,value'], ['say "hi"'], ['two' + String.fromCharCode(10) + 'lines']]),
+    ['header','"comma,value"','"say ""hi"""','"two' + String.fromCharCode(10) + 'lines"'].join(String.fromCharCode(10)));
 });
 
 test('safety and backup affordances are present', () => {
