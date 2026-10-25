@@ -26,6 +26,19 @@ header h1{margin:0;letter-spacing:.025em}header .sub{margin:0;opacity:.85}
 .wf-issues p{margin:5px 0;padding:7px;border-left:3px solid var(--warn);background:var(--panel2)}
 .wf-help{font-size:12px;color:var(--mute);margin-top:8px}
 @media(max-width:650px){header{padding:12px}.wf-workspace{padding:10px}.wf-actions button{flex:1 1 130px}}
+</style><style>
+.wf-pro-head{display:flex;justify-content:space-between;gap:14px;align-items:start;margin:12px 0 18px;flex-wrap:wrap}
+.wf-pro-head h2{margin:8px 0}.wf-pro-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:14px}
+.wf-pro-grid .card{min-width:0}.wf-pro-grid label{display:flex;flex-direction:column;gap:5px;margin:7px 0}
+.wf-pro-grid input,.wf-pro-grid select{max-width:100%;width:100%;box-sizing:border-box}
+.wf-pro-grid .row{display:flex;flex-wrap:wrap;gap:8px}.wf-pro-grid .row>*{flex:1;min-width:95px}
+.wf-pro-table{width:100%;border-collapse:collapse;font-size:12px}.wf-pro-table th,.wf-pro-table td{padding:6px;text-align:left;border-bottom:1px solid var(--line)}
+.wf-pro-scroll{overflow:auto;max-height:340px}.wf-pro-actions{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+.wf-pro-cavities{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:7px;margin:12px 0}
+.wf-pro-cavity{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:9px;min-height:55px}
+.wf-pro-cavity b{display:block;color:var(--accent)}
+@media(max-width:650px){.wf-pro-head .btn{width:100%}.wf-pro-grid{grid-template-columns:1fr}}
+@media print{body.wf-pro-print header,body.wf-pro-print nav,body.wf-pro-print footer,body.wf-pro-print section:not(#t-pro),body.wf-pro-print .wf-pro-actions,body.wf-pro-print button{display:none!important}body.wf-pro-print #t-pro{display:block!important}body.wf-pro-print .card{break-inside:avoid}body.wf-pro-print{background:#fff;color:#111}}
 </style></head><body>
 <title>WireForge</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -188,6 +201,7 @@ a{color:var(--accent)}
 <section id="t-project" hidden></section>
 <section id="t-studio" hidden></section>
 <section id="t-sim" hidden></section>
+<section id="t-pro" hidden><div class="wf-pro-head"><div><span class="pill">PRO WORKSPACE · PREVIEW</span><h2>Harness Production Studio</h2><p class="muted">Reusable cavity maps, drawing layers, branch schedules, build reports and restore points. Manufacturer geometry and electrical suitability require independent verification.</p></div><button class="btn primary" id="proPrint">Print build pack</button></div><div id="proRoot"></div></section>
 <section id="t-draw">
 <section class="wf-phase card" id="wfPhasePanel" aria-label="Harness engineering tools">
 <h3>Harness engineering · Phase 1 <span class="pill">v0.18 preview</span></h3>
@@ -212,7 +226,7 @@ a{color:var(--accent)}
 <button type="button" id="wfPinExport">Export connector pinouts CSV</button>
 <button type="button" id="wfLoomExport">Export harness bundles CSV</button>
 </div>
-<div class="wf-help">Snap changes positions and can be undone. Lock is a workspace marker, not yet enforced during dragging. Electrical findings require manual verification against component datasheets.</div>
+<div class="wf-help">Snap changes positions and can be undone. Lock enforcement is included in the next hardening update; verify before relying on it. Electrical findings require manual verification against component datasheets.</div>
 <div class="wf-issues" id="wfIssues"></div></aside>
   <div class="bar">
     <button class="btn primary" data-act="lib" id="libBtn" aria-pressed="false">+ Add part</button>
@@ -251,10 +265,10 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.17.0-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.19.0-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.17.0-preview';
+const APP_VERSION='0.19.0-preview';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -827,9 +841,10 @@ function draw(){
   S.parts.forEach(p=>{if(T[p.t].bulk)out.push(partSVG(p))});
   const handles=[];
   const PAIR={};S.wires.forEach(w=>{if(w.tw)(PAIR[w.tw]=PAIR[w.tw]||[]).push(w)});const LP=loomPlan(),LM=LP.LM;
-  S.wires.forEach(w=>{const g=geo(w);if(!g||LM[w.id])return;const lm=(S.looms||[]).find(l=>l.id===w.loom);
+  S.wires.forEach(w=>{if(proState().hiddenLayers.includes(w.wfLayer||'Other'))return;const g=geo(w);if(!g||LM[w.id])return;const lm=(S.looms||[]).find(l=>l.id===w.loom);
     if(lm)out.push(`<path d="${g.path}" fill="none" stroke="${lm.color}" stroke-width="14" stroke-linecap="round" opacity=".22"/>`)});
   S.wires.forEach(w=>{
+    if(proState().hiddenLayers.includes(w.wfLayer||'Other'))return;
     const g=geo(w);if(!g)return;
     const sel=(selection&&selection.type==='wire'&&selection.id===w.id)||MSEL.has(w.id);
     const lmi=LM[w.id],PD=!lmi&&!!(w.tw&&PAIR[w.tw]&&PAIR[w.tw].length===2),dd=lmi?lmi.d:g.path;
@@ -1767,10 +1782,117 @@ function calcElectrical(){
 }
 
 /* ---------- tabs ---------- */
-const TABS=[['project','Dashboard'],['draw','Harness Designer'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
-const RENDER={project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
+
+/* Production Studio: project-scoped engineering metadata, never authoritative pinouts. */
+function proState(){return S.pro||(S.pro={templates:[],branches:[],hiddenLayers:[],selectedPart:'',selectedTemplate:'',layer:'all'})}
+const proEsc=v=>esc(String(v??''));
+const proOption=(value,label,selected)=>'<option value="'+proEsc(value)+'" '+(String(value)===String(selected)?'selected':'')+'>'+proEsc(label)+'</option>';
+function proCSV(name,rows){downloadCsvFile(name,rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'))}
+function proData(){
+ const ps=proState(),layers=['Power','Ground','CAN','Sensors','Controls','Other'],parts=S.parts.filter(p=>T[p.t]&&!T[p.t].node),p=parts.find(p=>String(p.id)===String(ps.selectedPart))||parts[0];
+ if(p)ps.selectedPart=String(p.id);
+ const tpl=ps.templates.find(t=>t.id===ps.selectedTemplate)||ps.templates[0];if(tpl)ps.selectedTemplate=tpl.id;
+ return {ps,layers,parts,p,tpl};
+}
+function proFindings(){
+ const rows=[],seen=new Map(),parts=new Map(S.parts.map(p=>[String(p.id),p]));
+ for(const w of S.wires){
+  for(const side of ['a','b']){
+   const e=w[side],p=e&&parts.get(String(e.p)),t=p&&T[p.t],max=t?(t.node?1:t.pins.length):0;
+   if(!p||!Number.isInteger(Number(e.i))||Number(e.i)<0||Number(e.i)>=max){rows.push(['ERROR',w.id,'Invalid endpoint or cavity','Review '+side+' endpoint']);continue}
+   const key=p.id+':'+e.i+':'+(e.s||'');
+   if(!seen.has(key))seen.set(key,[]);seen.get(key).push(w.id);
+  }
+  if(!w.sig)rows.push(['REVIEW',w.id,'Unnamed wire','Add circuit name']);
+  if(!w.color)rows.push(['REVIEW',w.id,'Missing wire color','Assign insulation color']);
+  if(+w.amps>0&&+w.fa>0&&+w.amps>+w.fa)rows.push(['REVIEW',w.id,'Entered current exceeds entered fuse','Verify load and protection']);
+  if(!(+w.len>0))rows.push(['INFO',w.id,'No measured length','Measure actual routed wire']);
+ }
+ for(const [key,ids] of seen)if(ids.length>1)rows.push(['REVIEW',ids.join('/'),'Multiple wires share '+key,'Verify splice, connector and face']);
+ return rows;
+}
+function proBuildRows(){
+ const rows=[['Wire ID','Circuit','From','To','AWG','Color','Layer','Branch','Measured length (in)','Allowance (in)','Cut length (in)','Length status']];
+ for(const w of S.wires){
+  const measured=+w.len>0,allow=w.proAllowance===''||w.proAllowance==null?null:+w.proAllowance;
+  const valid=allow!==null&&Number.isFinite(allow)&&allow>=0;
+  rows.push([w.id,w.sig||'',endName(w.a),endName(w.b),w.awg||'',w.color||'',w.wfLayer||'Other',w.proBranch||'',measured?w.len:'',valid?allow:'',measured&&valid?(+w.len+allow).toFixed(2):'',measured?'Measured':'Unverified / drawing estimate']);
+ }
+ return rows;
+}
+function rPro(){
+ const root=document.getElementById('proRoot');if(!root)return;
+ const {ps,layers,parts,p,tpl}=proData();
+ const t=p&&T[p.t],pins=t&&!t.node?t.pins:[],assigned=p&&p.pl||{};
+ const choices=parts.map(q=>proOption(q.id,q.name+' · '+T[q.t].name,p&&p.id)).join('');
+ const templateChoices='<option value="">Select template</option>'+ps.templates.map(q=>proOption(q.id,q.name+' · '+q.pins.length+' cavities',tpl&&tpl.id)).join('');
+ const templateCavities=tpl?tpl.pins.map((pin,i)=>'<div class="wf-pro-cavity"><b>'+proEsc(pin.cavity)+'</b><small>'+proEsc(pin.label||'Unassigned')+'</small></div>').join(''):'';
+ const layerOpts=layers.map(l=>proOption(l,l,ps.layer)).join('');
+ const branchOpts='<option value="">Unassigned</option>'+ps.branches.map(b=>proOption(b.id,b.name,'')).join('');
+ const report=proFindings(),issues=report.filter(x=>x[0]!=='INFO').length;
+ root.innerHTML='<div class="wf-pro-grid">'+
+ '<article class="card"><h3>Connector templates & cavity assignments</h3><p class="muted">Save a reusable signal-label template for the selected connector. Applying a template changes pin labels only; it does not alter physical pin numbering or wiring.</p>'+
+ '<label>Connector instance<select id="proPart">'+choices+'</select></label>'+
+ '<div class="wf-pro-scroll"><table class="wf-pro-table"><thead><tr><th>Cavity</th><th>Assigned signal</th><th>Wires</th></tr></thead><tbody>'+
+ pins.map((pin,i)=>'<tr><td>'+proEsc(pin.p)+'</td><td><input data-pro-pin="'+i+'" value="'+proEsc(assigned[i]||'')+'" aria-label="Signal for cavity '+proEsc(pin.p)+'"></td><td>'+proEsc(usedOn(p.id,i).map(w=>w.sig||'Wire '+w.id).join(', '))+'</td></tr>').join('')+
+ '</tbody></table></div><div class="wf-pro-actions"><button class="btn" id="proSavePins">Save pin labels</button><button class="btn" id="proTemplateSave">Save as template</button></div>'+
+ '<label>Saved template<select id="proTemplate">'+templateChoices+'</select></label>'+
+ '<div class="wf-pro-cavities">'+templateCavities+'</div><div class="wf-pro-actions"><button class="btn" id="proTemplateApply">Apply template</button><button class="btn danger" id="proTemplateDelete">Delete template</button></div></article>'+
+ '<article class="card"><h3>CAD layers & wire assignments</h3><p class="muted">Organize circuits by layer. Hidden layers are omitted from the diagram view, not deleted from project documentation.</p>'+
+ '<label>Layer<select id="proLayer">'+layerOpts+'</select></label>'+
+ '<label><input type="checkbox" id="proLayerHidden" '+(ps.hiddenLayers.includes(ps.layer)?'checked':'')+'> Hide selected layer on drawing</label>'+
+ '<div class="wf-pro-scroll"><table class="wf-pro-table"><thead><tr><th>Wire</th><th>Layer</th><th>Branch</th><th>Allowance (in)</th></tr></thead><tbody>'+
+ S.wires.map(w=>'<tr><td>'+proEsc(w.sig||'Wire '+w.id)+'</td><td><select data-pro-wire="'+w.id+'" data-pro-field="wfLayer">'+layers.map(l=>proOption(l,l,w.wfLayer||'Other')).join('')+'</select></td><td><select data-pro-wire="'+w.id+'" data-pro-field="proBranch">'+branchOpts.replace('value="'+proEsc(w.proBranch||'')+'"','value="'+proEsc(w.proBranch||'')+'"')+'</select></td><td><input type="number" min="0" step=".1" data-pro-wire="'+w.id+'" data-pro-field="proAllowance" value="'+proEsc(w.proAllowance??'')+'" placeholder="TBD"></td></tr>').join('')+
+ '</tbody></table></div><div class="wf-pro-actions"><button class="btn" id="proWireSave">Save assignments</button><button class="btn" id="proLayerShowAll">Show all layers</button></div></article>'+
+ '<article class="card"><h3>Physical harness branches</h3><p class="muted">Record loom and branch specifications. Dimensions are user-entered, not inferred from the schematic.</p>'+
+ '<label>Branch name<input id="proBranchName" placeholder="Engine harness trunk"></label><div class="row"><label>Length (in)<input id="proBranchLength" type="number" min="0" step=".1"></label><label>Diameter (mm)<input id="proBranchDiameter" type="number" min="0" step=".1"></label></div>'+
+ '<label>Sleeving / covering<input id="proBranchSleeve" placeholder="Braided PET / DR-25"></label><label>Build notes<input id="proBranchNotes" placeholder="Breakout and strain relief notes"></label>'+
+ '<div class="wf-pro-actions"><button class="btn primary" id="proBranchAdd">Add branch</button><button class="btn" id="proBranchCSV">Export branch schedule</button></div>'+
+ '<div class="wf-pro-scroll">'+ps.branches.map(b=>'<div class="card"><b>'+proEsc(b.name)+'</b><p class="muted">'+proEsc(b.length??'TBD')+' in · '+proEsc(b.diameter??'TBD')+' mm · '+proEsc(b.sleeve||'Sleeving TBD')+'</p><p>'+proEsc(b.notes||'')+'</p><button class="btn danger" data-pro-delete="'+proEsc(b.id)+'">Remove</button></div>').join('')+'</div></article>'+
+ '<article class="card"><h3>Build quality & production</h3><p class="muted">'+S.parts.length+' components · '+S.wires.length+' wires · '+issues+' review findings</p>'+
+ '<div class="wf-pro-actions"><button class="btn" id="proValidationCSV">Export validation CSV</button><button class="btn" id="proCutCSV">Export production cut list</button><button class="btn" id="proSnapshot">Save restore point</button><button class="btn" id="proRestore">Restore saved point</button></div>'+
+ '<div class="wf-pro-scroll"><table class="wf-pro-table"><thead><tr><th>Severity</th><th>Wire</th><th>Finding</th></tr></thead><tbody>'+
+ report.slice(0,100).map(q=>'<tr><td>'+proEsc(q[0])+'</td><td>'+proEsc(q[1])+'</td><td>'+proEsc(q[2])+'</td></tr>').join('')+
+ '</tbody></table></div><p class="muted">No manufacturing release until every physical cavity, fuse, current, gauge and cut length is independently checked.</p></article></div>';
+ const sel=document.getElementById('proTemplate');if(sel&&tpl)sel.value=tpl.id;
+ root.querySelectorAll('[data-pro-field="proBranch"]').forEach(e=>{const w=wireById(e.dataset.proWire);e.value=w&&w.proBranch||''});
+}
+function proAttach(){
+ const root=document.getElementById('t-pro');if(!root)return;
+ root.addEventListener('change',e=>{
+  if(e.target.id==='proPart'){proState().selectedPart=e.target.value;rPro()}
+  if(e.target.id==='proTemplate'){proState().selectedTemplate=e.target.value;rPro()}
+  if(e.target.id==='proLayer'){proState().layer=e.target.value;rPro()}
+  if(e.target.id==='proLayerHidden'){const ps=proState(),l=ps.layer;ps.hiddenLayers=ps.hiddenLayers.filter(x=>x!==l);if(e.target.checked)ps.hiddenLayers.push(l);save();draw();rPro()}
+ });
+ root.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const id=b.id,ps=proState(),p=part(ps.selectedPart),t=p&&T[p.t],pins=t&&!t.node?t.pins:[],read=k=>document.getElementById(k)?.value?.trim()||'';
+  if(b.dataset.proDelete){if(!confirm('Remove branch record?'))return;ps.branches=ps.branches.filter(q=>q.id!==b.dataset.proDelete);S.wires.forEach(w=>{if(w.proBranch===b.dataset.proDelete)w.proBranch=''});save();rPro();return}
+  if(id==='proSavePins'||id==='proTemplateSave'){
+   if(!p||!pins.length){toast('Select a connector with cavities');return}
+   const labels=pins.map((_,i)=>root.querySelector('[data-pro-pin="'+i+'"]')?.value?.trim()||'');
+   if(id==='proSavePins'){commit();p.pl=Object.fromEntries(labels.map((l,i)=>[i,l]));save();draw();toast('Pin labels saved')}
+   else{const name=prompt('Reusable template name',p.name+' pin map');if(!name||!name.trim())return;const template={id:'tpl-'+nid(),name:name.trim(),type:p.t,pins:pins.map((q,i)=>({cavity:q.p,label:labels[i]}))};ps.templates.push(template);ps.selectedTemplate=template.id;save();toast('Template saved')}
+   rPro();return
+  }
+  if(id==='proTemplateApply'){const tpl=ps.templates.find(q=>q.id===ps.selectedTemplate);if(!p||!tpl||!pins.length){toast('Choose connector and template');return}if(tpl.pins.length!==pins.length||tpl.pins.some((q,i)=>String(q.cavity)!==String(pins[i].p))){toast('Cavity numbers do not match; template not applied');return}commit();p.pl=Object.fromEntries(tpl.pins.map((q,i)=>[i,q.label]));save();draw();rPro();toast('Template labels applied');return}
+  if(id==='proTemplateDelete'){if(!confirm('Delete selected reusable template?'))return;ps.templates=ps.templates.filter(q=>q.id!==ps.selectedTemplate);ps.selectedTemplate='';save();rPro();return}
+  if(id==='proWireSave'){root.querySelectorAll('[data-pro-wire]').forEach(input=>{const w=wireById(input.dataset.proWire);if(!w)return;const field=input.dataset.proField,val=input.value;if(field==='proAllowance'&&val!==''&&(!Number.isFinite(+val)||+val<0)){toast('Allowance must be nonnegative');return}w[field]=field==='proAllowance'?(val===''?'':+val):val});save();draw();rPro();toast('Wire assignments saved');return}
+  if(id==='proLayerShowAll'){ps.hiddenLayers=[];save();draw();rPro();return}
+  if(id==='proBranchAdd'){const name=read('proBranchName'),length=read('proBranchLength'),diameter=read('proBranchDiameter');if(!name){toast('Branch name required');return}if([length,diameter].some(v=>v!==''&&(!Number.isFinite(+v)||+v<0))){toast('Invalid dimension');return}ps.branches.push({id:'br-'+nid(),name,length:length===''?null:+length,diameter:diameter===''?null:+diameter,sleeve:read('proBranchSleeve'),notes:read('proBranchNotes')});save();rPro();return}
+  if(id==='proBranchCSV'){proCSV('wireforge-branch-schedule.csv',[['Branch ID','Name','Length in','Diameter mm','Sleeving','Build notes','Wire IDs'],...ps.branches.map(q=>[q.id,q.name,q.length,q.diameter,q.sleeve,q.notes,S.wires.filter(w=>w.proBranch===q.id).map(w=>w.id).join('; ')])]);return}
+  if(id==='proValidationCSV'){proCSV('wireforge-production-validation.csv',[['Severity','Wire ID','Finding','Action'],...proFindings()]);return}
+  if(id==='proCutCSV'){proCSV('wireforge-production-cut-list.csv',proBuildRows());return}
+  if(id==='proSnapshot'){try{localStorage.setItem(KEY+'-pro-restore',JSON.stringify({at:new Date().toISOString(),project:S}));toast('Local restore point saved')}catch(e){toast('Could not save restore point')}return}
+  if(id==='proRestore'){let raw;try{raw=JSON.parse(localStorage.getItem(KEY+'-pro-restore')||'null')}catch(e){}if(!raw||!raw.project||!Array.isArray(raw.project.parts)||!Array.isArray(raw.project.wires)){toast('No valid restore point');return}if(!confirm('Replace current project with restore point from '+raw.at+'? Export a backup first.'))return;S=raw.project;save();showTab('pro');toast('Restore point loaded');return}
+ });
+ document.getElementById('proPrint')?.addEventListener('click',()=>{showTab('pro');document.body.classList.add('wf-pro-print');window.print();setTimeout(()=>document.body.classList.remove('wf-pro-print'),1000)});
+}
+
+const TABS=[['pro','Production Studio'],['project','Dashboard'],['draw','Harness Designer'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
+const RENDER={pro:rPro,project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
-const TAB_GROUP={project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
+const TAB_GROUP={pro:'Build',project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
 let lastTabGroup='';
 tabsEl.innerHTML=TABS.map(([k,l])=>{const g=TAB_GROUP[k]||'Workspace',head=g!==lastTabGroup?'<div class="nav-label">'+g+'</div>':'';lastTabGroup=g;return head+'<button role="tab" data-tab="'+k+'">'+l+'</button>'}).join('');
 function showTab(k){
@@ -2207,6 +2329,7 @@ save();
 renderLib();
 syncUndo();
 showTab('project');
+proAttach();
 if(S.tab==='draw'&&!S.view)requestAnimationFrame(fit);
 </script>
 
