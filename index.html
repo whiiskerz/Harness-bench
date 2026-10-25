@@ -226,7 +226,7 @@ a{color:var(--accent)}
 <button type="button" id="wfPinExport">Export connector pinouts CSV</button>
 <button type="button" id="wfLoomExport">Export harness bundles CSV</button>
 </div>
-<div class="wf-help">Snap changes positions and can be undone. Lock enforcement is included in the next hardening update; verify before relying on it. Electrical findings require manual verification against component datasheets.</div>
+<div class="wf-help">Snap changes positions and can be undone. Locked parts cannot be dragged. Electrical findings require independent verification. Electrical findings require manual verification against component datasheets.</div>
 <div class="wf-issues" id="wfIssues"></div></aside>
   <div class="bar">
     <button class="btn primary" data-act="lib" id="libBtn" aria-pressed="false">+ Add part</button>
@@ -761,6 +761,19 @@ function orthoRoute0(w,A,B,pa,pb){
   if(da===1&&db===-1&&B1.x>A1.x+10)pts=pickRoute(X=>[A,{x:X,y:A.y},{x:X,y:B.y},B],(A1.x+B1.x)/2+lane,12,ex);
   else if(da===db)pts=pickRoute(X=>[A,{x:X,y:A.y},{x:X,y:B.y},B],da===1?Math.max(A1.x,B1.x)+Math.abs(lane)+6:Math.min(A1.x,B1.x)-Math.abs(lane)-6,da*12,ex);
   else{let ym=(A.y+B.y)/2+lane;if(Math.abs(A.y-B.y)<10)ym=A.y+36+lane;pts=pickRoute(Y=>[A,A1,{x:A1.x,y:Y},{x:B1.x,y:Y},B1,B],ym,12,ex)}
+  if(!FASTROUTE&&obstacleHits(pts,ex)>0){
+    const bounds=S.parts.filter(p=>!ex.includes(p.id)&&!T[p.t].node).map(p=>{const z=dims(p);return{x0:p.x-18,x1:p.x+z.w+18,y0:p.y-18,y1:p.y+z.h+18}});
+    const xs=new Set([A1.x,B1.x]),ys=new Set([A.y,B.y]);
+    bounds.forEach(b=>{xs.add(b.x0);xs.add(b.x1);ys.add(b.y0);ys.add(b.y1)});
+    const dist=ps=>ps.slice(1).reduce((sum,p,i)=>sum+Math.abs(p.x-ps[i].x)+Math.abs(p.y-ps[i].y),0);
+    let best=pts,score=obstacleHits(pts,ex)*1e7+dist(pts);
+    for(const x of xs)for(const y of ys){
+      const options=[[A,{x,y:A.y},{x,y},{x:B.x,y},B],[A,{x:A.x,y},{x,y},{x,y:B.y},B]];
+      for(const candidate of options){const cost=obstacleHits(candidate,ex)*1e7+dist(candidate);if(cost<score){best=candidate;score=cost}if(score<1e7)break}
+      if(score<1e7)break;
+    }
+    pts=best;
+  }
   const q=[pts[0]];for(let i=1;i<pts.length;i++){const p=pts[i],l=q[q.length-1];if(Math.hypot(p.x-l.x,p.y-l.y)>.5)q.push(p)}
   const segs=[],ln=(P,Q)=>[{x:P.x,y:P.y},{x:P.x+(Q.x-P.x)/3,y:P.y+(Q.y-P.y)/3},{x:P.x+2*(Q.x-P.x)/3,y:P.y+2*(Q.y-P.y)/3},{x:Q.x,y:Q.y}];
   let path='M'+q[0].x+' '+q[0].y,cur=q[0],d=0;
@@ -936,7 +949,7 @@ cv.addEventListener('pointerdown',e=>{
   if(ptrs.size===2){const[a,b]=[...ptrs.values()];G={kind:'pinch',d:Math.hypot(a.x-b.x,a.y-b.y)||1,k:V.k,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,vx:V.x,vy:V.y,moved:true};return}
   const pin=e.target.closest('[data-pin]'),pt=e.target.closest('[data-part]'),wr=e.target.closest('[data-wire]'),fwh=e.target.closest('[data-fw]'),tkh=e.target.closest('[data-tk]'),vh=e.target.closest('[data-vh]'),zr=e.target.closest('[data-zone-resize]'),zn=e.target.closest('[data-zone]');
   G={kind:pin?'pin':vh?'vh':wr?'wire':pt?'part':fwh?'fw':tkh?'tk':zr?'zoneResize':zn?'zone':'bg',sx:e.clientX,sy:e.clientY,moved:false,shift:e.shiftKey,pin:pin&&pin.dataset.pin,part:pt&&+pt.dataset.part,wire:wr&&+wr.dataset.wire,vh:vh&&+vh.dataset.vh,zone:(zr||zn)&&(zr||zn).dataset.zoneResize||(zr||zn)&&(zr||zn).dataset.zone,vx:V.x,vy:V.y};
-  if(G.kind==='part'){const p=part(G.part);G.ox=p.x;G.oy=p.y}
+  if(G.kind==='part'){const p=part(G.part);G.ox=p.x;G.oy=p.y;G.locked=!!p.wfLocked}
   if(G.kind==='zone'||G.kind==='zoneResize'){const z=(S.zones||[]).find(q=>q.id===G.zone);if(z){G.ox=z.x;G.oy=z.y;G.ow=z.w;G.oh=z.h;selection={type:'zone',id:z.id};renderInsp()}}
   if(G.kind==='fw')G.ox=S.fw;
   if(G.kind==='tk')G.ox=S.tk;
@@ -951,7 +964,7 @@ cv.addEventListener('pointermove',e=>{
     V.k=k;V.x=G.cx-r.left-wx*k;V.y=G.cy-r.top-wy*k;draw();return;
   }
   const dx=e.clientX-G.sx,dy=e.clientY-G.sy;
-  if(!G.moved&&Math.hypot(dx,dy)>6){G.moved=true;if(['part','fw','tk','vh','zone','zoneResize'].includes(G.kind))commit()}
+  if(!G.moved&&Math.hypot(dx,dy)>6){if(G.kind==='part'&&G.locked){G.kind='bg';G.vx=V.x;G.vy=V.y;G.sx=e.clientX;G.sy=e.clientY;toast('Part is locked — unlock it before moving');return}G.moved=true;if(['part','fw','tk','vh','zone','zoneResize'].includes(G.kind))commit()}
   if(G.moved&&G.kind==='wire'){commit();selection={type:'wire',id:G.wire};MSEL.clear();G.kind='vh';G.vh=G.wire;renderInsp();hint()}
   if(!G.moved)return;
   if(G.kind==='fw'){S.fw=snap(G.ox+dx/V.k);draw();return}
@@ -959,6 +972,7 @@ cv.addEventListener('pointermove',e=>{
   if(G.kind==='vh'){const wd=toWorld(e.clientX,e.clientY),w=wireById(G.vh);if(w){w.v={x:Math.round(wd.x/5)*5,y:Math.round(wd.y/5)*5};draw()}return}
   if(G.kind==='zone'||G.kind==='zoneResize'){const z=(S.zones||[]).find(q=>q.id===G.zone);if(z){if(G.kind==='zone'){z.x=snap(G.ox+dx/V.k);z.y=snap(G.oy+dy/V.k)}else{z.w=Math.max(240,snap(G.ow+dx/V.k));z.h=Math.max(240,snap(G.oh+dy/V.k))}draw()}return}
   if(G.kind==='part'){
+    if(G.locked)return;
     if(!selection||selection.id!==G.part||selection.type!=='part'){selection={type:'part',id:G.part};renderInsp()}
     const p=part(G.part);p.x=snap(G.ox+dx/V.k);p.y=snap(G.oy+dy/V.k);draw();
   }else{V.x=G.vx+dx;V.y=G.vy+dy;draw()}
