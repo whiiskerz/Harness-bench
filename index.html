@@ -189,7 +189,19 @@ a{color:var(--accent)}
 <section id="t-studio" hidden></section>
 <section id="t-sim" hidden></section>
 <section id="t-draw">
-<aside class="wf-workspace" id="wfWorkspace" aria-label="Harness editor tools">
+<section class="wf-phase card" id="wfPhasePanel" aria-label="Harness engineering tools">
+<h3>Harness engineering · Phase 1 <span class="pill">v0.18 preview</span></h3>
+<p class="muted">Routing diagnostics, physical branch records, ECU pin schedule and manufacturing estimates. These tools do not certify a harness.</p>
+<div class="row" style="flex-wrap:wrap;gap:8px">
+<button class="btn" id="wfRouteAudit" type="button">Analyze routing</button>
+<button class="btn" id="wfAddBranch" type="button">Add harness branch</button>
+<button class="btn" id="wfCutList" type="button">Export cut list CSV</button>
+<button class="btn" id="wfEcuSchedule" type="button">Export MaxxECU schedule CSV</button>
+<button class="btn" id="wfValidation" type="button">Export validation CSV</button>
+</div>
+<div class="row" style="flex-wrap:wrap;gap:8px;margin-top:10px"><label>Branch name <input id="wfBranchName" placeholder="Engine → firewall"></label><label>Bundle ID <input id="wfBranchLoom" placeholder="990"></label><label>Branch length (in) <input id="wfBranchLength" type="number" min="0" step=".1" placeholder="Measured"></label><label>Branch diameter (mm) <input id="wfBranchDiameter" type="number" min="0" step=".1" placeholder="Estimate"></label></div>
+<div id="wfBranchRows" class="muted" style="margin-top:10px"></div><div id="wfPhaseResults" aria-live="polite" style="margin-top:10px"></div>
+</section><aside class="wf-workspace" id="wfWorkspace" aria-label="Harness editor tools">
 <div class="wf-top"><h2>Harness workspace <small style="font-size:12px;color:var(--mute)">BETA · v0.17 preview</small></h2><span id="wfStatus" class="pill">Ready</span></div>
 <div class="wf-metrics" id="wfMetrics" aria-live="polite"></div>
 <div class="wf-actions">
@@ -2129,6 +2141,64 @@ document.addEventListener('change',e=>{
  bind('wfPinExport',pinExport);bind('wfLoomExport',loomExport);
  document.addEventListener('click',e=>{if(e.target.closest('#tabs')||e.target.closest('#t-draw'))requestAnimationFrame(refresh)});
  refresh();
+})();
+
+
+/* WireForge Phase 1: non-destructive engineering helpers */
+(function(){
+ const el=id=>document.getElementById(id);
+ const safe=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const csv=(filename,rows)=>{const b=new Blob(['\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)};
+ const endpoint=e=>{const p=e&&part(e.p);const t=p&&T[p.t];return {name:p&&p.name||'UNKNOWN',pin:t&&t.pins&&t.pins[e.i]?t.pins[e.i].p:'UNKNOWN'}};
+ const wireLen=w=>+w.len>0?+w.len:(typeof autoLen==='function'?autoLen(w):0);
+ function validation(){
+   const rows=[['Severity','Wire ID','Circuit','Finding','Action']];
+   (S.wires||[]).forEach(w=>{
+     if(!w.a||!w.b||!part(w.a.p)||!part(w.b.p)){rows.push(['ERROR',w.id,w.sig,'Missing endpoint','Correct connector assignment']);return}
+     if(!w.sig)rows.push(['REVIEW',w.id,'','Unnamed circuit','Enter signal name']);
+     if(!w.color)rows.push(['REVIEW',w.id,w.sig,'Wire color missing','Select wire color']);
+     if(+w.fa>0&&+w.amps>+w.fa)rows.push(['REVIEW',w.id,w.sig,'Entered load exceeds fuse rating','Review design with circuit data']);
+     if(!(+w.len>0))rows.push(['INFO',w.id,w.sig,'Length is drawing-derived','Measure actual routing and service loops']);
+   });
+   return rows;
+ }
+ function routeAudit(){
+   const issues=[],parts=S.parts||[];
+   (S.wires||[]).forEach(w=>{
+     if(!w.a||!w.b)return;
+     const pa=part(w.a.p),pb=part(w.b.p);if(!pa||!pb)return;
+     const g=geo(w);if(!g||!g.A||!g.B)return;
+     const dx=Math.abs(g.A.x-g.B.x),dy=Math.abs(g.A.y-g.B.y);
+     if(dx<30&&dy<30)issues.push('Wire '+w.id+': closely spaced endpoints — check service loop');
+     if(!w.autoRoute)issues.push('Wire '+w.id+': manually routed — inspect bends after moving parts');
+   });
+   const html=issues.length?issues.slice(0,35).map(x=>'<p>'+safe(x)+'</p>').join(''):'<p>No basic route warnings. Crossings and obstacle clearance are not fully verified.</p>';
+   el('wfPhaseResults').innerHTML='<b>Route review: '+issues.length+' finding(s)</b>'+html;
+ }
+ function branches(){return S.wfBranches||(S.wfBranches=[])}
+ function renderBranches(){
+   el('wfBranchRows').innerHTML=branches().length?branches().map((b,i)=>'<div style="padding:7px;border-bottom:1px solid var(--line)"><b>'+safe(b.name)+'</b> · loom '+safe(b.loom||'unassigned')+' · '+safe(b.length||'unmeasured')+' in · '+safe(b.diameter||'unknown')+' mm <button class="btn" type="button" data-wf-delete="'+i+'">Remove</button></div>').join(''):'No physical harness branches recorded yet.';
+ }
+ el('wfAddBranch').addEventListener('click',()=>{
+   const name=el('wfBranchName').value.trim(),length=el('wfBranchLength').value,diameter=el('wfBranchDiameter').value;
+   if(!name){toast('Enter a branch name');return}
+   if((length!==''&&(!Number.isFinite(+length)||+length<0))||(diameter!==''&&(!Number.isFinite(+diameter)||+diameter<0))){toast('Enter valid nonnegative measurements');return}
+   commit();branches().push({id:'branch-'+nid(),name,loom:el('wfBranchLoom').value.trim(),length:length===''?null:+length,diameter:diameter===''?null:+diameter});save();renderBranches();toast('Harness branch recorded');
+ });
+ el('wfBranchRows').addEventListener('click',e=>{const b=e.target.closest('[data-wf-delete]');if(!b)return;const i=+b.dataset.wfDelete;if(!branches()[i])return;commit();branches().splice(i,1);save();renderBranches()});
+ el('wfRouteAudit').addEventListener('click',routeAudit);
+ el('wfCutList').addEventListener('click',()=>{
+   const rows=[['Wire ID','Signal','From connector','From cavity','To connector','To cavity','Gauge AWG','Color','Loom ID','Length in','Length source','Service allowance in','Suggested cut length in']];
+   (S.wires||[]).forEach(w=>{const a=endpoint(w.a),b=endpoint(w.b),len=wireLen(w),measured=+w.len>0;rows.push([w.id,w.sig,a.name,a.pin,b.name,b.pin,w.awg,w.color,w.loom||'',len?len.toFixed(1):'',measured?'Entered':'Drawing estimate','', ''])});
+   csv('wireforge-cut-list-review.csv',rows);toast('Cut list exported; add service allowance before cutting');
+ });
+ el('wfEcuSchedule').addEventListener('click',()=>{
+   const rows=[['ECU connector','ECU cavity','Circuit','Other endpoint','Other cavity','AWG','Color','Status']];
+   (S.wires||[]).forEach(w=>{for(const [a,b] of [[w.a,w.b],[w.b,w.a]]){const p=a&&part(a.p),t=p&&T[p.t];if(!p||!t||!/maxxecu/i.test((p.name||'')+' '+(t.name||'')))continue;const other=endpoint(b),pin=t.pins&&t.pins[a.i];rows.push([p.name,pin&&pin.p||'UNKNOWN',w.sig,other.name,other.pin,w.awg,w.color,'Verify against physical ECU breakout'])}});
+   csv('wireforge-maxxecu-pin-schedule.csv',rows);toast('MaxxECU schedule exported for verification');
+ });
+ el('wfValidation').addEventListener('click',()=>{csv('wireforge-validation-review.csv',validation());toast('Validation review exported')});
+ renderBranches();
 })();
 
 /* ---------- start ---------- */
