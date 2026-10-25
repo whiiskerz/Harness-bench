@@ -921,7 +921,7 @@ cv.addEventListener('pointerdown',e=>{
   if(ptrs.size===2){const[a,b]=[...ptrs.values()];G={kind:'pinch',d:Math.hypot(a.x-b.x,a.y-b.y)||1,k:V.k,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,vx:V.x,vy:V.y,moved:true};return}
   const pin=e.target.closest('[data-pin]'),pt=e.target.closest('[data-part]'),wr=e.target.closest('[data-wire]'),fwh=e.target.closest('[data-fw]'),tkh=e.target.closest('[data-tk]'),vh=e.target.closest('[data-vh]'),zr=e.target.closest('[data-zone-resize]'),zn=e.target.closest('[data-zone]');
   G={kind:pin?'pin':vh?'vh':wr?'wire':pt?'part':fwh?'fw':tkh?'tk':zr?'zoneResize':zn?'zone':'bg',sx:e.clientX,sy:e.clientY,moved:false,shift:e.shiftKey,pin:pin&&pin.dataset.pin,part:pt&&+pt.dataset.part,wire:wr&&+wr.dataset.wire,vh:vh&&+vh.dataset.vh,zone:(zr||zn)&&(zr||zn).dataset.zoneResize||(zr||zn)&&(zr||zn).dataset.zone,vx:V.x,vy:V.y};
-  if(G.kind==='part'){const p=part(G.part);G.ox=p.x;G.oy=p.y}
+  if(G.kind==='part'){const p=part(G.part);G.ox=p.x;G.oy=p.y;G.locked=!!p.wfLocked}
   if(G.kind==='zone'||G.kind==='zoneResize'){const z=(S.zones||[]).find(q=>q.id===G.zone);if(z){G.ox=z.x;G.oy=z.y;G.ow=z.w;G.oh=z.h;selection={type:'zone',id:z.id};renderInsp()}}
   if(G.kind==='fw')G.ox=S.fw;
   if(G.kind==='tk')G.ox=S.tk;
@@ -936,7 +936,7 @@ cv.addEventListener('pointermove',e=>{
     V.k=k;V.x=G.cx-r.left-wx*k;V.y=G.cy-r.top-wy*k;draw();return;
   }
   const dx=e.clientX-G.sx,dy=e.clientY-G.sy;
-  if(!G.moved&&Math.hypot(dx,dy)>6){G.moved=true;if(['part','fw','tk','vh','zone','zoneResize'].includes(G.kind))commit()}
+  if(!G.moved&&Math.hypot(dx,dy)>6){if(G.kind==='part'&&G.locked){G.kind='bg';G.vx=V.x;G.vy=V.y;G.sx=e.clientX;G.sy=e.clientY;toast('Part is locked — unlock it before moving');return}G.moved=true;if(['part','fw','tk','vh','zone','zoneResize'].includes(G.kind))commit()}
   if(G.moved&&G.kind==='wire'){commit();selection={type:'wire',id:G.wire};MSEL.clear();G.kind='vh';G.vh=G.wire;renderInsp();hint()}
   if(!G.moved)return;
   if(G.kind==='fw'){S.fw=snap(G.ox+dx/V.k);draw();return}
@@ -944,6 +944,7 @@ cv.addEventListener('pointermove',e=>{
   if(G.kind==='vh'){const wd=toWorld(e.clientX,e.clientY),w=wireById(G.vh);if(w){w.v={x:Math.round(wd.x/5)*5,y:Math.round(wd.y/5)*5};draw()}return}
   if(G.kind==='zone'||G.kind==='zoneResize'){const z=(S.zones||[]).find(q=>q.id===G.zone);if(z){if(G.kind==='zone'){z.x=snap(G.ox+dx/V.k);z.y=snap(G.oy+dy/V.k)}else{z.w=Math.max(240,snap(G.ow+dx/V.k));z.h=Math.max(240,snap(G.oh+dy/V.k))}draw()}return}
   if(G.kind==='part'){
+    if(G.locked)return;
     if(!selection||selection.id!==G.part||selection.type!=='part'){selection={type:'part',id:G.part};renderInsp()}
     const p=part(G.part);p.x=snap(G.ox+dx/V.k);p.y=snap(G.oy+dy/V.k);draw();
   }else{V.x=G.vx+dx;V.y=G.vy+dy;draw()}
@@ -2189,7 +2190,7 @@ document.addEventListener('change',e=>{
  el('wfRouteAudit').addEventListener('click',routeAudit);
  el('wfCutList').addEventListener('click',()=>{
    const rows=[['Wire ID','Signal','From connector','From cavity','To connector','To cavity','Gauge AWG','Color','Loom ID','Length in','Length source','Service allowance in','Suggested cut length in']];
-   (S.wires||[]).forEach(w=>{const a=endpoint(w.a),b=endpoint(w.b),len=wireLen(w),measured=+w.len>0;rows.push([w.id,w.sig,a.name,a.pin,b.name,b.pin,w.awg,w.color,w.loom||'',len?len.toFixed(1):'',measured?'Entered':'Drawing estimate','', ''])});
+   (S.wires||[]).forEach(w=>{const a=endpoint(w.a),b=endpoint(w.b),len=wireLen(w),measured=+w.len>0;rows.push([w.id,w.sig,a.name,a.pin,b.name,b.pin,w.awg,w.color,w.loom||'',len?len.toFixed(1):'',measured?'Entered':'Drawing estimate',Number.isFinite(+w.serviceAllowance)&&w.serviceAllowance!==undefined&&w.serviceAllowance!==''?+w.serviceAllowance:'',measured&&Number.isFinite(+w.serviceAllowance)&&w.serviceAllowance!==undefined&&w.serviceAllowance!==''?(len+(+w.serviceAllowance)).toFixed(1):''])});
    csv('wireforge-cut-list-review.csv',rows);toast('Cut list exported; add service allowance before cutting');
  });
  el('wfEcuSchedule').addEventListener('click',()=>{
