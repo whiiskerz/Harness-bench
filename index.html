@@ -7,7 +7,7 @@
 
 /* WireForge workspace refresh: additive, responsive, existing controls remain intact */
 header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:16px 22px;background:linear-gradient(110deg,#101923,#1b2735);border-bottom:1px solid #354353}
-header h1{margin:0;letter-spacing:.025em}header .sub{margin:0;opacity:.85}
+header h1{margin:0;letter-spacing:.025em;color:#f2f4f7}header .sub{margin:0;opacity:.85}
 #tabs{position:sticky;top:0;z-index:40;background:var(--panel);box-shadow:0 7px 20px #0002}
 #t-draw .bar{gap:7px;padding:12px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
 #t-draw .btn{border-radius:7px;transition:background .15s,border-color .15s}
@@ -1307,7 +1307,7 @@ function rWires(){
   document.getElementById('t-wires').innerHTML=`<h2>Wire list</h2><div class="row"><label style="flex:1;min-width:200px"><span>Search signals, parts, pins, color, gauge, fuse</span><input id="wireSearch" value="${esc(S.wireSearch||'')}" placeholder="e.g. GPO2, fuel pump, red, 10 AWG"></label><label><span>Filter</span><select id="wireFilter"><option value="all" ${filter==='all'?'selected':''}>All wires</option><option value="missing" ${filter==='missing'?'selected':''}>Missing name, color or entered length</option><option value="powered" ${filter==='powered'?'selected':''}>Has current value</option></select></label><span class="pill">${filtered.length} / ${S.wires.length} wires</span></div>
    ${filtered.length?`<div class="tw"><table><thead><tr><th>#</th><th>Signal</th><th>From</th><th>To</th><th>AWG</th><th>Color</th><th class="num">Length (in)</th><th></th></tr></thead><tbody>
    ${filtered.map(({w,i})=>`<tr><td class="mono">${i+1}</td><td>${esc(w.sig||plabelOf(w.a)||plabelOf(w.b)||'(unnamed)')}</td><td>${esc(endName(w.a))}</td><td>${esc(endName(w.b))}</td><td class="mono">${w.awg}</td><td>${dotColor(w.color)} ${esc(w.color)}</td><td class="num mono">${wlen(w)}${+w.len>0?'':'<span class="nt"> auto</span>'}</td><td><button class="btn" data-edit="${w.id}">Edit</button></td></tr>`).join('')}</tbody></table></div>
-   <div class="row"><button class="btn" data-copy="wires">Copy wire list as CSV</button><button class="btn" data-act="downloadWires">Download wire list CSV</button></div>`:empty(S.wires.length?'No wires match your filters.':'No wires yet. Go to Draw and tap two pins.')}`;
+   <div class="row"><button class="btn" data-copy="wires">Copy wire list as CSV</button><button class="btn" data-act="downloadWires">Download wire list CSV</button><button class="btn primary" data-act="downloadXlsx">Export Excel workbook</button></div>`:empty(S.wires.length?'No wires match your filters.':'No wires yet. Go to Draw and tap two pins.')}`;
 }
 function rPower(){
  const voltage=Number.isFinite(+S.powerVoltage)&&+S.powerVoltage>0?+S.powerVoltage:14,groups=new Map();
@@ -1337,7 +1337,7 @@ function rCut(){
    <h3>Cut each wire to</h3>
    <div class="tw"><table><thead><tr><th>#</th><th>Signal</th><th>Gauge</th><th>Color</th><th class="num">Cut (in)</th></tr></thead><tbody>
    ${S.wires.map((w,i)=>`<tr><td class="mono">${i+1}</td><td>${esc(w.sig||plabelOf(w.a)||plabelOf(w.b)||'(unnamed)')}<div class="nt">${esc(endName(w.a))} → ${esc(endName(w.b))}</div></td><td class="mono">${w.awg}</td><td>${esc(w.color)}</td><td class="num mono">${cutLen(w).toFixed(1)}</td></tr>`).join('')}</tbody></table></div>
-   <div class="row"><button class="btn" data-copy="cut">Copy cut list as CSV</button><button class="btn" data-act="downloadCut">Download cut list CSV</button></div>`;
+   <div class="row"><button class="btn" data-copy="cut">Copy cut list as CSV</button><button class="btn" data-act="downloadCut">Download cut list CSV</button><button class="btn primary" data-act="downloadXlsx">Export Excel workbook</button></div>`;
 }
 function rPins(){
   const el=document.getElementById('t-pins');
@@ -1697,7 +1697,7 @@ function rSave(){
   document.getElementById('t-save').innerHTML=`<h2>Backup</h2>
    <p class="muted">Your drawing saves in this browser only. Copy the backup text and keep it somewhere safe. To restore, paste it below and press Load.</p>
    <textarea id="bk" placeholder="Paste a backup here to load it"></textarea>
-   <div class="row"><button class="btn primary" data-act="bkCopy">Copy backup</button><button class="btn" data-act="bkDownload">Download JSON backup</button><button class="btn" data-act="bkLoad">Load from box</button></div>
+   <div class="row"><button class="btn primary" data-act="bkCopy">Copy backup</button><button class="btn" data-act="bkDownload">Download JSON backup</button><button class="btn primary" data-act="downloadXlsx">Export Excel workbook</button><button class="btn" data-act="bkLoad">Load from box</button></div>
    <h3>Saved designs</h3>
    <p class="muted">Save the drawing under a name, like "Current build" or "Bulkhead rebuild". Designs stay in this browser.</p>
    <div class="row"><input id="dsn" placeholder="Design name" style="flex:1"><button class="btn primary" data-act="designSave">Save design</button></div>
@@ -1966,6 +1966,41 @@ const CSVS={
 };
 
 function downloadTextFile(filename,content,type='text/plain;charset=utf-8'){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('Downloaded '+filename)}
+/* ---------- Excel workbook export (.xlsx, no libraries) ---------- */
+const CRC_T=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_T[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+function zipStore(files){
+  const enc=new TextEncoder(),parts=[],cd=[];let off=0;const u16=n=>[n&255,n>>8&255],u32=n=>[n&255,n>>8&255,n>>16&255,n>>24&255];
+  files.forEach(([name,txt])=>{const nb=enc.encode(name),d=enc.encode(txt),c=crc32(d);
+    const lh=[0x50,0x4b,3,4,...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c),...u32(d.length),...u32(d.length),...u16(nb.length),...u16(0)];
+    parts.push(new Uint8Array(lh),nb,d);
+    cd.push(new Uint8Array([0x50,0x4b,1,2,...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c),...u32(d.length),...u32(d.length),...u16(nb.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nb);
+    off+=lh.length+nb.length+d.length});
+  const cds=cd.reduce((a,b)=>a+b.length,0),end=new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...u16(files.length),...u16(files.length),...u32(cds),...u32(off),0,0]);
+  return new Blob([...parts,...cd,end],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+function parseCsvText(t){const rows=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===','){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);rows.push(r);r=[];c=''}else c+=ch}if(c!==''||r.length){r.push(c);rows.push(r)}return rows}
+const xe=v=>String(v).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
+const xcol=n=>{let s='';n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s};
+function sheetXml(rows,widths,head=true){
+  const cell=(v,ri,ci)=>{const ref=xcol(ci)+(ri+1),st=head&&ri===0?' s="1"':'';if(v===''||v==null)return `<c r="${ref}"${st}/>`;
+    if(!(head&&ri===0)&&/^-?\d+(\.\d+)?$/.test(String(v))&&String(v).length<12&&!/^0\d/.test(String(v)))return `<c r="${ref}"${st}><v>${v}</v></c>`;
+    return `<c r="${ref}"${st} t="inlineStr"><is><t xml:space="preserve">${xe(v)}</t></is></c>`};
+  const nc=Math.max(1,...rows.map(r=>r.length));
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0">${head?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>':''}</sheetView></sheetViews><cols>${Array.from({length:nc},(_,i)=>`<col min="${i+1}" max="${i+1}" width="${widths&&widths[i]||Math.min(60,Math.max(10,...rows.slice(0,200).map(r=>String(r[i]==null?'':r[i]).length+2)))}" customWidth="1"/>`).join('')}</cols><sheetData>${rows.map((r,ri)=>`<row r="${ri+1}">${Array.from({length:nc},(_,ci)=>cell(r[ci],ri,ci)).join('')}</row>`).join('')}</sheetData>${head&&rows.length>1?`<autoFilter ref="A1:${xcol(nc-1)}${rows.length}"/>`:''}</worksheet>`;
+}
+function downloadXlsx(){
+  const stamp=new Date().toISOString().slice(0,10);
+  const sheets=[['Summary',[['WireForge project export',''],['Exported',stamp],['App version',APP_VERSION],['Parts',S.parts.length],['Wires',S.wires.length],['Looms',(S.looms||[]).length],['Note','Planning data only. Verify pinouts, wire gauge and fuse sizes against manufacturer specs before building.']],false],
+    ['Wire list',parseCsvText(CSVS.wires()),true],['Cut list',parseCsvText(CSVS.cut()),true],['Pinouts',parseCsvText(CSVS.pins()),true],['Parts',parseCsvText(CSVS.bom()),true]];
+  const files=[['[Content_Types].xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`],
+   ['_rels/.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+   ['xl/workbook.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((x,i)=>`<sheet name="${xe(x[0])}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`],
+   ['xl/_rels/workbook.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+   ['xl/styles.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2B3037"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`],
+   ...sheets.map((x,i)=>[`xl/worksheets/sheet${i+1}.xml`,sheetXml(x[1],x[0]==='Summary'?[22,70]:null,x[2])])];
+  const blob=zipStore(files),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wireforge-harness-'+stamp+'.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);toast('Excel workbook downloaded');
+}
 function downloadBackup(){downloadTextFile('wireforge-project-backup.json',JSON.stringify(S,null,2),'application/json;charset=utf-8')}
 function validateBackupObject(o){
  const errors=[];if(!o||!Array.isArray(o.parts)||!Array.isArray(o.wires))return {errors:['Backup must contain parts and wires arrays']};
@@ -2019,6 +2054,7 @@ document.addEventListener('click',e=>{
    case'delZone':{if(selection?.type==='zone'){commit();S.zones=(S.zones||[]).filter(z=>z.id!==selection.id);selection=null;save();draw();renderInsp()}break;}
    case'zoneDone':{selection=null;save();draw();renderInsp();break;}
    case'bkDownload':downloadBackup();break;
+   case'downloadXlsx':downloadXlsx();break;
    case'runSelfTests':{const report=runProjectSelfTests();window.__wireForgeTestReport=report;showTab('checks');toast(report.passed+'/'+report.total+' project self-tests passed');break;}
    case'downloadAudit':downloadReadinessReport();break;
    case'savePowerVoltage':{const n=Number(document.getElementById('powerVoltage')?.value);if(!Number.isFinite(n)||n<=0){toast('Enter a valid system voltage');break;}S.powerVoltage=n;save();rPower();toast('Power budget voltage saved');break;}
