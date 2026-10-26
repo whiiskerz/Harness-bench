@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a0e15">
-<title>WireForge · 3D Harness Studio</title>
+<meta name="theme-color" content="#0b1119">
+<title>WireForge · 3D Hardware Studio</title>
 <style>
 :root{color-scheme:dark;--bg:#0a0d13;--panel:#121924;--panel2:#1b2432;--edge:#2b3646;--type:#f1f5f9;--muted:#a1afc2;--accent:#f4ac3c;--ok:#65d7ad;--radius:15px;font:14px/1.45 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
 *{box-sizing:border-box}html,body{margin:0;height:100%;min-width:300px;background:var(--bg);color:var(--type)}
@@ -44,6 +44,87 @@ footer{font-size:10px;color:var(--muted);margin-top:16px}
 @media(max-width:1150px){.shell{grid-template-columns:235px minmax(0,1fr) 250px}.panel{padding:12px}}
 @media(max-width:850px){.shell{grid-template-columns:200px minmax(0,1fr)}.panel.right{display:none}.stagehead>div{padding:7px}.stagehead b{font-size:13px}}
 @media(max-width:610px){.layout{min-height:100dvh}.shell{display:flex;flex-direction:column-reverse}.panel:not(.right){max-height:230px;border-top:1px solid var(--edge);border-right:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}.panel h2,.panel .sub,.panel h3,.panel footer,.panel .notice{grid-column:1/-1}.panel .field{margin:7px 0}.panel .toolrow{grid-column:1/-1}.stage{flex:1;min-height:42dvh}.stagehead{left:8px;right:8px;top:8px}.bottomcontrols{left:8px;right:8px;bottom:8px}.bottomcontrols .button{padding:7px 8px}.meta small{display:none}header{gap:9px;padding:9px 12px}.brand{font-size:16px}}
+
+/* WireForge Blackglass: cohesive industrial interface, no decorative neon. */
+:root{
+ --bg:#080c12;--panel:#0f151e;--panel2:#171f2b;--edge:#293442;
+ --type:#eaf1f7;--muted:#93a3b5;--accent:#83cbdc;--ok:#79cfb0;
+ --radius:14px;color-scheme:dark;
+}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.03px}
+.layout{background:#080c12}
+header{
+ background:linear-gradient(105deg,#101924 0%,#0d131c 68%,#0b1119 100%);
+ border-bottom:1px solid #253342;
+ box-shadow:0 9px 30px #0004;z-index:2;
+}
+.brand{letter-spacing:-.9px}.brand b{color:#c8ebf3}
+.logo{
+ background:linear-gradient(155deg,#9cd6e4,#396b80);
+ color:#071119;border:1px solid #acdfe855;box-shadow:0 4px 22px #427c9440;
+}
+.pill{background:#19303a;color:#a6e2ef;border-color:#355365;letter-spacing:1.05px}
+.meta small{color:#7e98ac}
+.button{
+ background:linear-gradient(180deg,#222f3e,#1a2531);
+ color:#dde9f4;border:1px solid #3a5060;border-radius:10px;
+ box-shadow:0 1px 0 #ffffff08 inset;
+ padding:9px 13px;transition:transform .14s,background .16s,border-color .16s;
+}
+.button:hover{background:#2a3a4a;border-color:#66899f;transform:translateY(-1px)}
+.button:active{transform:translateY(0)}
+.button.primary{background:linear-gradient(125deg,#a8dfeb,#75b6ca);border-color:#9ed6e6;color:#09212a}
+.button.primary:hover{background:linear-gradient(125deg,#c3f0f7,#8acbde)}
+.button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #a9e5f2}
+.panel{
+ background:linear-gradient(180deg,#121a25,#0d141d 72%);
+ border-color:#273441;padding:19px;
+ scrollbar-color:#354657 transparent;
+}
+.panel h2{font-size:16px;letter-spacing:-.35px}
+.panel h3{font-size:10.5px;letter-spacing:1.6px;color:#8ea6b9;border-top:1px solid #263442;padding-top:16px}
+.field{font-weight:600}
+.field select,.field input[type="search"]{
+ background:#111b26;border-color:#354555;box-shadow:0 1px 2px #0005 inset;
+ color:#e2edf4;min-height:42px;border-radius:10px;
+}
+.check{color:#bccbd8}.check input,.field input[type="range"]{accent-color:#7ec4d5}
+.stage{
+ background:radial-gradient(ellipse at 50% 22%,#203548 0%,#101a27 39%,#070e16 78%);
+ box-shadow:inset 0 0 80px #0005;
+}
+.stagehead>div,.bottomcontrols>div{
+ background:rgba(11,19,29,.80);backdrop-filter:blur(14px);
+ border:1px solid #3b5566a0;box-shadow:0 12px 30px #0005;
+}
+.stagehead b{font-weight:740;letter-spacing:-.25px}
+.stagehead small{font-size:10px;letter-spacing:.6px}
+.bottomcontrols .button{color:#cbdce8}
+.bottomcontrols .button:hover{background:#314655}
+.kpi{
+ background:linear-gradient(140deg,#1a2836,#13202b);
+ border-color:#314353;border-radius:12px;min-width:0;
+}
+.kpi b{color:#e8f8ff;font-size:25px}
+.kpi span{letter-spacing:.85px;color:#91a6b6}
+.list button:hover,.list button.active{background:#203344;border-color:#4b7d91}
+.list button.active{box-shadow:inset 3px 0 #89cad8}
+.detail{background:#121d28;border-color:#334758;border-radius:12px}
+.notice{background:#1a2431;border:1px solid #354f62;color:#aac1d1}
+#loading{background:radial-gradient(circle,#1a2b3b,#0b121b 75%);color:#e8f4fa}
+.quick-models{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0}
+.quick-models .button{padding:11px 8px;text-align:center}
+#hardwareMix{display:block;color:#acc5d4;font-size:11px;margin-top:7px;line-height:1.5}
+.panel .model-caption{background:#142631;border:1px solid #314d5d;border-radius:11px;padding:10px;font-size:11px;color:#abc4d2}
+@media(max-width:610px){
+ .panel:not(.right){max-height:300px;gap:4px 12px}
+ .panel .quick-models{grid-column:1/-1}
+ .bottomcontrols{align-items:end}
+ .bottomcontrols>div{padding:3px}
+ header{padding:10px 12px}
+ .stagehead>div{max-width:70%}
+}
+
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}
@@ -53,39 +134,39 @@ footer{font-size:10px;color:var(--muted);margin-top:16px}
 <div class="layout">
 <header>
 <a class="brand" href="./index.html" title="Return to harness editor"><span class="logo">W</span><span>Wire<b>Forge</b></span></a>
-<div class="meta"><span class="pill">3D Harness Studio · Beta</span><small>Built by @whiiskerzbuilt</small><a class="button" href="./index.html">← Back to editor</a></div>
+<div class="meta"><span class="pill">3D Hardware Studio · v0.21</span><small>Built by @whiiskerzbuilt</small><a class="button" href="./index.html">← Back to editor</a></div>
 </header>
 <main class="shell">
 <aside class="panel">
-<h2>Render controls</h2>
-<p class="sub">Interactive 3D mockup generated from your WireForge wiring diagram. Orbit with drag, zoom with scroll/pinch, pan with right-click or two-finger drag.</p>
+<h2>Realism controls</h2>
+<p class="sub">Rendered hardware and wiring from your live harness drawing. Drag to orbit, scroll to zoom, right-drag to pan. Select a part to inspect its molded details.</p>
 <div class="toolrow"><button class="button primary" id="savePng">Save PNG</button><button class="button" id="saveGlb">Export GLB</button></div>
 <div class="toolrow"><button class="button" id="saveJson">Scene JSON</button><button class="button" id="loadJson">Import scene</button><input id="fileImport" type="file" accept="application/json,.json"></div>
-<h3>Model layers</h3>
+<h3>Hardware spotlight</h3><div class="quick-models"><button class="button" data-hardware-focus="deutsch">Deutsch-style</button><button class="button" data-hardware-focus="leash">Leash boards</button><button class="button" data-hardware-focus="relay">Relays</button><button class="button" data-hardware-focus="ecu">ECU housings</button></div><div class="model-caption">Procedural hardware concepts, not manufacturer CAD. Actual molded cavity locations and dimensions require drawings or scans.</div><h3>Model layers</h3>
 <label class="check">Connector housings <input id="layerParts" type="checkbox" checked></label>
 <label class="check">Individual wires <input id="layerWires" type="checkbox" checked></label>
 <label class="check">Harness sleeving <input id="layerLoom" type="checkbox" checked></label>
 <label class="check">Labels <input id="layerLabels" type="checkbox" checked></label>
-<label class="check">Grid and ground <input id="layerGrid" type="checkbox" checked></label>
+<label class="check">Grid and ground <input id="layerGrid" type="checkbox" checked></label><label class="check">Wire color tracers <input id="wireTracers" type="checkbox" checked></label><label class="check">Twisted pair helical view <input id="canTwists" type="checkbox" checked></label>
 <h3>Appearance</h3>
 <label class="field">Background<select id="background"><option value="studio">Midnight studio</option><option value="graphite">Graphite</option><option value="light">White studio</option><option value="transparent">Transparent export</option></select></label>
 <label class="field">Sleeve texture<select id="sleeve"><option value="braid">Braided jacket</option><option value="convoluted">Convoluted tubing</option><option value="smooth">Smooth heat-shrink</option></select></label>
 <label class="field">Loom diameter <span id="radiusValue">100%</span><input type="range" id="radius" min="50" max="200" value="100" step="10"></label>
-<label class="check">Auto rotate <input id="autoRotate" type="checkbox"></label>
-<div class="notice">This is a visual mockup, not a manufacturer-accurate CAD model. 2D drawing coordinates are projected into 3D. Check connector dimensions, breakouts, bend radii and wire lengths against physical measurements before manufacturing.</div>
+<label class="field">Pigtail transition <span id="pigtailValue">35 px</span><input type="range" id="pigtailLength" min="10" max="100" value="35" step="5"></label><label class="check">Auto rotate <input id="autoRotate" type="checkbox"></label>
+<div class="notice"><strong>Visual concept only.</strong>, not a manufacturing-certified CAD model. Deutsch-style shells, relay layouts, and Leash-style relay boards are parametric approximations. Verify cavity geometry, board terminal positions, wire lengths, bend radius and electrical ratings before manufacturing.</div>
 <footer>WireForge · local project snapshot · Three.js runtime from jsDelivr. Internet and WebGL required for this release.</footer>
 </aside>
 <section class="stage" aria-label="3D harness renderer">
 <canvas id="viewport" aria-label="Interactive three dimensional harness model"></canvas>
 <div class="stagehead"><div><b id="projectTitle">3D Harness Preview</b><small id="viewSubtitle">Loading your project…</small></div><div><small id="viewMode">PERSPECTIVE · SCHEMATIC SCALE</small></div></div>
-<div class="bottomcontrols"><div><button class="button" data-view="iso">ISO</button><button class="button" data-view="top">TOP</button><button class="button" data-view="front">FRONT</button><button class="button" data-view="side">SIDE</button><button class="button" id="fit">FIT</button></div><div><button class="button icon" id="reset" title="Reset render controls">↻</button></div></div>
+<div class="bottomcontrols"><div><button class="button" data-view="iso">ISO</button><button class="button" data-view="top">TOP</button><button class="button" data-view="front">FRONT</button><button class="button" data-view="side">SIDE</button><button class="button" id="fit">FIT</button></div><div><button class="button" id="isolateRuns" aria-pressed="false" title="Show only the selected wire or a connector’s connected wires">Isolate runs</button><button class="button icon" id="reset" title="Reset render controls">↻</button></div></div>
 <div id="loading"><div><h2 id="loadingTitle">Building your 3D harness…</h2><p id="loadingText">Loading the renderer and schematic-derived geometry.</p></div></div>
 </section>
 <aside class="panel right">
 <h2>Project inspector</h2>
 <p class="sub">Click a connector or wire to inspect it.</p>
 <div class="twokpi"><div class="kpi"><b id="countParts">—</b><span>Components</span></div><div class="kpi"><b id="countWires">—</b><span>Wire runs</span></div></div>
-<div class="twokpi" style="margin-top:8px"><div class="kpi"><b id="countLooms">—</b><span>Loom groups</span></div><div class="kpi"><b id="countBranches">—</b><span>Branches</span></div></div>
+<small id="hardwareMix">Analyzing hardware categories…</small><div class="twokpi" style="margin-top:8px"><div class="kpi"><b id="countLooms">—</b><span>Loom groups</span></div><div class="kpi"><b id="countBranches">—</b><span>Branches</span></div></div>
 <h3>Search parts and circuits</h3><label class="field"><input type="search" id="search" placeholder="e.g. DT12, GPO2, CAN"></label>
 <div class="list" id="itemList"></div>
 <h3>Selection</h3><div class="detail" id="selected">Select a wire or connector in the 3D view, or use the searchable project list.</div>

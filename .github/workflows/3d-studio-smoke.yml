@@ -22,6 +22,8 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check render3d.js
+          node --check render3d-hardware.js
+          node --check render3d-wiring.js
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -48,5 +50,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wireforge-3d-preview
-          path: wireforge-3d-test-preview.png
+          path: |
+            wireforge-3d-test-preview.png
+            wireforge-3d-desktop-realism.png
           if-no-files-found: ignore
