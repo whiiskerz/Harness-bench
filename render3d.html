@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1119">
-<title>WireForge · 3D Hardware Studio</title>
+<title>WireForge · 3D Connector Exit Studio</title>
 <style>
 :root{color-scheme:dark;--bg:#0a0d13;--panel:#121924;--panel2:#1b2432;--edge:#2b3646;--type:#f1f5f9;--muted:#a1afc2;--accent:#f4ac3c;--ok:#65d7ad;--radius:15px;font:14px/1.45 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
 *{box-sizing:border-box}html,body{margin:0;height:100%;min-width:300px;background:var(--bg);color:var(--type)}
@@ -134,12 +134,12 @@ header{
 <div class="layout">
 <header>
 <a class="brand" href="./index.html" title="Return to harness editor"><span class="logo">W</span><span>Wire<b>Forge</b></span></a>
-<div class="meta"><span class="pill">3D Hardware Studio · v0.21</span><small>Built by @whiiskerzbuilt</small><a class="button" href="./index.html">← Back to editor</a></div>
+<div class="meta"><span class="pill">3D Pigtail Studio · v0.22</span><small>Built by @whiiskerzbuilt</small><a class="button" href="./index.html">← Back to editor</a></div>
 </header>
 <main class="shell">
 <aside class="panel">
 <h2>Realism controls</h2>
-<p class="sub">Rendered hardware and wiring from your live harness drawing. Drag to orbit, scroll to zoom, right-drag to pan. Select a part to inspect its molded details.</p>
+<p class="sub">More realistic Deutsch connector wire-side exits, rear seals and individual cavity pigtails, using your live harness drawing. Select a Deutsch connector and tap WIRE SIDE for its rear face.</p>
 <div class="toolrow"><button class="button primary" id="savePng">Save PNG</button><button class="button" id="saveGlb">Export GLB</button></div>
 <div class="toolrow"><button class="button" id="saveJson">Scene JSON</button><button class="button" id="loadJson">Import scene</button><input id="fileImport" type="file" accept="application/json,.json"></div>
 <h3>Hardware spotlight</h3><div class="quick-models"><button class="button" data-hardware-focus="deutsch">Deutsch-style</button><button class="button" data-hardware-focus="leash">Leash boards</button><button class="button" data-hardware-focus="relay">Relays</button><button class="button" data-hardware-focus="ecu">ECU housings</button></div><div class="model-caption">Procedural hardware concepts, not manufacturer CAD. Actual molded cavity locations and dimensions require drawings or scans.</div><h3>Model layers</h3>
@@ -153,13 +153,13 @@ header{
 <label class="field">Sleeve texture<select id="sleeve"><option value="braid">Braided jacket</option><option value="convoluted">Convoluted tubing</option><option value="smooth">Smooth heat-shrink</option></select></label>
 <label class="field">Loom diameter <span id="radiusValue">100%</span><input type="range" id="radius" min="50" max="200" value="100" step="10"></label>
 <label class="field">Pigtail transition <span id="pigtailValue">35 px</span><input type="range" id="pigtailLength" min="10" max="100" value="35" step="5"></label><label class="check">Auto rotate <input id="autoRotate" type="checkbox"></label>
-<div class="notice"><strong>Visual concept only.</strong>, not a manufacturing-certified CAD model. Deutsch-style shells, relay layouts, and Leash-style relay boards are parametric approximations. Verify cavity geometry, board terminal positions, wire lengths, bend radius and electrical ratings before manufacturing.</div>
+<div class="notice"><strong>Visual concept only.</strong>, not a manufacturing-certified CAD model. Deutsch-style shells, representative cavity positions and wire-side views, relay layouts, and Leash-style boards are parametric approximations. Actual molded cavity numbering depends on connector model and orientation. Verify cavity geometry, board terminal positions, wire lengths, bend radius and electrical ratings before manufacturing.</div>
 <footer>WireForge · local project snapshot · Three.js runtime from jsDelivr. Internet and WebGL required for this release.</footer>
 </aside>
 <section class="stage" aria-label="3D harness renderer">
 <canvas id="viewport" aria-label="Interactive three dimensional harness model"></canvas>
 <div class="stagehead"><div><b id="projectTitle">3D Harness Preview</b><small id="viewSubtitle">Loading your project…</small></div><div><small id="viewMode">PERSPECTIVE · SCHEMATIC SCALE</small></div></div>
-<div class="bottomcontrols"><div><button class="button" data-view="iso">ISO</button><button class="button" data-view="top">TOP</button><button class="button" data-view="front">FRONT</button><button class="button" data-view="side">SIDE</button><button class="button" id="fit">FIT</button></div><div><button class="button" id="isolateRuns" aria-pressed="false" title="Show only the selected wire or a connector’s connected wires">Isolate runs</button><button class="button icon" id="reset" title="Reset render controls">↻</button></div></div>
+<div class="bottomcontrols"><div><button class="button" data-view="iso">ISO</button><button class="button" data-view="top">TOP</button><button class="button" data-view="front">FRONT</button><button class="button" data-view="rear" title="View the connector rear seals and individual pigtail wire exits">WIRE SIDE</button><button class="button" data-view="side">SIDE</button><button class="button" id="fit">FIT</button></div><div><button class="button" id="isolateRuns" aria-pressed="false" title="Show only the selected wire or a connector’s connected wires">Isolate runs</button><button class="button icon" id="reset" title="Reset render controls">↻</button></div></div>
 <div id="loading"><div><h2 id="loadingTitle">Building your 3D harness…</h2><p id="loadingText">Loading the renderer and schematic-derived geometry.</p></div></div>
 </section>
 <aside class="panel right">
