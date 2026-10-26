@@ -24,6 +24,7 @@ jobs:
           node --check render3d.js
           node --check render3d-hardware.js
           node --check render3d-wiring.js
+          node --check render3d-cavities.mjs
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -32,6 +33,8 @@ jobs:
           Path('/tmp/wireforge-inline.js').write_text('\n'.join(inline))
           PY
           node --check /tmp/wireforge-inline.js
+      - name: Verify indexed cavities and rear wire exits
+        run: node --test tests/render3d-cavities.test.mjs
       - name: Use local Three.js in browser tests
         run: |
           python3 - <<'PY'
