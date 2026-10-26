@@ -40,73 +40,7 @@ header h1{margin:0;letter-spacing:.025em;color:#f2f4f7}header .sub{margin:0;opac
 @media(max-width:650px){.wf-pro-head .btn{width:100%}.wf-pro-grid{grid-template-columns:1fr}}
 @media print{body.wf-pro-print header,body.wf-pro-print nav,body.wf-pro-print footer,body.wf-pro-print section:not(#t-pro),body.wf-pro-print .wf-pro-actions,body.wf-pro-print button{display:none!important}body.wf-pro-print #t-pro{display:block!important}body.wf-pro-print .card{break-inside:avoid}body.wf-pro-print{background:#fff;color:#111}}
 </style>
-<style id="wfBlackglassTheme">
-/* Visual-only refresh. Semantic good/warning/error colors stay distinct. */
-:root:not([data-theme="light"]){
- --bg:#080d14;--panel:#111923;--panel2:#1a2531;--line:#2c3b49;--grid:#253441;
- --fg:#e7f1f7;--mute:#9cafbe;--accent:#88d0df;--accent-ink:#102027;
- --good:#69cba6;--warn:#deb36a;--bad:#ec776e;
- color-scheme:dark;
-}
-:root[data-theme="light"]{
- --bg:#edf2f5;--panel:#ffffff;--panel2:#eaf2f5;--line:#b6ccd5;
- --grid:#d4e0e6;--fg:#182b36;--mute:#4b6675;--accent:#247c96;--accent-ink:#fff;
- --good:#1c8364;--warn:#a87021;--bad:#c3433d;
-}
-body{background:var(--bg);color:var(--fg)}
-header{
- background:linear-gradient(115deg,#101a25,#142332 55%,#0e1721);
- border-bottom:1px solid #2f4859;
- box-shadow:0 10px 30px #0003;
-}
-header h1{color:#e6f6fb;letter-spacing:.005em}
-header h1 span{color:#8dd0e1}
-header .sub{color:#b0c4d2;opacity:1}
-nav{background:var(--bg);scrollbar-color:#405769 transparent}
-nav button{border-radius:9px}
-nav button[aria-selected="true"]{
- color:var(--fg);border-color:#4b8597;
- background:linear-gradient(120deg,#1c3745,#172837);
- box-shadow:inset 3px 0 #8bd4e5;
-}
-.nav-label{color:var(--mute)}
-.card,.wf-workspace,#wfPhasePanel,.wf-pro-grid .card{
- border-color:var(--line);border-radius:13px;
- box-shadow:0 7px 22px #00000014;
-}
-#t-draw .bar{background:linear-gradient(125deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:13px}
-#t-draw .btn,.wf-actions button,button.btn{border-radius:9px}
-.btn.primary,.button.primary{
- background:linear-gradient(130deg,#9fe3ef,#68afc5);
- color:#0d2530;border:1px solid #a9e4f2;
- box-shadow:0 3px 13px #2c71812b;
-}
-.btn.primary:hover,.button.primary:hover{background:#a5e7ef;color:#071c26}
-#wf3dLaunch,#wf3dProLaunch{
- background:linear-gradient(130deg,#b8e9f1,#7ec9d9);
- color:#0b2734;border-color:#b5e9f3;font-weight:800;
-}
-input,textarea,select{accent-color:var(--accent)}
-input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline-color:var(--accent)}
-::-webkit-scrollbar{width:9px;height:9px}
-::-webkit-scrollbar-thumb{background:#405364;border-radius:12px}
-::-webkit-scrollbar-track{background:transparent}
-@media(max-width:760px){
- header{padding:13px}
- #t-draw .bar{gap:7px}
- #t-draw .btn{min-height:37px}
-}
-:root[data-theme="light"] header{
- background:linear-gradient(115deg,#e7f3f8,#dbeaf1);
- border-bottom-color:#a7c3d0;
-}
-:root[data-theme="light"] header h1{color:#19303e}
-:root[data-theme="light"] header h1 span{color:#207b98}
-:root[data-theme="light"] header .sub{color:#506c79}
-:root[data-theme="light"] nav button[aria-selected="true"]{
- background:#daedf2;color:#1c485a;border-color:#93c1d1;
-}
-</style>
+
 </head><body>
 <title>WireForge</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -335,6 +269,73 @@ a{color:var(--accent)}
 <div id="toast" class="toast" hidden></div>
 <footer class="app-footer"><span>WireForge <b id="appVersion">v0.21.0-hardware-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
+<style id="wfBlackglassTheme">
+/* Visual-only refresh. Semantic good/warning/error colors stay distinct. */
+:root:not([data-theme="light"]){
+ --bg:#080d14;--panel:#111923;--panel2:#1a2531;--line:#2c3b49;--grid:#253441;
+ --fg:#e7f1f7;--mute:#9cafbe;--accent:#88d0df;--accent-ink:#102027;
+ --good:#69cba6;--warn:#deb36a;--bad:#ec776e;
+ color-scheme:dark;
+}
+:root[data-theme="light"]{
+ --bg:#edf2f5;--panel:#ffffff;--panel2:#eaf2f5;--line:#b6ccd5;
+ --grid:#d4e0e6;--fg:#182b36;--mute:#4b6675;--accent:#247c96;--accent-ink:#fff;
+ --good:#1c8364;--warn:#a87021;--bad:#c3433d;
+}
+body{background:var(--bg);color:var(--fg)}
+header{
+ background:linear-gradient(115deg,#101a25,#142332 55%,#0e1721);
+ border-bottom:1px solid #2f4859;
+ box-shadow:0 10px 30px #0003;
+}
+header h1{color:#e6f6fb;letter-spacing:.005em}
+header h1 span{color:#8dd0e1}
+header .sub{color:#b0c4d2;opacity:1}
+nav{background:var(--bg);scrollbar-color:#405769 transparent}
+nav button{border-radius:9px}
+nav button[aria-selected="true"]{
+ color:var(--fg);border-color:#4b8597;
+ background:linear-gradient(120deg,#1c3745,#172837);
+ box-shadow:inset 3px 0 #8bd4e5;
+}
+.nav-label{color:var(--mute)}
+.card,.wf-workspace,#wfPhasePanel,.wf-pro-grid .card{
+ border-color:var(--line);border-radius:13px;
+ box-shadow:0 7px 22px #00000014;
+}
+#t-draw .bar{background:linear-gradient(125deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:13px}
+#t-draw .btn,.wf-actions button,button.btn{border-radius:9px}
+.btn.primary,.button.primary{
+ background:linear-gradient(130deg,#9fe3ef,#68afc5);
+ color:#0d2530;border:1px solid #a9e4f2;
+ box-shadow:0 3px 13px #2c71812b;
+}
+.btn.primary:hover,.button.primary:hover{background:#a5e7ef;color:#071c26}
+#wf3dLaunch,#wf3dProLaunch{
+ background:linear-gradient(130deg,#b8e9f1,#7ec9d9);
+ color:#0b2734;border-color:#b5e9f3;font-weight:800;
+}
+input,textarea,select{accent-color:var(--accent)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline-color:var(--accent)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#405364;border-radius:12px}
+::-webkit-scrollbar-track{background:transparent}
+@media(max-width:760px){
+ header{padding:13px}
+ #t-draw .bar{gap:7px}
+ #t-draw .btn{min-height:37px}
+}
+:root[data-theme="light"] header{
+ background:linear-gradient(115deg,#e7f3f8,#dbeaf1);
+ border-bottom-color:#a7c3d0;
+}
+:root[data-theme="light"] header h1{color:#19303e}
+:root[data-theme="light"] header h1 span{color:#207b98}
+:root[data-theme="light"] header .sub{color:#506c79}
+:root[data-theme="light"] nav button[aria-selected="true"]{
+ background:#daedf2;color:#1c485a;border-color:#93c1d1;
+}
+</style>
 <script>
 const APP_VERSION='0.21.0-hardware-preview';
 const CREATOR_HANDLE='@whiiskerzbuilt';
