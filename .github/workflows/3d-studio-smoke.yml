@@ -41,3 +41,10 @@ jobs:
           python3 -m http.server 8765 --bind 127.0.0.1 &
           sleep 2
           node tests/render3d-smoke.cjs
+      - name: Upload 3D preview screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wireforge-3d-preview
+          path: wireforge-3d-test-preview.png
+          if-no-files-found: ignore
