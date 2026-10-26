@@ -21,10 +21,25 @@ let activeBrowser=null;
    canvas:document.querySelector('canvas').width,
    source:JSON.parse(localStorage.getItem('wireforge-3d-scene-v1'))
  }));
+ const stats=await page.evaluate(()=>window.__WF3D_STATS);
+ assert.ok(stats&&stats.models.deutsch>1,'Deutsch housings should render in 3D');
+ assert.ok(stats.models.leash>=1,'Leash board assembly should render');
+ assert.ok(stats.models.relay>=1,'Socketed relay should render');
+ assert.ok(stats.paintedWires>=60,'3D insulated wires should render');
+ assert.ok(stats.paintedSleeves>=1,'3D loom sleeves should render');
  assert.equal(state.parts,original.parts);
  assert.equal(state.wires,original.wires);
  assert.ok(state.canvas>100,'canvas needs a real viewport');
  assert.ok(state.source.wires.some(w=>w.points.length>=2),'routed wire points exported');
+ await page.locator('[data-hardware-focus="deutsch"]').click();
+ await page.locator('#pigtailLength').fill('70');
+ await page.locator('#pigtailLength').dispatchEvent('change');
+ assert.equal(await page.locator('#pigtailValue').textContent(),'70 px');
+ await page.locator('#wireTracers').uncheck();
+ await page.locator('#canTwists').uncheck();
+ await page.locator('#wireTracers').check();
+ await page.locator('#canTwists').check();
+ await page.screenshot({path:'wireforge-3d-desktop-realism.png',fullPage:true});
  await page.locator('[data-view="top"]').click();
  assert.match(await page.locator('#viewMode').textContent(),/TOP/);
  await page.locator('#layerParts').uncheck();
