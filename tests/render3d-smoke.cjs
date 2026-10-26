@@ -1,7 +1,9 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
+let activeBrowser=null;
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist']});
+ activeBrowser=browser;
  const page=await browser.newPage({acceptDownloads:true,viewport:{width:1420,height:900}});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  page.on('console',e=>{if(e.type()==='error')console.error('BROWSER:',e.text())});
@@ -37,4 +39,4 @@ const assert=require('node:assert/strict');
  assert.ok(!errors.length,'No uncaught page errors: '+errors.join(' / '));
  console.log(JSON.stringify({passed:true,parts:state.parts,wires:state.wires,samplePoints:state.source.wires[0].points.length,download:png.suggestedFilename()},null,2));
  await browser.close();
-})().catch(err=>{console.error(err);process.exitCode=1});
+})().catch(async err=>{console.error(err);try{await activeBrowser?.close()}catch{}process.exitCode=1});
