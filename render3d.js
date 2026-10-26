@@ -142,6 +142,7 @@ function build(sceneData,resetCamera=true){
  sceneData.wires.forEach(w=>{const id=String(w.loom||'');if(id){if(!wireGroups.has(id))wireGroups.set(id,[]);wireGroups.get(id).push(w)}});
  for(const p of sceneData.parts){if(!finite(p.x)||!finite(p.y))continue;if(p.node)spliceNode(p,groups.parts);else hardware.build(p)}
  let paintedWires=0,paintedSleeves=0;
+ const exitAudit=[];
  const twistPairs=new Map();
  for(const w of sceneData.wires){
    if(!w.tw)continue;
@@ -155,6 +156,17 @@ function build(sceneData,resetCamera=true){
    const sibling=other?wirePath(other,sceneData.wires.indexOf(other)):null;
    const result=cables.makeWire(w,points,pair.length===2&&w===pair[1]?1:0,sibling,{showTracers:$('wireTracers')?.checked!==false});
    if(result)paintedWires++;
+   if(exitAudit.length<80){
+     const from=hardware?.portInfo(w.a?.p,w.a?.i);
+     const to=hardware?.portInfo(w.b?.p,w.b?.i);
+     const actual=(index)=>({x:points[index].x/SCALE,y:points[index].height,z:-points[index].y/SCALE});
+     const error=(got,expected)=>Math.hypot(got.x-expected.x,got.y-expected.y,got.z-expected.z);
+     if(from||to)exitAudit.push({wireId:w.id,
+        fromError:from?error(actual(0),from.position):null,
+        toError:to?error(actual(points.length-1),to.position):null,
+        fromIndex:from?.index??null,toIndex:to?.index??null,
+        originStep:points[1]?.x===undefined?null:Math.hypot((points[1].x-points[0].x)/SCALE,(points[1].height-points[0].height),-(points[1].y-points[0].y)/SCALE)});
+   }
  });
  for(const [id,ws] of wireGroups){
    const loom=looms.find(l=>String(l.id)===id)||{id,name:'Loom '+id,color:'#505966'};
@@ -163,13 +175,15 @@ function build(sceneData,resetCamera=true){
    const points=wirePath(representative,sceneData.wires.indexOf(representative));
    if(cables.makeLoom(loom,points,{sleeve:$('sleeve').value,ratio:Number($('radius').value)/100,pigtail:Number($('pigtailLength')?.value||35)/SCALE}))paintedSleeves++;
  }
+ window.__WF3D_EXIT_AUDIT=exitAudit;
  window.__WF3D_REAR_PORTS=[...hardware.portDetails.entries()].map(([id,list])=>({
    id,exits:list.map(p=>({index:p.index,cavity:p.cavity,used:p.used,
      p:[p.position.x,p.position.y,p.position.z],direction:[p.direction.x,p.direction.y,p.direction.z],
      rearCenter:[p.rearCenter.x,p.rearCenter.y,p.rearCenter.z]}))
  }));
  window.__WF3D_STATS={models:{...hardware.models},paintedWires,paintedSleeves,wireCount:sceneData.wires.length,
-  distinctRearCavities:window.__WF3D_REAR_PORTS.reduce((n,p)=>n+p.exits.length,0)};
+  distinctRearCavities:window.__WF3D_REAR_PORTS.reduce((n,p)=>n+p.exits.length,0),
+ auditedRearEnds:exitAudit.reduce((n,p)=>n+(p.fromError!==null?1:0)+(p.toError!==null?1:0),0)};
  if($('hardwareMix'))$('hardwareMix').textContent=Object.entries(hardware.models).filter(([,n])=>n>0).map(([k,n])=>n+' '+k).join(' · ');
  const items=[...sceneData.parts,...sceneData.wires];
  $('projectTitle').textContent=clean(sceneData.projectName||'Untitled harness');
@@ -243,6 +257,7 @@ function choose(kind,id,meshObj=null){
   info=(item.sig||'Unnamed wire')+'\nColor: '+(item.color||'TBD')+'\nGauge: '+(item.awg||'TBD')+' AWG\nFrom: '+(p?.name||'?')+' / '+(item.fromPin||'?')+'\nTo: '+(q?.name||'?')+' / '+(item.toPin||'?')+'\nLoom: '+(item.loom||'Unassigned')+'\nLength: '+(item.len?'Entered '+item.len+' in':'Drawing-derived only');
  }else{
   info=(item.name||'Component')+'\n3D hardware: '+hardwareClass(item)+' (procedural concept)\nType: '+(item.type||'Unknown')+'\nCavities: '+(item.pins?.length||0)+'\nPosition: '+Math.round(item.x)+', '+Math.round(item.y)+' (diagram units)\nVerify actual manufacturer body and cavity geometry.';
+  if(meshObj?.userData.meta?.kind==='cavity')info+='\nSelected front cavity: '+(meshObj.userData.meta.pin?.number||String(meshObj.userData.meta.index+1))+'\n'+(meshObj.userData.meta.pin?.used?'Wire populated':'No wire assigned · simulated rear cavity plug');
  }
  $('selected').textContent=info;
  applyWireIsolation();
@@ -262,8 +277,24 @@ function fit(){
  controls.minDistance=.25;controls.maxDistance=Math.max(60,max*15);
  controls.update();
 }
+function rearView(){
+ const part=activeScene?.parts.find(p=>String(p.id)===String(selectedMeta?.id)&&hardwareClass(p)==='deutsch')
+   ||activeScene?.parts.find(p=>hardwareClass(p)==='deutsch');
+ if(!part){toastRearNotice('Add a Deutsch connector to preview wire-side exits.');return}
+ const first=hardware?.portInfo(part.id,0);
+ if(!first)return;
+ const center=first.rearCenter.clone();
+ const distance=Math.max(2.7,(part.pins?.length||2)*.09+.9);
+ controls.target.copy(center);
+ camera.position.copy(center).addScaledVector(first.direction,distance).add(new THREE.Vector3(0,distance*.24,0));
+ camera.up.set(0,1,0);controls.update();
+ choose('part',part.id);
+ $('viewMode').textContent='REAR / WIRE SIDE · SCHEMATIC SCALE';
+}
+function toastRearNotice(msg){$('selected').textContent=msg}
 function preset(mode){
  if(!worldRoot)return;
+ if(mode==='rear'){rearView();return}
  const target=controls.target.clone(),distance=camera.position.distanceTo(target)||12;
  const directions={iso:new THREE.Vector3(.7,1,.85),top:new THREE.Vector3(.003,1,.002),front:new THREE.Vector3(0,.3,1),side:new THREE.Vector3(1,.3,0)};
  const dir=(directions[mode]||directions.iso).normalize();
