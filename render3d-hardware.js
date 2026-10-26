@@ -146,10 +146,16 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf}){
      const x=cx+(i-(count-1)/2)*(dual?.75:0);
      box(group,'Leash relay socket '+(i+1),.61,.15,.61,x,.29,cz+.21,plastic('#222a32'),.05);
      box(group,'Leash high-current relay '+(i+1),.52,.42,.50,x,.56,cz+.23,plastic('#22262d',.48),.067);
-     box(group,'Leash relay top label '+(i+1),.40,.012,.30,x,.79,cz+.23,plastic('#32383e'),.008);
-     fuse(x,.36,cz-.23,'#38bc61');
-     stud(x,.35,cz-.56);
-     outputPorts.push(v(x,.32,cz-.88));
+     box(group,'Leash relay top badge '+(i+1),.40,.012,.30,x,.79,cz+.23,plastic('#3a4046'),.008);
+     // This relay board's main current connections are stud terminals,
+     // while the small control connections are spade-style terminals.
+     // Do not invent integral fuses on the Leash board.
+     stud(x,.35,cz-.58);
+     for(const offset of [-1,1]){
+       box(group,'Leash relay control spade',.068,.20,.034,x+offset*.18,.34,cz-.24,metal('#b1bcc7'),.012);
+       box(group,'Leash spade insulating collar',.12,.066,.08,x+offset*.18,.255,cz-.24,plastic('#202933'),.015);
+     }
+     outputPorts.push(v(x,.32,cz-.87));
    }
    if(!dual)outputPorts.push(v(cx+.42,.33,cz-.60));
    screws(cx,.28,cz,width,depth);
