@@ -76,7 +76,7 @@ export function cableRenderer({mesh,wireGroup,loomGroup,labels,textSprite}){
    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),tangent.clone().normalize());
    return m;
  }
- function makeWire(w,points,index,twistedPartner=null){
+ function makeWire(w,points,index,twistedPartner=null,opts={}){
    const initial=curveFrom(points);if(!initial)return null;
    const radius=awgRadius(w.awg),colors=wireColors(w.color);
    const len=initial.getLength();
@@ -98,7 +98,7 @@ export function cableRenderer({mesh,wireGroup,loomGroup,labels,textSprite}){
      }
    }
    const core=tube(mesh,wireGroup,'Insulated '+(w.sig||'wire '+w.id),path,radius,shell(colors.base),{kind:'wire',id:w.id,wire:w});
-   if(colors.tracer){
+   if(colors.tracer&&opts.showTracers!==false){
      const trace=stripedCurve(path,radius,0,1,.92);
      if(trace)tube(mesh,wireGroup,'Longitudinal wire tracer '+w.id,trace,.008,shell(colors.tracer,.45));
    }
