@@ -10,7 +10,7 @@ const canvas=$('viewport');
 const groups={};
 const selectable=[];
 let activeScene=null,selected=null,selectedMesh=null,renderer,scene,camera,controls,worldRoot,grid;
-let selectedMeta=null,hardware=null,cables=null;
+let selectedMeta=null,hardware=null,cables=null,isolateRuns=false;
 const SCALE=78;
 const COLORS={BLK:'#15191f',BLACK:'#15191f',RED:'#e54a49',WHT:'#eceff2',WHITE:'#eceff2',GRN:'#36a66e',GREEN:'#36a66e',BLU:'#347eda',BLUE:'#347eda',YEL:'#f3c545',YELLOW:'#f3c545',ORG:'#f28f38',ORANGE:'#f28f38',BRN:'#76543a',BROWN:'#76543a',PUR:'#9e67db',VIO:'#9e67db',PNK:'#ed8ab2',GRY:'#858f9d',GRAY:'#858f9d',SLV:'#aeb8bf',TAN:'#c8aa7d',GND:'#20262e'};
 const clean=v=>String(v??'').slice(0,240);
@@ -93,7 +93,7 @@ function build(sceneData,resetCamera=true){
  for(const name of ['parts','wires','loom','labels'])layer(worldRoot,name);
  hardware=hardwareRenderer({mesh,group:groups.parts,labels:groups.labels,textSprite,colorOf});
  cables=cableRenderer({mesh,wireGroup:groups.wires,loomGroup:groups.loom,labels:groups.labels,textSprite});
- selectable.length=0;selected=null;selectedMesh=null;selectedMeta=null;
+ selectable.length=0;selected=null;selectedMesh=null;selectedMeta=null;isolateRuns=false;
  const looms=Array.isArray(sceneData.looms)?sceneData.looms:[];
  const wireGroups=new Map();
  sceneData.wires.forEach(w=>{const id=String(w.loom||'');if(id){if(!wireGroups.has(id))wireGroups.set(id,[]);wireGroups.get(id).push(w)}});
@@ -135,10 +135,28 @@ function build(sceneData,resetCamera=true){
  if(resetCamera)fit();
  $('loading').hidden=true;
 }
+function applyWireIsolation(){
+ const active=isolateRuns&&!!selectedMeta;
+ let visible=0,hidden=0;
+ const map=new Map((activeScene?.wires||[]).map(w=>[String(w.id),w]));
+ for(const item of groups.wires?.children||[]){
+  const wire=map.get(String(item.userData.wireId));
+  if(!wire)continue;
+  item.visible=!active||(selectedMeta.kind==='wire'
+    ?String(wire.id)===String(selectedMeta.id)
+    :String(wire.a?.p)===String(selectedMeta.id)||String(wire.b?.p)===String(selectedMeta.id));
+  if(item.visible)visible++;else hidden++;
+ }
+ if(groups.loom)groups.loom.visible=$('layerLoom').checked&&!active;
+ const button=$('isolateRuns');
+ if(button){button.textContent=active?'Show all wires':'Isolate runs';button.setAttribute('aria-pressed',String(active))}
+ window.__WF3D_FOCUS={active,visible,hidden};
+}
 function updateLayerVisibility(){
  for(const [name,id] of [['parts','layerParts'],['wires','layerWires'],['loom','layerLoom'],['labels','layerLabels']])
   if(groups[name])groups[name].visible=$(id).checked;
  if(grid)grid.visible=$('layerGrid').checked;
+ applyWireIsolation();
 }
 function updateSearch(){
  const list=$('itemList');list.replaceChildren();
@@ -178,6 +196,7 @@ function choose(kind,id,meshObj=null){
   info=(item.name||'Component')+'\n3D hardware: '+hardwareClass(item)+' (procedural concept)\nType: '+(item.type||'Unknown')+'\nCavities: '+(item.pins?.length||0)+'\nPosition: '+Math.round(item.x)+', '+Math.round(item.y)+' (diagram units)\nVerify actual manufacturer body and cavity geometry.';
  }
  $('selected').textContent=info;
+ applyWireIsolation();
  updateSearch();
 }
 function fit(){
@@ -301,8 +320,9 @@ function init(){
  $('fit').addEventListener('click',fit);
  $('reset').addEventListener('click',()=>{for(const id of ['layerParts','layerWires','layerLoom','layerLabels','layerGrid'])$(id).checked=true;$('radius').value=100;$('radiusValue').textContent='100%';$('sleeve').value='braid';$('background').value='studio';$('autoRotate').checked=false;$('pigtailLength').value=35;$('pigtailValue').textContent='35 px';$('wireTracers').checked=true;$('canTwists').checked=true;updateLayerVisibility();updateBackground();if(activeScene)build(activeScene)});
  $('focusSelection').addEventListener('click',focus);
+ $('isolateRuns').addEventListener('click',()=>{if(!selectedMeta&& !isolateRuns){$('selected').textContent='Select a wire or connector to isolate its connected runs.';return}isolateRuns=!isolateRuns;applyWireIsolation()});
  document.querySelectorAll('[data-hardware-focus]').forEach(b=>b.addEventListener('click',()=>{const category=b.dataset.hardwareFocus,p=activeScene?.parts.find(q=>hardwareClass(q)===category);if(!p)return;choose('part',p.id);focus()}));
- $('clearSelection').addEventListener('click',()=>{selectedMeta=null;selected=null;$('selected').textContent='No selection';updateSearch()});
+ $('clearSelection').addEventListener('click',()=>{selectedMeta=null;selected=null;isolateRuns=false;$('selected').textContent='No selection';applyWireIsolation();updateSearch()});
  let raw=null;
  try{raw=localStorage.getItem(STORAGE)}catch(e){}
  if(!raw)throw new Error('No 3D scene snapshot found. Return to WireForge Harness Designer and click Render 3D.');
