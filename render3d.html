@@ -125,6 +125,48 @@ header{
  .stagehead>div{max-width:70%}
 }
 
+/* v0.21 product-style camera and adjustable premium finishes */
+#showcaseBtn{border:1px solid #476f7e;background:linear-gradient(135deg,#203d4b,#182b36);color:#c6eff5;font-weight:800}
+#showcaseBtn[aria-pressed="true"]{background:linear-gradient(135deg,#a5dfec,#70b9c9);border-color:#a5dfec;color:#08202a;box-shadow:0 0 0 2px #96deed2b}
+.panel h3{position:relative}
+.panel h3::before{content:"";display:inline-block;width:4px;height:4px;background:var(--accent);border-radius:50%;margin-right:7px;vertical-align:2px}
+body[data-finish="copper"]{
+ --accent:#dfb48b;--edge:#423b36;--panel:#181917;--panel2:#262824;
+ --muted:#b1aba1;
+}
+body[data-finish="copper"] header{background:linear-gradient(110deg,#24231f,#171819 70%);border-color:#56483c}
+body[data-finish="copper"] .panel{background:linear-gradient(180deg,#1b1b1a,#111315)}
+body[data-finish="copper"] .stage{background:radial-gradient(ellipse at 48% 24%,#3d332e,#151719 54%,#0d0e11 82%)}
+body[data-finish="copper"] .pill{color:#e9c9a2;background:#342a23;border-color:#6a513c}
+body[data-finish="copper"] .logo{background:linear-gradient(145deg,#eed2af,#aa8568);color:#2e2118}
+body[data-finish="copper"] .brand b{color:#f0cba6}
+body[data-finish="copper"] .button.primary,body[data-finish="copper"] #showcaseBtn[aria-pressed="true"]{background:linear-gradient(115deg,#eac8a2,#c99a72);color:#261a14;border-color:#f2d4b4}
+body[data-finish="copper"] .button{border-color:#52483e;background:linear-gradient(180deg,#322c28,#262522)}
+body[data-finish="copper"] .button:hover{background:#46382d}
+body[data-finish="copper"] .kpi{background:linear-gradient(145deg,#282725,#202220);border-color:#4c443d}
+body[data-finish="copper"] .panel h3{color:#c0ad97;border-color:#413a32}
+body[data-finish="copper"] #showcaseBtn{background:linear-gradient(135deg,#453328,#29221f);border-color:#8f6950;color:#f1d2ae}
+body[data-finish="stealth"]{
+ --accent:#c0cbd2;--edge:#39414a;--panel:#13171d;--panel2:#1d242d;
+ --muted:#9ca9b5;
+}
+body[data-finish="stealth"] header{background:linear-gradient(110deg,#1b2027,#101318)}
+body[data-finish="stealth"] .panel{background:linear-gradient(180deg,#191e25,#10151a)}
+body[data-finish="stealth"] .stage{background:radial-gradient(ellipse at 47% 30%,#29323d,#11161e 52%,#080b0e)}
+body[data-finish="stealth"] .logo{background:linear-gradient(140deg,#dfe7ef,#7f92a0);color:#10161f}
+body[data-finish="stealth"] .brand b{color:#e7edf2}
+body[data-finish="stealth"] .button.primary,body[data-finish="stealth"] #showcaseBtn[aria-pressed="true"]{background:linear-gradient(130deg,#ecf1f6,#9faeba);color:#18202a;border-color:#d2dbe4}
+body[data-finish="stealth"] .pill{background:#29313a;color:#d4e0e8;border-color:#4b5966}
+body[data-finish="stealth"] #showcaseBtn{background:linear-gradient(140deg,#35414d,#1c242d);border-color:#687583;color:#e5eaf0}
+@media(max-width:610px){
+ .stagehead small{font-size:9px}
+ #showcaseBtn{min-width:84px}
+ .bottomcontrols>div{gap:1px}
+ .bottomcontrols .button{padding:7px 7px;font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){.button{transition:none!important}.button:hover{transform:none}}
+
+
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}
@@ -134,7 +176,7 @@ header{
 <div class="layout">
 <header>
 <a class="brand" href="./index.html" title="Return to harness editor"><span class="logo">W</span><span>Wire<b>Forge</b></span></a>
-<div class="meta"><span class="pill">3D Pigtail Studio · v0.22</span><small>Built by @whiiskerzbuilt</small><a class="button" href="./index.html">← Back to editor</a></div>
+<div class="meta"><span class="pill">3D Pigtail Studio · v0.22.1</span><small>Built by @whiiskerzbuilt</small><a class="button" href="./index.html">← Back to editor</a></div>
 </header>
 <main class="shell">
 <aside class="panel">
@@ -149,17 +191,18 @@ header{
 <label class="check">Labels <input id="layerLabels" type="checkbox" checked></label>
 <label class="check">Grid and ground <input id="layerGrid" type="checkbox" checked></label><label class="check">Wire color tracers <input id="wireTracers" type="checkbox" checked></label><label class="check">Twisted pair helical view <input id="canTwists" type="checkbox" checked></label>
 <h3>Appearance</h3>
+<label class="field">Studio finish<select id="studioFinish" aria-label="Studio finish"><option value="ice">Carbon · Ice Blue</option><option value="copper">Forged Titanium</option><option value="stealth">Obsidian · Mono</option></select></label>
 <label class="field">Background<select id="background"><option value="studio">Midnight studio</option><option value="graphite">Graphite</option><option value="light">White studio</option><option value="transparent">Transparent export</option></select></label>
 <label class="field">Sleeve texture<select id="sleeve"><option value="braid">Braided jacket</option><option value="convoluted">Convoluted tubing</option><option value="smooth">Smooth heat-shrink</option></select></label>
 <label class="field">Loom diameter <span id="radiusValue">100%</span><input type="range" id="radius" min="50" max="200" value="100" step="10"></label>
 <label class="field">Pigtail transition <span id="pigtailValue">35 px</span><input type="range" id="pigtailLength" min="10" max="100" value="35" step="5"></label><label class="check">Auto rotate <input id="autoRotate" type="checkbox"></label>
-<div class="notice"><strong>Visual concept only.</strong>, not a manufacturing-certified CAD model. Deutsch-style shells, representative cavity positions and wire-side views, relay layouts, and Leash-style boards are parametric approximations. Actual molded cavity numbering depends on connector model and orientation. Verify cavity geometry, board terminal positions, wire lengths, bend radius and electrical ratings before manufacturing.</div>
+<div class="notice"><strong>Visual concept only.</strong> Not a manufacturing-certified CAD model. Deutsch-style shells, representative cavity positions and wire-side views, relay layouts, and Leash-style boards are parametric approximations. Actual molded cavity numbering depends on connector model and orientation. Verify cavity geometry, board terminal positions, wire lengths, bend radius and electrical ratings before manufacturing.</div>
 <footer>WireForge · local project snapshot · Three.js runtime from jsDelivr. Internet and WebGL required for this release.</footer>
 </aside>
 <section class="stage" aria-label="3D harness renderer">
 <canvas id="viewport" aria-label="Interactive three dimensional harness model"></canvas>
 <div class="stagehead"><div><b id="projectTitle">3D Harness Preview</b><small id="viewSubtitle">Loading your project…</small></div><div><small id="viewMode">PERSPECTIVE · SCHEMATIC SCALE</small></div></div>
-<div class="bottomcontrols"><div><button class="button" data-view="iso">ISO</button><button class="button" data-view="top">TOP</button><button class="button" data-view="front">FRONT</button><button class="button" data-view="rear" title="View the connector rear seals and individual pigtail wire exits">WIRE SIDE</button><button class="button" data-view="side">SIDE</button><button class="button" id="fit">FIT</button></div><div><button class="button" id="isolateRuns" aria-pressed="false" title="Show only the selected wire or a connector’s connected wires">Isolate runs</button><button class="button icon" id="reset" title="Reset render controls">↻</button></div></div>
+<div class="bottomcontrols"><div><button class="button" data-view="iso">ISO</button><button class="button" data-view="top">TOP</button><button class="button" data-view="front">FRONT</button><button class="button" data-view="rear" title="View the connector rear seals and individual pigtail wire exits">WIRE SIDE</button><button class="button" data-view="side">SIDE</button><button class="button" id="fit">FIT</button></div><div><button class="button" id="showcaseBtn" aria-pressed="false" title="Close-up studio view with connected wire runs">Showcase</button><button class="button" id="isolateRuns" aria-pressed="false" title="Show only the selected wire or a connector’s connected wires">Isolate runs</button><button class="button icon" id="reset" title="Reset render controls">↻</button></div></div>
 <div id="loading"><div><h2 id="loadingTitle">Building your 3D harness…</h2><p id="loadingText">Loading the renderer and schematic-derived geometry.</p></div></div>
 </section>
 <aside class="panel right">

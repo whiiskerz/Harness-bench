@@ -40,73 +40,7 @@ header h1{margin:0;letter-spacing:.025em;color:#f2f4f7}header .sub{margin:0;opac
 @media(max-width:650px){.wf-pro-head .btn{width:100%}.wf-pro-grid{grid-template-columns:1fr}}
 @media print{body.wf-pro-print header,body.wf-pro-print nav,body.wf-pro-print footer,body.wf-pro-print section:not(#t-pro),body.wf-pro-print .wf-pro-actions,body.wf-pro-print button{display:none!important}body.wf-pro-print #t-pro{display:block!important}body.wf-pro-print .card{break-inside:avoid}body.wf-pro-print{background:#fff;color:#111}}
 </style>
-<style id="wfBlackglassTheme">
-/* Visual-only refresh. Semantic good/warning/error colors stay distinct. */
-:root:not([data-theme="light"]){
- --bg:#080d14;--panel:#111923;--panel2:#1a2531;--line:#2c3b49;--grid:#253441;
- --fg:#e7f1f7;--mute:#9cafbe;--accent:#88d0df;--accent-ink:#102027;
- --good:#69cba6;--warn:#deb36a;--bad:#ec776e;
- color-scheme:dark;
-}
-:root[data-theme="light"]{
- --bg:#edf2f5;--panel:#ffffff;--panel2:#eaf2f5;--line:#b6ccd5;
- --grid:#d4e0e6;--fg:#182b36;--mute:#4b6675;--accent:#247c96;--accent-ink:#fff;
- --good:#1c8364;--warn:#a87021;--bad:#c3433d;
-}
-body{background:var(--bg);color:var(--fg)}
-header{
- background:linear-gradient(115deg,#101a25,#142332 55%,#0e1721);
- border-bottom:1px solid #2f4859;
- box-shadow:0 10px 30px #0003;
-}
-header h1{color:#e6f6fb;letter-spacing:.005em}
-header h1 span{color:#8dd0e1}
-header .sub{color:#b0c4d2;opacity:1}
-nav{background:var(--bg);scrollbar-color:#405769 transparent}
-nav button{border-radius:9px}
-nav button[aria-selected="true"]{
- color:var(--fg);border-color:#4b8597;
- background:linear-gradient(120deg,#1c3745,#172837);
- box-shadow:inset 3px 0 #8bd4e5;
-}
-.nav-label{color:var(--mute)}
-.card,.wf-workspace,#wfPhasePanel,.wf-pro-grid .card{
- border-color:var(--line);border-radius:13px;
- box-shadow:0 7px 22px #00000014;
-}
-#t-draw .bar{background:linear-gradient(125deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:13px}
-#t-draw .btn,.wf-actions button,button.btn{border-radius:9px}
-.btn.primary,.button.primary{
- background:linear-gradient(130deg,#9fe3ef,#68afc5);
- color:#0d2530;border:1px solid #a9e4f2;
- box-shadow:0 3px 13px #2c71812b;
-}
-.btn.primary:hover,.button.primary:hover{background:#a5e7ef;color:#071c26}
-#wf3dLaunch,#wf3dProLaunch{
- background:linear-gradient(130deg,#b8e9f1,#7ec9d9);
- color:#0b2734;border-color:#b5e9f3;font-weight:800;
-}
-input,textarea,select{accent-color:var(--accent)}
-input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline-color:var(--accent)}
-::-webkit-scrollbar{width:9px;height:9px}
-::-webkit-scrollbar-thumb{background:#405364;border-radius:12px}
-::-webkit-scrollbar-track{background:transparent}
-@media(max-width:760px){
- header{padding:13px}
- #t-draw .bar{gap:7px}
- #t-draw .btn{min-height:37px}
-}
-:root[data-theme="light"] header{
- background:linear-gradient(115deg,#e7f3f8,#dbeaf1);
- border-bottom-color:#a7c3d0;
-}
-:root[data-theme="light"] header h1{color:#19303e}
-:root[data-theme="light"] header h1 span{color:#207b98}
-:root[data-theme="light"] header .sub{color:#506c79}
-:root[data-theme="light"] nav button[aria-selected="true"]{
- background:#daedf2;color:#1c485a;border-color:#93c1d1;
-}
-</style>
+
 </head><body>
 <title>WireForge</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -263,6 +197,7 @@ a{color:var(--accent)}
 <header>
   <h1>Wire<span>Forge</span></h1>
   <p class="sub">Motorsport harness design · linked pinouts · wire schedules · build documentation</p>
+  <label class="wf-finish-choice">FINISH <select id="wfEditorFinish" aria-label="WireForge interface finish"><option value="ice">Carbon Ice</option><option value="copper">Forged Titanium</option><option value="stealth">Obsidian</option></select></label>
 </header>
 <nav id="tabs"></nav>
 
@@ -333,10 +268,102 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.22.0-rear-exit-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.22.1-showcase-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
+<style id="wfBlackglassTheme">
+/* Visual-only refresh. Semantic good/warning/error colors stay distinct. */
+:root:not([data-theme="light"]){
+ --bg:#080d14;--panel:#111923;--panel2:#1a2531;--line:#2c3b49;--grid:#253441;
+ --fg:#e7f1f7;--mute:#9cafbe;--accent:#88d0df;--accent-ink:#102027;
+ --good:#69cba6;--warn:#deb36a;--bad:#ec776e;
+ color-scheme:dark;
+}
+:root[data-theme="light"]{
+ --bg:#edf2f5;--panel:#ffffff;--panel2:#eaf2f5;--line:#b6ccd5;
+ --grid:#d4e0e6;--fg:#182b36;--mute:#4b6675;--accent:#247c96;--accent-ink:#fff;
+ --good:#1c8364;--warn:#a87021;--bad:#c3433d;
+}
+body{background:var(--bg);color:var(--fg)}
+header{
+ background:linear-gradient(115deg,#101a25,#142332 55%,#0e1721);
+ border-bottom:1px solid #2f4859;
+ box-shadow:0 10px 30px #0003;
+}
+header h1{color:#e6f6fb;letter-spacing:.005em}
+header h1 span{color:#8dd0e1}
+header .sub{color:#b0c4d2;opacity:1}
+nav{background:var(--bg);scrollbar-color:#405769 transparent}
+nav button{border-radius:9px}
+nav button[aria-selected="true"]{
+ color:var(--fg);border-color:#4b8597;
+ background:linear-gradient(120deg,#1c3745,#172837);
+ box-shadow:inset 3px 0 #8bd4e5;
+}
+.nav-label{color:var(--mute)}
+.card,.wf-workspace,#wfPhasePanel,.wf-pro-grid .card{
+ border-color:var(--line);border-radius:13px;
+ box-shadow:0 7px 22px #00000014;
+}
+#t-draw .bar{background:linear-gradient(125deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:13px}
+#t-draw .btn,.wf-actions button,button.btn{border-radius:9px}
+.btn.primary,.button.primary{
+ background:linear-gradient(130deg,#9fe3ef,#68afc5);
+ color:#0d2530;border:1px solid #a9e4f2;
+ box-shadow:0 3px 13px #2c71812b;
+}
+.btn.primary:hover,.button.primary:hover{background:#a5e7ef;color:#071c26}
+#wf3dLaunch,#wf3dProLaunch{
+ background:linear-gradient(130deg,#b8e9f1,#7ec9d9);
+ color:#0b2734;border-color:#b5e9f3;font-weight:800;
+}
+input,textarea,select{accent-color:var(--accent)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline-color:var(--accent)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#405364;border-radius:12px}
+::-webkit-scrollbar-track{background:transparent}
+@media(max-width:760px){
+ header{padding:13px}
+ #t-draw .bar{gap:7px}
+ #t-draw .btn{min-height:37px}
+}
+:root[data-theme="light"] header{
+ background:linear-gradient(115deg,#e7f3f8,#dbeaf1);
+ border-bottom-color:#a7c3d0;
+}
+:root[data-theme="light"] header h1{color:#19303e}
+:root[data-theme="light"] header h1 span{color:#207b98}
+:root[data-theme="light"] header .sub{color:#506c79}
+:root[data-theme="light"] nav button[aria-selected="true"]{
+ background:#daedf2;color:#1c485a;border-color:#93c1d1;
+}
+
+.wf-finish-choice{margin-left:auto;display:flex;gap:10px;align-items:center;color:var(--mute);font-size:10px;font-weight:800;letter-spacing:1.2px}
+#wfEditorFinish{background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;font-family:var(--body);font-weight:700;min-width:146px}
+#wfEditorFinish:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+:root[data-wf-finish="copper"]:not([data-theme="light"]){
+ --bg:#111312;--panel:#1c1e1b;--panel2:#292b27;--line:#46423b;--grid:#292a27;
+ --fg:#f1eee8;--mute:#b9ada0;--accent:#ddbb92;--accent-ink:#20180f;
+}
+:root[data-wf-finish="copper"]:not([data-theme="light"]) header{background:linear-gradient(110deg,#28251e,#191d1c);border-bottom-color:#66503a}
+:root[data-wf-finish="copper"]:not([data-theme="light"]) header h1 span{color:#eac5a3}
+:root[data-wf-finish="copper"]:not([data-theme="light"]) nav button[aria-selected="true"]{border-color:#8d7054;background:linear-gradient(130deg,#40342a,#2c2925);box-shadow:inset 3px 0 #d9b38c}
+:root[data-wf-finish="copper"]:not([data-theme="light"]) .btn.primary,
+:root[data-wf-finish="copper"]:not([data-theme="light"]) #wf3dLaunch,
+:root[data-wf-finish="copper"]:not([data-theme="light"]) #wf3dProLaunch{background:linear-gradient(115deg,#f0d0ad,#cda37e);color:#291d15;border-color:#f0d0ad}
+:root[data-wf-finish="stealth"]:not([data-theme="light"]){
+ --bg:#111419;--panel:#1b2027;--panel2:#262c34;--line:#3a4754;--grid:#28313d;
+ --fg:#f0f3f6;--mute:#a8b3bd;--accent:#c5d4e1;--accent-ink:#17212b;
+}
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) header{background:linear-gradient(110deg,#242b33,#151b22);border-bottom-color:#59636b}
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) header h1 span{color:#d5e0eb}
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) nav button[aria-selected="true"]{background:linear-gradient(130deg,#33404e,#25303b);border-color:#798796;box-shadow:inset 3px 0 #d0dbe4}
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) .btn.primary,
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) #wf3dLaunch,
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) #wf3dProLaunch{background:linear-gradient(130deg,#f4f6f9,#a9bccb);color:#19212b;border-color:#d5e3eb}
+@media(max-width:720px){.wf-finish-choice{width:100%;justify-content:space-between;margin:0}#wfEditorFinish{flex:1;max-width:220px}}
+</style>
 <script>
-const APP_VERSION='0.22.0-rear-exit-preview';
+const APP_VERSION='0.22.1-showcase-preview';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -2491,6 +2518,20 @@ function wf3dOpen(){
 }
 document.getElementById('wf3dLaunch')?.addEventListener('click',wf3dOpen);
 document.getElementById('wf3dProLaunch')?.addEventListener('click',wf3dOpen);
+
+/* Persistent visual finish shared with the 3D renderer. */
+(function initWireForgeFinish(){
+ const el=document.getElementById('wfEditorFinish');
+ if(!el)return;
+ const valid=new Set(['ice','copper','stealth']);
+ const apply=v=>{
+   const finish=valid.has(v)?v:'ice';
+   el.value=finish;document.documentElement.dataset.wfFinish=finish;
+   try{localStorage.setItem('wireforge-3d-finish',finish)}catch(e){}
+ };
+ let chosen='ice';try{chosen=localStorage.getItem('wireforge-3d-finish')||'ice'}catch(e){}
+ apply(chosen);el.addEventListener('change',()=>apply(el.value));
+})();
 
 /* ---------- start ---------- */
 ensureBook();
