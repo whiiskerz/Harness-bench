@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { hardwareRenderer, hardwareClass } from './render3d-hardware.js';
 import { cableRenderer } from './render3d-wiring.js';
+import { pigtailGuides } from './render3d-cavities.mjs';
 
 const STORAGE='wireforge-3d-scene-v1';
 const $=id=>document.getElementById(id);
@@ -68,20 +69,62 @@ function spliceNode(p,parent){
 function wirePath(w,wireIndex){
  const raw=Array.isArray(w.points)?w.points:[];
  if(raw.length<2)return [];
- const step=1/Math.max(1,raw.length-1),rise=.09+(wireIndex%5)*.024;
- const base=raw.map((p,i)=>({x:Number(p.x)||0,y:Number(p.y)||0,height:.32+Math.sin(Math.PI*i*step)*rise}));
- const conv=port=>port&&{x:port.x*SCALE,y:-port.z*SCALE,height:port.y};
- const tail=Number($('pigtailLength')?.value||35);
- const extension=(port,to)=>{
-  if(!port)return [];
-  const start=conv(port),dx=to.x-start.x,dy=to.y-start.y,l=Math.hypot(dx,dy)||1;
-  const d=Math.min(tail*.7,l*.6);
-  return[start,{x:start.x+dx/l*d,y:start.y+dy/l*d,height:start.height+.02}];
- };
- const from=hardware?.port(w.a?.p,w.a?.i),to=hardware?.port(w.b?.p,w.b?.i);
- if(from)base.unshift(...extension(from,base[Math.min(3,base.length-1)]));
- if(to)base.push(...extension(to,base[Math.max(0,base.length-4)]).reverse());
- return base;
+ const step=1/Math.max(1,raw.length-1),rise=.07+(wireIndex%5)*.019;
+ const base=raw.filter(p=>Number.isFinite(+p.x)&&Number.isFinite(+p.y))
+               .map((p,i)=>({x:+p.x,y:+p.y,height:.34+Math.sin(Math.PI*i*step)*rise}));
+ if(base.length<2)return [];
+ const toPlain=v=>({x:v.x*SCALE,y:-v.z*SCALE,height:v.y});
+ const fromPlain=p=>({x:p.x/SCALE,y:p.height,z:-p.y/SCALE});
+ const tailPx=Number($('pigtailLength')?.value)||35;
+ const tail=Math.max(.32,Math.min(1.65,tailPx/SCALE*1.20));
+ function portion(isStart){
+   const ep=isStart?w.a:w.b;
+   if(!ep)return null;
+   const info=hardware?.portInfo(ep.p,ep.i);
+   // Other hardware categories keep their simpler existing terminal-to-route paths.
+   const pos=info?.position||hardware?.port(ep.p,ep.i);
+   if(!pos)return null;
+   const direction=info?.direction||new THREE.Vector3(0,0,-1);
+   const rearCenter=info?.rearCenter||pos.clone();
+   // Choose a route join OUTSIDE the body. Reject near-body schematic points to
+   // stop Catmull-Rom interpolation looping through the connector housing.
+   let index=isStart?0:base.length-1;
+   const inc=isStart?1:-1;
+   const minimum=info?Math.max(.46,tail*.85):Math.max(.26,tail*.5);
+   for(let k=0;k<base.length-2;k++){
+     const j=isStart?k:base.length-1-k;
+     const point=fromPlain(base[j]);
+     if(point.distanceTo(rearCenter)>minimum){index=j;break}
+     index=j;
+   }
+   if(isStart)index=Math.min(index,base.length-2);
+   else index=Math.max(index,1);
+   const target=fromPlain(base[index]);
+   const guides=pigtailGuides({
+      exit:{x:pos.x,y:pos.y,z:pos.z},
+      rearCenter:{x:rearCenter.x,y:rearCenter.y,z:rearCenter.z},
+      direction:{x:direction.x,y:direction.y,z:direction.z},
+      target:{x:target.x,y:target.y,z:target.z},
+      fanLength:info?tail:Math.min(.47,tail),
+      gauge:w.awg
+   }).map(v=>({x:v.x*SCALE,y:-v.z*SCALE,height:v.y}));
+   return{index,guides,portInfo:info};
+ }
+ const a=portion(true),b=portion(false);
+ const left=a?a.guides:[],right=b?b.guides.slice().reverse():[];
+ const low=a?a.index:0,high=b?b.index:base.length-1;
+ const middle=low<=high?base.slice(low,high+1):[base[Math.floor(base.length/2)]];
+ const points=[...left,...middle,...right];
+ // Remove duplicate points (seen on short diagrams / closely grouped breakouts).
+ const unique=[];
+ for(const p of points){
+   if(unique.length){
+     const q=unique[unique.length-1];
+     if(Math.hypot(p.x-q.x,p.y-q.y,(p.height-q.height)*SCALE)<.01)continue;
+   }
+   unique.push(p);
+ }
+ return unique.length>1?unique:base;
 }
 function build(sceneData,resetCamera=true){
  if(!sceneData||sceneData.schema!=='wireforge.3d.scene.v1'||!Array.isArray(sceneData.parts)||!Array.isArray(sceneData.wires))
@@ -91,7 +134,7 @@ function build(sceneData,resetCamera=true){
  if(worldRoot){scene.remove(worldRoot);worldRoot.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();const materials=obj.material?[].concat(obj.material):[];for(const material of materials){if(material.map)material.map.dispose();if(material.dispose)material.dispose()}})}
  worldRoot=new THREE.Group();scene.add(worldRoot);
  for(const name of ['parts','wires','loom','labels'])layer(worldRoot,name);
- hardware=hardwareRenderer({mesh,group:groups.parts,labels:groups.labels,textSprite,colorOf});
+ hardware=hardwareRenderer({mesh,group:groups.parts,labels:groups.labels,textSprite,colorOf,sceneData});
  cables=cableRenderer({mesh,wireGroup:groups.wires,loomGroup:groups.loom,labels:groups.labels,textSprite});
  selectable.length=0;selected=null;selectedMesh=null;selectedMeta=null;isolateRuns=false;
  const looms=Array.isArray(sceneData.looms)?sceneData.looms:[];
@@ -120,7 +163,13 @@ function build(sceneData,resetCamera=true){
    const points=wirePath(representative,sceneData.wires.indexOf(representative));
    if(cables.makeLoom(loom,points,{sleeve:$('sleeve').value,ratio:Number($('radius').value)/100,pigtail:Number($('pigtailLength')?.value||35)/SCALE}))paintedSleeves++;
  }
- window.__WF3D_STATS={models:{...hardware.models},paintedWires,paintedSleeves,wireCount:sceneData.wires.length};
+ window.__WF3D_REAR_PORTS=[...hardware.portDetails.entries()].map(([id,list])=>({
+   id,exits:list.map(p=>({index:p.index,cavity:p.cavity,used:p.used,
+     p:[p.position.x,p.position.y,p.position.z],direction:[p.direction.x,p.direction.y,p.direction.z],
+     rearCenter:[p.rearCenter.x,p.rearCenter.y,p.rearCenter.z]}))
+ }));
+ window.__WF3D_STATS={models:{...hardware.models},paintedWires,paintedSleeves,wireCount:sceneData.wires.length,
+  distinctRearCavities:window.__WF3D_REAR_PORTS.reduce((n,p)=>n+p.exits.length,0)};
  if($('hardwareMix'))$('hardwareMix').textContent=Object.entries(hardware.models).filter(([,n])=>n>0).map(([k,n])=>n+' '+k).join(' · ');
  const items=[...sceneData.parts,...sceneData.wires];
  $('projectTitle').textContent=clean(sceneData.projectName||'Untitled harness');
