@@ -268,7 +268,13 @@ function setShowcase(force){
 }
 function updateBackground(){
  const bg=$('background').value;
- const colors={studio:'#080e18',graphite:'#262e38',light:'#e6ecf1'};
+ const finish=$('studioFinish')?.value||'ice';
+ const palette={
+  ice:{studio:'#0a1520',graphite:'#283541',light:'#e7eef4'},
+  copper:{studio:'#171615',graphite:'#39342f',light:'#f4eee7'},
+  stealth:{studio:'#111419',graphite:'#323940',light:'#e5e8eb'}
+ };
+ const colors=palette[finish]||palette.ice;
  if(bg==='transparent'){scene.background=null;renderer.setClearAlpha(0)}
  else{scene.background=new THREE.Color(colors[bg]);renderer.setClearAlpha(1)}
  if(grid)grid.material.opacity=bg==='light'?.25:.20;
@@ -326,6 +332,9 @@ function init(){
  const rim=new THREE.DirectionalLight('#f4ca91',1.15);rim.position.set(8,5,-18);scene.add(rim);
  grid=new THREE.GridHelper(450,110,0x6c7b91,0x334155);
  grid.material.transparent=true;grid.material.opacity=.2;grid.position.y=-.15;scene.add(grid);
+ const finishSaved=(()=>{try{return localStorage.getItem('wireforge-3d-finish')}catch(e){return null}})();
+ if(['ice','copper','stealth'].includes(finishSaved))$('studioFinish').value=finishSaved;
+ document.body.dataset.finish=$('studioFinish').value;
  updateBackground();resize();
  new ResizeObserver(resize).observe(canvas.parentElement);
  canvas.addEventListener('pointerup',event=>{
@@ -344,6 +353,12 @@ function init(){
  $('radius').addEventListener('input',()=>$('radiusValue').textContent=$('radius').value+'%');
  $('pigtailLength').addEventListener('input',()=>$('pigtailValue').textContent=$('pigtailLength').value+' px');
  $('background').addEventListener('change',updateBackground);
+ $('studioFinish').addEventListener('change',()=>{
+  const finish=$('studioFinish').value;
+  document.body.dataset.finish=finish;
+  try{localStorage.setItem('wireforge-3d-finish',finish)}catch(e){}
+  updateBackground();
+ });
  $('showcaseBtn')?.addEventListener('click',()=>setShowcase());
  $('search').addEventListener('input',updateSearch);
  $('savePng').addEventListener('click',savePNG);
@@ -353,7 +368,7 @@ function init(){
  $('fileImport').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const input=JSON.parse(await file.text());build(input);localStorage.setItem(STORAGE,JSON.stringify(input))}catch(err){showError(err)}finally{e.target.value=''}});
  document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>preset(b.dataset.view)));
  $('fit').addEventListener('click',fit);
- $('reset').addEventListener('click',()=>{setShowcase(false);for(const id of ['layerParts','layerWires','layerLoom','layerLabels','layerGrid'])$(id).checked=true;$('radius').value=100;$('radiusValue').textContent='100%';$('sleeve').value='braid';$('background').value='studio';$('autoRotate').checked=false;$('pigtailLength').value=35;$('pigtailValue').textContent='35 px';$('wireTracers').checked=true;$('canTwists').checked=true;updateLayerVisibility();updateBackground();if(activeScene)build(activeScene)});
+ $('reset').addEventListener('click',()=>{setShowcase(false);$('studioFinish').value='ice';document.body.dataset.finish='ice';try{localStorage.removeItem('wireforge-3d-finish')}catch(e){}for(const id of ['layerParts','layerWires','layerLoom','layerLabels','layerGrid'])$(id).checked=true;$('radius').value=100;$('radiusValue').textContent='100%';$('sleeve').value='braid';$('background').value='studio';$('autoRotate').checked=false;$('pigtailLength').value=35;$('pigtailValue').textContent='35 px';$('wireTracers').checked=true;$('canTwists').checked=true;updateLayerVisibility();updateBackground();if(activeScene)build(activeScene)});
  $('focusSelection').addEventListener('click',focus);
  $('isolateRuns').addEventListener('click',()=>{if(!selectedMeta&& !isolateRuns){$('selected').textContent='Select a wire or connector to isolate its connected runs.';return}isolateRuns=!isolateRuns;applyWireIsolation()});
  document.querySelectorAll('[data-hardware-focus]').forEach(b=>b.addEventListener('click',()=>{const category=b.dataset.hardwareFocus,p=activeScene?.parts.find(q=>hardwareClass(q)===category);if(!p)return;choose('part',p.id);focus();if(showcaseState){isolateRuns=true;updateLayerVisibility()}}));
