@@ -21,7 +21,6 @@ export function cavityLayout(count,family='DT'){
    let x=(column-(cols-1)/2)*spacing,y=((rows-1)/2-row)*spacing;
    if(n===3){
      // TRIANGLE VISUAL: rear viewed with latch up.
-     [[-.5,-.46],[.5,-.46],[0,.46]].forEach(()=>{});
      const xy=[[-.5,-.46],[.5,-.46],[0,.46]][i];
      x=xy[0]*spacing*1.45;y=xy[1]*spacing*1.45;
    }
@@ -51,7 +50,8 @@ export function pigtailGuides({exit,rearCenter,direction,target,fanLength=.55,ga
  const gather=sum(sum(rearCenter,mul(d,travel)),mul(offset,.12));
  // Let the external spline follow the schematic away from the connector; the
  // first 4 points enforce rear exit, strain relief, then gradual convergence.
- return [exit,guide1,guide2,gather].map(p=>({...p}));
+ const approach=sum(mul(gather,.58),mul(target,.42));
+ return [exit,guide1,guide2,gather,approach].map(p=>({...p}));
 }
 export function finitePoint(p){
  return !!p&&['x','y','z'].every(k=>Number.isFinite(Number(p[k])));
