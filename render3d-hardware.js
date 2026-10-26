@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { cavityLayout } from './render3d-cavities.mjs';
 
 /*
  * WireForge v0.21 procedural hardware models.
@@ -33,8 +34,8 @@ export function cavityGrid(n){
 }
 const v=(x,y,z)=>new THREE.Vector3(x,y,z);
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-export function hardwareRenderer({mesh,group,labels,textSprite,colorOf}){
- const ports=new Map(),models={deutsch:0,leash:0,relay:0,ecu:0,power:0,generic:0},scale=78;
+export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData}){
+ const ports=new Map(),portDetails=new Map(),models={deutsch:0,leash:0,relay:0,ecu:0,power:0,generic:0},scale=78;
  const plastic=(color,roughness=.68)=>new THREE.MeshPhysicalMaterial({color,roughness,metalness:.045,clearcoat:.12,clearcoatRoughness:.34});
  const metal=(color='#b2bdc7')=>new THREE.MeshStandardMaterial({color,roughness:.34,metalness:.75});
  const rubber=plastic('#20252c',.84),shadow=plastic('#11171d',.76);
@@ -65,43 +66,109 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf}){
      cylinder(group,'Hardware · mounting screw',.028,.012,cx+x*w*.40,y,cz+z*d*.40,silver,12);
    }
  }
- function deutsch(p){
-   const n=Math.max(1,Math.min(64,Array.isArray(p.pins)?p.pins.length:1)),family=connectorFamily(p),{cols,rows}=cavityGrid(n);
-   const spacing=family==='DTP'?.27:family==='DTM'?.16:.21;
-   const w=clamp(.38+spacing*cols,.62,2.45),d=clamp(.39+spacing*rows,.58,1.65);
-   const {cx,cz}=place(p),height=.36;
-   const type=String(p.type||'').toLowerCase(),female=/socket|receptacle|female|dt04/i.test(p.name||'')||/dt04/.test(type);
-   const shell=plastic(female?'#424b56':'#5b646b',.69);
-   const gasket=plastic('#a75635',.84);
-   const main=box(group,'Deutsch '+family+' housing (visual)',w,height,d,cx,height/2+.07,cz,shell,.09,{kind:'part',id:p.id,part:p});
-   box(group,'Deutsch keyed front shoulder',w*.87,.075,d*.73,cx,height+.08,cz+d*.06,plastic('#2d343d',.75),.043);
-   // Mating-side silicone seal and removable secondary wedge are visible.
-   box(group,'Deutsch mating interface seal',w*.84,.023,d*.67,cx,height+.124,cz+d*.06,gasket,.055);
-   const wedgeMat=female?green:orange;
-   box(group,'Deutsch '+family+' secondary wedge lock',w*.78,.035,d*.53,cx,height+.15,cz+d*.07,wedgeMat,.04);
-   // Rear grommet and stepped cable boot retain the harness at the shell exit.
-   box(group,'Deutsch rear seal',w*.79,.11,d*.22,cx,.20,cz-d*.42,plastic('#b46b40',.81),.05);
-   box(group,'Deutsch strain-relief boot',w*.65,.14,d*.18,cx,.23,cz-d*.59,rubber,.06);
-   // Polarized latch, thumb ridge and side rails.
-   box(group,'Deutsch positive lock latch',w*.42,.13,d*.37,cx,height+.09,cz+d*.39,shell,.05);
-   box(group,'Deutsch latch catch',w*.24,.045,.105,cx,height+.175,cz+d*.48,plastic('#252c35'),.023);
-   for(const side of [-1,1])box(group,'Deutsch side key rail',.055,.14,d*.60,cx+side*w*.46,height*.66,cz,shell,.021);
-   const terminals=[];
-   for(let i=0;i<n;i++){
-     const column=i%cols,row=Math.floor(i/cols);
-     const x=cx+(column-(cols-1)/2)*spacing;
-     const z=cz+(row-(rows-1)/2)*spacing+d*.065;
-     const r=clamp(spacing*.275,.028,.075);
-     cylinder(group,'Deutsch molded cavity recess',r*1.30,.018,x,height+.178,z,shadow,16,{kind:'cavity',id:p.id,part:p,pin:p.pins?.[i]});
-     cylinder(group,'Deutsch contact or seal',r*.69,.022,x,height+.189,z,p.pins?.[i]?.used?gold:plastic('#29313b'),14);
-     if(p.pins?.[i]?.used){
-       cylinder(group,'Deutsch cavity wire color ring',r*.24,.026,x,height+.202,z,plastic(colorOf(p.pins[i].color||'BLK')) ,10);
+
+ function connectorDirection(p){
+   // Aim the rear (-local Z) toward the collective outgoing diagram segments.
+   // This is a viewing heuristic, not a specified physical installation angle.
+   const center=place(p),wires=sceneData?.wires||[];
+   let sx=0,sz=0,count=0,first=null;
+   for(const w of wires){
+     const isA=String(w.a?.p)===String(p.id),isB=String(w.b?.p)===String(p.id);
+     if(!isA&&!isB)continue;
+     const route=w.points||[],near=isA?route[Math.min(5,route.length-1)]:route[Math.max(0,route.length-6)];
+     if(!near||!Number.isFinite(Number(near.x))||!Number.isFinite(Number(near.y)))continue;
+     let ox=Number(near.x)/scale-center.cx,oz=-Number(near.y)/scale-center.cz;
+     if(Math.hypot(ox,oz)<.16){
+       const other=(sceneData?.parts||[]).find(q=>String(q.id)===String(isA?w.b?.p:w.a?.p));
+       if(other){ox=(other.x+other.w/2)/scale-center.cx;oz=-(other.y+other.h/2)/scale-center.cz}
      }
-     const px=cx+(column-(cols-1)/2)*spacing*.95;
-     terminals.push(v(px,.32,cz-d*.55));
+     const d=Math.hypot(ox,oz);if(d<.02)continue;
+     if(!first)first={x:ox/d,z:oz/d};
+     sx+=ox/d;sz+=oz/d;count++;
+   }
+   if(Math.hypot(sx,sz)<.05&&first){sx=first.x;sz=first.z}
+   if(!count)return 0;
+   return Math.atan2(-sx,-sz);
+ }
+ function deutsch(p){
+   const n=Math.max(1,Math.min(64,Array.isArray(p.pins)?p.pins.length:1));
+   const family=connectorFamily(p),layout=cavityLayout(n,family),{cols,rows,spacing}=layout;
+   const w=Math.max(.65,cols*spacing+.37);
+   const h=Math.max(.58,rows*spacing+.36);
+   const length=family==='DTP'?1.04:family==='DTM'?.82:.91;
+   const {cx,cz}=place(p);
+   const caseY=Math.max(.50,h*.72+.18),front=length*.5,rear=-length*.5;
+   const assembly=new THREE.Group();
+   assembly.name='Deutsch '+family+' cavity-specific '+n+'-way housing';
+   assembly.position.set(cx,0,cz);
+   assembly.rotation.y=connectorDirection(p);
+   group.add(assembly);
+   const title=String(p.name||'').toUpperCase();
+   const female=/\bDT(?:M|P)?06[- ]|SOCKET|PLUG\b/.test(title),male=/\bDT(?:M|P)?04[- ]|RECEPTACLE\b/.test(title);
+   const shell=plastic(p.shellColor||'#535d65',.70);
+   const inner=plastic('#303a42',.85),seal=plastic('#a86b48',.84);
+   const housing=box(assembly,'Deutsch '+family+' molded main shell',w,h,length,0,caseY,0,shell,.11,{kind:'part',id:p.id,part:p});
+   // Shell step, polarization key and spring lock: visible in profile and on the mating side.
+   box(assembly,'Deutsch shell mating rim',w*.94,h*.93,.10,0,caseY,front-.002,plastic('#343d46',.73),.08);
+   box(assembly,'Deutsch mating interface recess',w*.80,h*.79,.023,0,caseY,front+.060,inner,.065);
+   const wedgeName=String(p.wedgeColor||'').toUpperCase();
+   const wedgeColor=/^#[0-9A-F]{6}$/.test(wedgeName)?wedgeName:/(ORANGE|ORG)/.test(wedgeName)?'#e38b4e':'#57b44c';
+   const wedge=plastic(wedgeColor,.63);
+   // Common DT wedges are green; a specific part's wedge variant may differ.
+   box(assembly,'Deutsch secondary wedgelock (visual)',w*.70,h*.70,.029,0,caseY,front+.089,wedge,.046);
+   box(assembly,'Deutsch rear gasket surround',w*.87,h*.86,.080,0,caseY,rear-.035,seal,.07);
+   box(assembly,'Deutsch rear seal retaining collar',w*.95,h*.95,.081,0,caseY,rear-.105,shell,.07);
+   const latchY=caseY+h*.53;
+   box(assembly,'Deutsch positive-lock sprung latch',w*.46,.090,length*.51,0,latchY+.04,front*.17,shell,.03);
+   box(assembly,'Deutsch latch thumb pad',w*.31,.068,.20,0,latchY+.103,front*.21,plastic('#777f83',.58),.026);
+   box(assembly,'Deutsch polarization latch ridge',w*.21,.046,.15,0,latchY+.113,front*.57,inner,.015);
+   for(const side of [-1,1]){
+     box(assembly,'Deutsch molded side polarization key',.075,h*.50,length*.51,side*w*.493,caseY,front*.29,shell,.025);
+     box(assembly,'Deutsch grip rib',.060,h*.19,length*.24,side*w*.512,caseY+h*.07,-length*.14,plastic('#657079',.71),.017);
+   }
+   // Every front terminal and its rear wire-seal aperture uses the SAME local X/Y
+   // coordinate. Observing from the opposite side mirrors the visual cavity view.
+   const terminals=[],detail=[];
+   const r=clamp(spacing*.255,.027,.070);
+   for(const cavity of layout.points){
+     const i=cavity.index,x=cavity.x,y=caseY+cavity.y;
+     const meta={kind:'cavity',id:p.id,part:p,pin:p.pins?.[i],index:i};
+     const used=!!p.pins?.[i]?.used;
+     // Cylinder primitives are normally along Y: turn them to face +Z/-Z.
+     const tube=(name,rad,len,z,material,meta)=>{
+       const q=cylinder(assembly,name,rad,len,x,y,z,material,20,meta);
+       q.rotation.x=Math.PI/2;
+       return q;
+     };
+     tube('Mating cavity dark recess',r*1.29,.018,front+.112,shadow,meta);
+     tube(used?(female?'Socket female contact':'Male pin contact'):'Mating face empty cavity',r*.68,.035,front+.129,used?gold:inner);
+     if(used&&male)tube('Male terminal pin tip',r*.33,.075,front+.170,gold);
+     tube('Rear elastomer seal boss',r*1.45,.048,rear-.155,seal);
+     tube('Individual rear grommet aperture',r*.85,.026,rear-.184,used?rubber:plastic('#262d35',.78));
+     if(used){
+       tube('Wire insulation emerging from rear cavity '+(i+1),r*.55,.042,rear-.212,plastic(colorOf(p.pins[i]?.color||'BLK'),.47));
+     }else{
+       // An unused cavity is visually capped by a *sample* sealing plug.
+       // Confirm real plug installation, type, size and color on the build sheet.
+       tube('Unpopulated-cavity sealing plug (illustrative)',r*.68,.065,rear-.221,plastic('#72818d',.77));
+     }
+     const local=new THREE.Vector3(x,y,rear-.235);
+     const world=assembly.localToWorld(local.clone());
+     const back=assembly.localToWorld(new THREE.Vector3(0,caseY,rear-.235));
+     const dir=new THREE.Vector3(0,0,-1).applyQuaternion(assembly.quaternion).normalize();
+     terminals.push(world);
+     detail.push({position:world.clone(),rearCenter:back.clone(),direction:dir.clone(),index:i,used,cavity:p.pins?.[i]?.number??String(i+1),family,partId:p.id,rotation:assembly.rotation.y});
    }
    setPorts(p,terminals);
-   addLabel(family+' '+n+'P',cx,height+.46,cz,.81);
+   portDetails.set(String(p.id),detail);
+   // A rear neck outlines the grommet but stays open so individual wires are visible.
+   const bootDepth=.18,bootRadius=Math.max(.30,w*.29);
+   for(const side of [-1,1]){
+      box(assembly,'Open wire-exit rear shroud side',.055,h*.72,bootDepth,side*w*.43,caseY,rear-.18,rubber,.021);
+   }
+   box(assembly,'Deutsch rear shroud bridge',w*.89,.050,bootDepth,0,caseY+h*.40,rear-.18,rubber,.018);
+   const label=textSprite(family+' '+n+' WAY', '#e1e9ee',22);
+   label.position.set(cx,caseY+h*.66,cz);labels.add(label);
  }
  function relay(p){
    const {cx,cz}=place(p),width=.84,depth=.83;
@@ -202,11 +269,16 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf}){
    ({deutsch,leash,relay,ecu,power,generic})[kind](p);
    return kind;
  }
+ function portInfo(id,pin){
+   const p=portDetails.get(String(id));
+   const i=Number(pin);
+   return p?.[Number.isInteger(i)&&i>=0&&i<p.length?i:0]||null;
+ }
  function port(id,pin){
    const points=ports.get(String(id));
    if(!points?.length)return null;
    const i=Number(pin);
    return points[Number.isInteger(i)&&i>=0&&i<points.length?i:0].clone();
  }
- return {build,port,ports,models};
+ return {build,port,portInfo,ports,portDetails,models};
 }

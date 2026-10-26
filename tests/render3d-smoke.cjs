@@ -14,7 +14,8 @@ let activeBrowser=null;
  await page.locator('#tabs [data-tab="draw"]').click();
  await page.locator('#wf3dLaunch').click();
  await page.waitForURL('**/render3d.html',{timeout:20000});
- await page.waitForFunction(()=>document.querySelector('#loading')?.hidden===true,null,{timeout:60000});
+ await page.waitForFunction(()=>document.querySelector('#loading')?.hidden===true || document.querySelector('#loadingTitle')?.textContent?.includes('Could not render'),null,{timeout:60000});
+ assert.equal(await page.locator('#loading').isHidden(),true,'3D engine failed before scene became ready; '+errors.join(' | '));
  const state=await page.evaluate(()=>({
    parts:+document.querySelector('#countParts').textContent,
    wires:+document.querySelector('#countWires').textContent,
@@ -23,6 +24,22 @@ let activeBrowser=null;
  }));
  const stats=await page.evaluate(()=>window.__WF3D_STATS);
  assert.ok(stats&&stats.models.deutsch>1,'Deutsch housings should render in 3D');
+ const cavities=await page.evaluate(()=>window.__WF3D_REAR_PORTS);
+ assert.ok(cavities.length>=2,'Deutsch models must expose rear cavity port positions');
+ for(const connector of cavities){
+   const exits=connector.exits;
+   assert.ok(exits.length>=2,'Connector exposes indexed terminal positions');
+   const positions=exits.map(x=>x.p.map(n=>n.toFixed(5)).join(','));
+   assert.equal(new Set(positions).size,exits.length,'Every rear cavity must have its own physical exit');
+   assert.ok(exits.every(q=>q.direction.every(Number.isFinite)),'Every cavity has a finite outward tangent');
+ }
+ const exitAudit=await page.evaluate(()=>window.__WF3D_EXIT_AUDIT);
+ assert.ok(exitAudit.length>=10,'Sample at least ten actual connector-to-wire exits');
+ for(const check of exitAudit){
+   if(check.fromError!==null)assert.ok(check.fromError<.00001,'Wire '+check.wireId+' start must match its rear seal port: '+check.fromError);
+   if(check.toError!==null)assert.ok(check.toError<.00001,'Wire '+check.wireId+' end must match its rear seal port: '+check.toError);
+   assert.ok(check.originStep===null||check.originStep>0,'Connector pigtail must not collapse into a point');
+ }
  assert.ok(stats.models.leash>=1,'Leash board assembly should render');
  assert.ok(stats.models.relay>=1,'Socketed relay should render');
  assert.ok(stats.paintedWires>=60,'3D insulated wires should render');
@@ -32,6 +49,8 @@ let activeBrowser=null;
  assert.ok(state.canvas>100,'canvas needs a real viewport');
  assert.ok(state.source.wires.some(w=>w.points.length>=2),'routed wire points exported');
  await page.locator('[data-hardware-focus="deutsch"]').click();
+ await page.locator('[data-view="rear"]').click();
+ assert.match(await page.locator('#viewMode').textContent(),/WIRE SIDE/);
  await page.locator('#isolateRuns').click();
  const isolated=await page.evaluate(()=>window.__WF3D_FOCUS);
  assert.ok(isolated.active&&isolated.visible>0&&isolated.hidden>0,'isolation should keep connected wires and hide unrelated runs');
