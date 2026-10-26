@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — v0.22.0 indexed Deutsch rear exits (preview)
+- Replaced the single rear wire-origin area with indexed, distinct wire-side positions on Deutsch-style connector models.
+- Added visible rear elastomer aperture details, unused-cavity sealing-plug illustrations, open shrouds and real wire-side/pigtail transition geometry.
+- Directed each conductor outward from its own terminal position before converging naturally toward the existing routed harness, with AWG-influenced stiffness.
+- Added a WIRE SIDE camera preset, per-cavity highlighting and geometry alignment diagnostics.
+- Added pure geometry regression tests and browser assertions for every rear exit to match its connected wire's actual start/end point.
+- Connector pitch, family orientation and cavity numbering are still illustrative until compared against verified part-number-specific TE drawings.
+
 ## Unreleased — v0.21.0 Blackglass + 3D hardware realism preview
 - Replaced generic 3D component blocks with parametric Deutsch-style connector bodies, Leash-style relay module trays, conventional relay sockets, ECU enclosures and power terminal visuals.
 - Added a more realistic insulation material pass: gauge-scaled wire thickness, tracer markings, visual twisted pairs, pigtail exit paths, braided / convoluted / shrink sleeve treatments and end collars.
