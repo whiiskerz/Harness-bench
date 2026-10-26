@@ -93,5 +93,15 @@ footer{font-size:10px;color:var(--muted);margin-top:16px}
 </aside>
 </main>
 </div>
+<script>
+window.addEventListener('error',event=>{
+ if(window.__WF3D_READY)return;
+ const target=event.target;
+ if(target===document.querySelector('script[src="./render3d.js"]')||target?.tagName==='SCRIPT'){
+  document.getElementById('loadingTitle').textContent='3D engine unavailable';
+  document.getElementById('loadingText').textContent='The Three.js modules could not load. Check your connection, disable restrictive blockers, or try another WebGL-capable browser.';
+ }
+},true);
+</script>
 <script type="module" src="./render3d.js"></script>
 </body></html>
