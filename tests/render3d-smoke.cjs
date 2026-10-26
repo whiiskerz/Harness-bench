@@ -1,0 +1,40 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--ignore-gpu-blocklist']});
+ const page=await browser.newPage({acceptDownloads:true,viewport:{width:1420,height:900}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ page.on('console',e=>{if(e.type()==='error')console.error('BROWSER:',e.text())});
+ await page.goto('http://127.0.0.1:8765/index.html',{waitUntil:'domcontentloaded'});
+ const original=await page.evaluate(()=>({parts:S.parts.length,wires:S.wires.length,version:APP_VERSION}));
+ assert.ok(original.parts>1,'starter project should contain parts');
+ assert.ok(original.wires>1,'starter project should contain wires');
+ await page.locator('#tabs [data-tab="draw"]').click();
+ await page.locator('#wf3dLaunch').click();
+ await page.waitForURL('**/render3d.html',{timeout:20000});
+ await page.waitForFunction(()=>document.querySelector('#loading')?.hidden===true,null,{timeout:60000});
+ const state=await page.evaluate(()=>({
+   parts:+document.querySelector('#countParts').textContent,
+   wires:+document.querySelector('#countWires').textContent,
+   canvas:document.querySelector('canvas').width,
+   source:JSON.parse(localStorage.getItem('wireforge-3d-scene-v1'))
+ }));
+ assert.equal(state.parts,original.parts);
+ assert.equal(state.wires,original.wires);
+ assert.ok(state.canvas>100,'canvas needs a real viewport');
+ assert.ok(state.source.wires.some(w=>w.points.length>=2),'routed wire points exported');
+ await page.locator('[data-view="top"]').click();
+ assert.match(await page.locator('#viewMode').textContent(),/TOP/);
+ await page.locator('#layerParts').uncheck();
+ assert.equal(await page.locator('#layerParts').isChecked(),false);
+ await page.locator('#layerParts').check();
+ await page.locator('#search').fill('CAN');
+ assert.ok(await page.locator('#itemList button').count()>0,'search should return CAN circuits');
+ const [png]=await Promise.all([page.waitForEvent('download',{timeout:30000}),page.locator('#savePng').click()]);
+ assert.match(png.suggestedFilename(),/\.png$/);
+ const [json]=await Promise.all([page.waitForEvent('download',{timeout:15000}),page.locator('#saveJson').click()]);
+ assert.match(json.suggestedFilename(),/\.json$/);
+ assert.ok(!errors.length,'No uncaught page errors: '+errors.join(' / '));
+ console.log(JSON.stringify({passed:true,parts:state.parts,wires:state.wires,samplePoints:state.source.wires[0].points.length,download:png.suggestedFilename()},null,2));
+ await browser.close();
+})().catch(err=>{console.error(err);process.exitCode=1});
