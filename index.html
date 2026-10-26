@@ -615,7 +615,8 @@ function e90ProjectStarter(){
   W.forEach(w=>{if(/^ECU 16-pin/.test(w.sig))return;if(/CAN L(ow)?\b/i.test(w.sig))w.color='PUR';else if(/CAN H(igh)?\b/i.test(w.sig))w.color='BLU'});
   // Approved trunk topology baseline: one trunk-side DT6 with three cabin DT2s.
   // Physical cavity numbers, total boundary count, route lengths, and fuse assignments remain unverified.
-  W.splice(0,W.length,...W.filter(w=>w.a.p!==162&&w.b.p!==162&&!w.sig.startsWith('Fuse box slot → valved mufflers control +')&&!w.sig.startsWith('Valved mufflers control − → trunk ground bus')));
+  // 140/141 were discontinued ECU connector drawings; their six links cannot be assigned to replacement breakout cavities without confirmed pin data. Exclude them from the starter rather than retaining orphaned endpoints.
+  W.splice(0,W.length,...W.filter(w=>![140,141,162].includes(w.a.p)&&![140,141,162].includes(w.b.p)&&!w.sig.startsWith('Fuse box slot → valved mufflers control +')&&!w.sig.startsWith('Valved mufflers control − → trunk ground bus')));
   const cabinDt6PartIndex=parts.findIndex(p=>p.id===162);
   if(cabinDt6PartIndex>=0)parts.splice(cabinDt6PartIndex,1);
   wire(163,0,161,0,'DT6 GPO2 conductor → cabin DT2-A pin 1 (molded cavity mapping TBD)',16,'GRN',{loom:993,circuitType:'signal'});
