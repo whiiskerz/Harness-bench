@@ -41,7 +41,8 @@ test('Individual rear exits begin at distinct cavity positions before converging
    assert.ok(points[1].z<points[0].z,'First pigtail segment must exit rear face, not cross the connector body');
    assert.ok(points[2].z<points[1].z);
    assert.ok(points[3].z<points[2].z);
-   assert.ok(Math.abs(points[3].x)<Math.abs(points[0].x),'Fan guides converge toward a shared harness centerline');
+   assert.ok(Math.abs(points[3].x)<=Math.abs(points[0].x)+1e-10,'Fan guides do not diverge from shared harness centerline');
+   if(Math.abs(points[0].x)>1e-7)assert.ok(Math.abs(points[3].x)<Math.abs(points[0].x),'Off-center cavities converge inward');
  });
 });
 test('Heavier AWG wire has a longer straight exit section (stiffer bend)',()=>{
