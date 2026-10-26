@@ -15,7 +15,7 @@ jobs:
           node-version: '22'
       - name: Install Playwright
         run: |
-          npm install --no-save playwright
+          npm install --no-save playwright three@0.160.1
           npx playwright install --with-deps chromium
       - name: Check JavaScript syntax
         run: |
@@ -28,6 +28,14 @@ jobs:
           Path('/tmp/wireforge-inline.js').write_text('\n'.join(inline))
           PY
           node --check /tmp/wireforge-inline.js
+      - name: Use local Three.js in browser tests
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('render3d.html')
+          s=p.read_text().replace('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js','/node_modules/three/build/three.module.js').replace('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/','/node_modules/three/examples/jsm/')
+          p.write_text(s)
+          PY
       - name: Test live editor-to-3D integration
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 &
