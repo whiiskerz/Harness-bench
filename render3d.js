@@ -94,7 +94,7 @@ function wirePath(w,wireIndex){
    for(let k=0;k<base.length-2;k++){
      const j=isStart?k:base.length-1-k;
      const point=fromPlain(base[j]);
-     if(point.distanceTo(rearCenter)>minimum){index=j;break}
+     if(Math.hypot(point.x-rearCenter.x,point.y-rearCenter.y,point.z-rearCenter.z)>minimum){index=j;break}
      index=j;
    }
    if(isStart)index=Math.min(index,base.length-2);
