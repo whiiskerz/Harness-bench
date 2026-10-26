@@ -53,4 +53,5 @@ jobs:
           path: |
             wireforge-3d-test-preview.png
             wireforge-3d-desktop-realism.png
+            wireforge-3d-showcase-titanium.png
           if-no-files-found: ignore
