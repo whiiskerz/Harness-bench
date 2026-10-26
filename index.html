@@ -197,6 +197,7 @@ a{color:var(--accent)}
 <header>
   <h1>Wire<span>Forge</span></h1>
   <p class="sub">Motorsport harness design · linked pinouts · wire schedules · build documentation</p>
+  <label class="wf-finish-choice">FINISH <select id="wfEditorFinish" aria-label="WireForge interface finish"><option value="ice">Carbon Ice</option><option value="copper">Forged Titanium</option><option value="stealth">Obsidian</option></select></label>
 </header>
 <nav id="tabs"></nav>
 
@@ -335,6 +336,31 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 :root[data-theme="light"] nav button[aria-selected="true"]{
  background:#daedf2;color:#1c485a;border-color:#93c1d1;
 }
+
+.wf-finish-choice{margin-left:auto;display:flex;gap:10px;align-items:center;color:var(--mute);font-size:10px;font-weight:800;letter-spacing:1.2px}
+#wfEditorFinish{background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;font-family:var(--body);font-weight:700;min-width:146px}
+#wfEditorFinish:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+:root[data-wf-finish="copper"]:not([data-theme="light"]){
+ --bg:#111312;--panel:#1c1e1b;--panel2:#292b27;--line:#46423b;--grid:#292a27;
+ --fg:#f1eee8;--mute:#b9ada0;--accent:#ddbb92;--accent-ink:#20180f;
+}
+:root[data-wf-finish="copper"]:not([data-theme="light"]) header{background:linear-gradient(110deg,#28251e,#191d1c);border-bottom-color:#66503a}
+:root[data-wf-finish="copper"]:not([data-theme="light"]) header h1 span{color:#eac5a3}
+:root[data-wf-finish="copper"]:not([data-theme="light"]) nav button[aria-selected="true"]{border-color:#8d7054;background:linear-gradient(130deg,#40342a,#2c2925);box-shadow:inset 3px 0 #d9b38c}
+:root[data-wf-finish="copper"]:not([data-theme="light"]) .btn.primary,
+:root[data-wf-finish="copper"]:not([data-theme="light"]) #wf3dLaunch,
+:root[data-wf-finish="copper"]:not([data-theme="light"]) #wf3dProLaunch{background:linear-gradient(115deg,#f0d0ad,#cda37e);color:#291d15;border-color:#f0d0ad}
+:root[data-wf-finish="stealth"]:not([data-theme="light"]){
+ --bg:#111419;--panel:#1b2027;--panel2:#262c34;--line:#3a4754;--grid:#28313d;
+ --fg:#f0f3f6;--mute:#a8b3bd;--accent:#c5d4e1;--accent-ink:#17212b;
+}
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) header{background:linear-gradient(110deg,#242b33,#151b22);border-bottom-color:#59636b}
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) header h1 span{color:#d5e0eb}
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) nav button[aria-selected="true"]{background:linear-gradient(130deg,#33404e,#25303b);border-color:#798796;box-shadow:inset 3px 0 #d0dbe4}
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) .btn.primary,
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) #wf3dLaunch,
+:root[data-wf-finish="stealth"]:not([data-theme="light"]) #wf3dProLaunch{background:linear-gradient(130deg,#f4f6f9,#a9bccb);color:#19212b;border-color:#d5e3eb}
+@media(max-width:720px){.wf-finish-choice{width:100%;justify-content:space-between;margin:0}#wfEditorFinish{flex:1;max-width:220px}}
 </style>
 <script>
 const APP_VERSION='0.22.0-rear-exit-preview';
@@ -2492,6 +2518,20 @@ function wf3dOpen(){
 }
 document.getElementById('wf3dLaunch')?.addEventListener('click',wf3dOpen);
 document.getElementById('wf3dProLaunch')?.addEventListener('click',wf3dOpen);
+
+/* Persistent visual finish shared with the 3D renderer. */
+(function initWireForgeFinish(){
+ const el=document.getElementById('wfEditorFinish');
+ if(!el)return;
+ const valid=new Set(['ice','copper','stealth']);
+ const apply=v=>{
+   const finish=valid.has(v)?v:'ice';
+   el.value=finish;document.documentElement.dataset.wfFinish=finish;
+   try{localStorage.setItem('wireforge-3d-finish',finish)}catch(e){}
+ };
+ let chosen='ice';try{chosen=localStorage.getItem('wireforge-3d-finish')||'ice'}catch(e){}
+ apply(chosen);el.addEventListener('change',()=>apply(el.value));
+})();
 
 /* ---------- start ---------- */
 ensureBook();
