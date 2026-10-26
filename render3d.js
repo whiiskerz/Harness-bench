@@ -347,4 +347,5 @@ function init(){
  if(!raw)throw new Error('No 3D scene snapshot found. Return to WireForge Harness Designer and click Render 3D.');
  build(JSON.parse(raw));
 }
+window.__WF3D_READY=true;
 try{init()}catch(err){showError(err)}
