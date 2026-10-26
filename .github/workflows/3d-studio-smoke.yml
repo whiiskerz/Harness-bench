@@ -3,8 +3,10 @@ on:
   push:
     branches:
       - main
-      - feature/wireforge-3d-harness-studio
   pull_request:
+concurrency:
+  group: wireforge-3d-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   smoke:
     runs-on: ubuntu-latest
