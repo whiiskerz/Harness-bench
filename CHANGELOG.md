@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — v0.21.0 Blackglass + 3D hardware realism preview
+- Replaced generic 3D component blocks with parametric Deutsch-style connector bodies, Leash-style relay module trays, conventional relay sockets, ECU enclosures and power terminal visuals.
+- Added a more realistic insulation material pass: gauge-scaled wire thickness, tracer markings, visual twisted pairs, pigtail exit paths, braided / convoluted / shrink sleeve treatments and end collars.
+- Added hardware focus shortcuts, adjustable pigtail transition lengths and tracer/twist toggles in 3D.
+- Overhauled the 3D interface and main WireForge styling with a coordinated graphite / ice-blue Blackglass visual system while keeping wire identity colors independent from UI themes.
+- Expanded browser smoke tests for component categories, cable geometry, GLB file validity and mobile viewport layouts.
+- All geometry remains an illustrative, schematic-derived mockup; confirm actual connector cavity numbering, physical dimensions and relay-module terminals from manufacturer resources.
+
 ## Unreleased — v0.20.0 3D Harness Studio preview
 - Added 3D Render launch actions in Harness Designer and Production Studio. 2D routing and connector-cavity metadata become a portable schematic-derived scene snapshot.
 - Added a responsive interactive Three.js studio with orbit, pan, zoom, view presets, selection, component search, and visibility layers.
