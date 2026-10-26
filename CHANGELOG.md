@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.22 — Studio visual polish and hardware showcase
+## v0.22.1 — Studio visual polish and hardware showcase
 - Resolved CSS cascade ordering so the modern dark WireForge design consistently overrides the older UI palette.
 - Added three user-selectable, synchronized editor and 3D finishes (Carbon Ice, Forged Titanium, Obsidian Mono) without changing any electrical wire identification data; preference is stored locally.
 - Added a Show/Exit Showcase camera control for isolated wire-exit closeups, with automatic selection, grid hiding and view restoration.
