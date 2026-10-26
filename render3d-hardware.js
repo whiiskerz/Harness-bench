@@ -76,10 +76,10 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData
      const isA=String(w.a?.p)===String(p.id),isB=String(w.b?.p)===String(p.id);
      if(!isA&&!isB)continue;
      const route=w.points||[],near=isA?route[Math.min(5,route.length-1)]:route[Math.max(0,route.length-6)];
-     let ox=near?.x/SCALE-center.cx,oz=-(near?.y/SCALE)-center.cz;
+     let ox=near?.x/scale-center.cx,oz=-(near?.y/scale)-center.cz;
      if(Math.hypot(ox,oz)<.16){
        const other=(sceneData?.parts||[]).find(q=>String(q.id)===String(isA?w.b?.p:w.a?.p));
-       if(other){ox=(other.x+other.w/2)/SCALE-center.cx;oz=-(other.y+other.h/2)/SCALE-center.cz}
+       if(other){ox=(other.x+other.w/2)/scale-center.cx;oz=-(other.y+other.h/2)/scale-center.cz}
      }
      const d=Math.hypot(ox,oz);if(d<.02)continue;
      if(!first)first={x:ox/d,z:oz/d};
