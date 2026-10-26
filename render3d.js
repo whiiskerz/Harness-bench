@@ -11,7 +11,7 @@ const canvas=$('viewport');
 const groups={};
 const selectable=[];
 let activeScene=null,selected=null,selectedMesh=null,renderer,scene,camera,controls,worldRoot,grid;
-let selectedMeta=null,hardware=null,cables=null,isolateRuns=false;
+let selectedMeta=null,hardware=null,cables=null,isolateRuns=false,showcaseState=null;
 const SCALE=78;
 const COLORS={BLK:'#15191f',BLACK:'#15191f',RED:'#e54a49',WHT:'#eceff2',WHITE:'#eceff2',GRN:'#36a66e',GREEN:'#36a66e',BLU:'#347eda',BLUE:'#347eda',YEL:'#f3c545',YELLOW:'#f3c545',ORG:'#f28f38',ORANGE:'#f28f38',BRN:'#76543a',BROWN:'#76543a',PUR:'#9e67db',VIO:'#9e67db',PNK:'#ed8ab2',GRY:'#858f9d',GRAY:'#858f9d',SLV:'#aeb8bf',TAN:'#c8aa7d',GND:'#20262e'};
 const clean=v=>String(v??'').slice(0,240);
@@ -130,13 +130,15 @@ function build(sceneData,resetCamera=true){
  if(!sceneData||sceneData.schema!=='wireforge.3d.scene.v1'||!Array.isArray(sceneData.parts)||!Array.isArray(sceneData.wires))
    throw new Error('Not a supported WireForge 3D scene file.');
  if(sceneData.parts.length>850||sceneData.wires.length>2500)throw new Error('Scene too large for the current 3D preview.');
+ const beforeSelection=selectedMeta?{kind:selectedMeta.kind,id:selectedMeta.id}:null;
+ const beforeIsolation=isolateRuns;
  activeScene=sceneData;
  if(worldRoot){scene.remove(worldRoot);worldRoot.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();const materials=obj.material?[].concat(obj.material):[];for(const material of materials){if(material.map)material.map.dispose();if(material.dispose)material.dispose()}})}
  worldRoot=new THREE.Group();scene.add(worldRoot);
  for(const name of ['parts','wires','loom','labels'])layer(worldRoot,name);
  hardware=hardwareRenderer({mesh,group:groups.parts,labels:groups.labels,textSprite,colorOf,sceneData});
  cables=cableRenderer({mesh,wireGroup:groups.wires,loomGroup:groups.loom,labels:groups.labels,textSprite});
- selectable.length=0;selected=null;selectedMesh=null;selectedMeta=null;isolateRuns=false;
+ selectable.length=0;selected=null;selectedMesh=null;selectedMeta=null;isolateRuns=beforeIsolation;
  const looms=Array.isArray(sceneData.looms)?sceneData.looms:[];
  const wireGroups=new Map();
  sceneData.wires.forEach(w=>{const id=String(w.loom||'');if(id){if(!wireGroups.has(id))wireGroups.set(id,[]);wireGroups.get(id).push(w)}});
@@ -194,6 +196,7 @@ function build(sceneData,resetCamera=true){
  $('countBranches').textContent=Array.isArray(sceneData.branches)?sceneData.branches.length:0;
  $('selected').textContent='Select any component or wire for details.';
  updateLayerVisibility();
+ if(beforeSelection)choose(beforeSelection.kind,beforeSelection.id);
  updateSearch();
  if(resetCamera)fit();
  $('loading').hidden=true;
@@ -308,13 +311,46 @@ function focus(){
  if(!m)return;
  const center=new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3());
  const bounds=new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
- const dist=Math.max(2.2,Math.max(bounds.x,bounds.y,bounds.z)*5.0);
+ const dist=Math.max(2.5,Math.max(bounds.x,bounds.y,bounds.z)*3.3);
  const dir=camera.position.clone().sub(controls.target).normalize();
  controls.target.copy(center);camera.position.copy(center).addScaledVector(dir,dist);controls.update();
 }
+function setShowcase(force){
+ const btn=$('showcaseBtn'),enable=typeof force==='boolean'?force:!showcaseState;
+ if(!activeScene)return;
+ if(enable){
+   if(showcaseState)return;
+   showcaseState={position:camera.position.clone(),target:controls.target.clone(),grid:$('layerGrid').checked,isolation:isolateRuns};
+   if(!selectedMeta){
+     const featured=activeScene.parts.find(p=>hardwareClass(p)==='deutsch')||activeScene.parts.find(p=>hardwareClass(p)==='leash')||activeScene.parts[0];
+     if(featured)choose('part',featured.id);
+   }
+   if(!selectedMeta){showcaseState=null;return}
+   isolateRuns=true;
+   $('layerGrid').checked=false;
+   updateLayerVisibility();
+   focus();
+   preset('iso');
+   $('viewMode').textContent='SHOWCASE · CONCEPT RENDER';
+ }else{
+   const before=showcaseState;
+   if(!before)return;
+   showcaseState=null;
+   isolateRuns=before.isolation;
+   $('layerGrid').checked=before.grid;
+   updateLayerVisibility();
+   camera.position.copy(before.position);
+   controls.target.copy(before.target);
+   controls.update();
+   $('viewMode').textContent='PERSPECTIVE · SCHEMATIC SCALE';
+ }
+ if(btn){btn.setAttribute('aria-pressed',String(!!showcaseState));btn.textContent=showcaseState?'Exit showcase':'Showcase'}
+}
 function updateBackground(){
  const bg=$('background').value;
- const colors={studio:'#080e18',graphite:'#262e38',light:'#e6ecf1'};
+ const finish=$('studioFinish')?.value||'ice';
+ const palette={ice:{studio:'#0a1520',graphite:'#283541',light:'#e7eef4'},copper:{studio:'#171615',graphite:'#39342f',light:'#f4eee7'},stealth:{studio:'#111419',graphite:'#323940',light:'#e5e8eb'}};
+ const colors=palette[finish]||palette.ice;
  if(bg==='transparent'){scene.background=null;renderer.setClearAlpha(0)}
  else{scene.background=new THREE.Color(colors[bg]);renderer.setClearAlpha(1)}
  if(grid)grid.material.opacity=bg==='light'?.25:.20;
@@ -358,7 +394,7 @@ function resize(){
 function init(){
  renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'high-performance'});
  renderer.outputColorSpace=THREE.SRGBColorSpace;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.5;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
  scene=new THREE.Scene();
  camera=new THREE.PerspectiveCamera(43,1,.05,10000);
@@ -366,12 +402,15 @@ function init(){
  controls=new OrbitControls(camera,renderer.domElement);
  controls.enableDamping=true;controls.dampingFactor=.08;
  controls.screenSpacePanning=true;controls.maxPolarAngle=Math.PI*.97;
- const hemi=new THREE.HemisphereLight('#eef8ff','#566780',1.9);scene.add(hemi);
- const key=new THREE.DirectionalLight('#f7faff',3.15);key.position.set(11,23,12);scene.add(key);
- const fill=new THREE.DirectionalLight('#8dbed9',2.1);fill.position.set(-17,9,-13);scene.add(fill);
- const rim=new THREE.DirectionalLight('#f9c588',.72);rim.position.set(8,5,-18);scene.add(rim);
+ const hemi=new THREE.HemisphereLight('#e5f4ff','#596777',1.65);scene.add(hemi);
+ const key=new THREE.DirectionalLight('#fff8ec',2.65);key.position.set(11,23,12);scene.add(key);
+ const fill=new THREE.DirectionalLight('#99cbe6',1.55);fill.position.set(-17,9,-13);scene.add(fill);
+ const rim=new THREE.DirectionalLight('#f4ca91',1.15);rim.position.set(8,5,-18);scene.add(rim);
  grid=new THREE.GridHelper(450,110,0x6c7b91,0x334155);
  grid.material.transparent=true;grid.material.opacity=.2;grid.position.y=-.15;scene.add(grid);
+ const savedFinish=(()=>{try{return localStorage.getItem('wireforge-3d-finish')}catch(e){return null}})();
+ if(['ice','copper','stealth'].includes(savedFinish))$('studioFinish').value=savedFinish;
+ document.body.dataset.finish=$('studioFinish').value;
  updateBackground();resize();
  new ResizeObserver(resize).observe(canvas.parentElement);
  canvas.addEventListener('pointerup',event=>{
@@ -390,6 +429,8 @@ function init(){
  $('radius').addEventListener('input',()=>$('radiusValue').textContent=$('radius').value+'%');
  $('pigtailLength').addEventListener('input',()=>$('pigtailValue').textContent=$('pigtailLength').value+' px');
  $('background').addEventListener('change',updateBackground);
+ $('studioFinish').addEventListener('change',()=>{const v=$('studioFinish').value;document.body.dataset.finish=v;try{localStorage.setItem('wireforge-3d-finish',v)}catch(e){}updateBackground()});
+ $('showcaseBtn').addEventListener('click',()=>setShowcase());
  $('search').addEventListener('input',updateSearch);
  $('savePng').addEventListener('click',savePNG);
  $('saveGlb').addEventListener('click',saveGLB);
@@ -398,10 +439,10 @@ function init(){
  $('fileImport').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const input=JSON.parse(await file.text());build(input);localStorage.setItem(STORAGE,JSON.stringify(input))}catch(err){showError(err)}finally{e.target.value=''}});
  document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>preset(b.dataset.view)));
  $('fit').addEventListener('click',fit);
- $('reset').addEventListener('click',()=>{for(const id of ['layerParts','layerWires','layerLoom','layerLabels','layerGrid'])$(id).checked=true;$('radius').value=100;$('radiusValue').textContent='100%';$('sleeve').value='braid';$('background').value='studio';$('autoRotate').checked=false;$('pigtailLength').value=35;$('pigtailValue').textContent='35 px';$('wireTracers').checked=true;$('canTwists').checked=true;updateLayerVisibility();updateBackground();if(activeScene)build(activeScene)});
+ $('reset').addEventListener('click',()=>{setShowcase(false);$('studioFinish').value='ice';document.body.dataset.finish='ice';try{localStorage.removeItem('wireforge-3d-finish')}catch(e){}for(const id of ['layerParts','layerWires','layerLoom','layerLabels','layerGrid'])$(id).checked=true;$('radius').value=100;$('radiusValue').textContent='100%';$('sleeve').value='braid';$('background').value='studio';$('autoRotate').checked=false;$('pigtailLength').value=35;$('pigtailValue').textContent='35 px';$('wireTracers').checked=true;$('canTwists').checked=true;updateLayerVisibility();updateBackground();if(activeScene)build(activeScene)});
  $('focusSelection').addEventListener('click',focus);
  $('isolateRuns').addEventListener('click',()=>{if(!selectedMeta&& !isolateRuns){$('selected').textContent='Select a wire or connector to isolate its connected runs.';return}isolateRuns=!isolateRuns;applyWireIsolation()});
- document.querySelectorAll('[data-hardware-focus]').forEach(b=>b.addEventListener('click',()=>{const category=b.dataset.hardwareFocus,p=activeScene?.parts.find(q=>hardwareClass(q)===category);if(!p)return;choose('part',p.id);focus()}));
+ document.querySelectorAll('[data-hardware-focus]').forEach(b=>b.addEventListener('click',()=>{const category=b.dataset.hardwareFocus,p=activeScene?.parts.find(q=>hardwareClass(q)===category);if(!p)return;choose('part',p.id);focus();if(showcaseState){isolateRuns=true;updateLayerVisibility()}}));
  $('clearSelection').addEventListener('click',()=>{selectedMeta=null;selected=null;isolateRuns=false;$('selected').textContent='No selection';applyWireIsolation();updateSearch()});
  let raw=null;
  try{raw=localStorage.getItem(STORAGE)}catch(e){}
