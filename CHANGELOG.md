@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — v0.20.0 3D Harness Studio preview
+- Added 3D Render launch actions in Harness Designer and Production Studio. 2D routing and connector-cavity metadata become a portable schematic-derived scene snapshot.
+- Added a responsive interactive Three.js studio with orbit, pan, zoom, view presets, selection, component search, and visibility layers.
+- Added generic 3D connector bodies with wire-colored cavities, 3D insulated wire paths and loom covering previews (braid, convoluted, smooth).
+- Added render appearance controls, PNG export, GLB mesh export, and portable 3D scene JSON import/export.
+- Added browser integration smoke tests, mobile viewport coverage and JavaScript syntax checks.
+- Cleaned six obsolete E90 starter wires referencing removed ECU-connector instances; missing real breakout assignments remain unresolved rather than guessed.
+- **Preview limitations:** scene geometry is schematic-derived, not manufacturer-dimensioned; sleeving uses representative member runs and does not yet map physical Y-branches; runtime requires WebGL and Three.js CDN availability. Generated meshes must not be treated as manufacturing dimensions.
+
 ## Unreleased — v0.17.0 editor overhaul (preview)
 - Redesigned the drawing workspace header, action controls, and responsive editor dashboard.
 - Added an on-demand structural wiring audit for invalid endpoints, shared cavities, missing circuit labels/colors, and entered load/fuse conflicts.

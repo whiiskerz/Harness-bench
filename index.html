@@ -201,7 +201,7 @@ a{color:var(--accent)}
 <section id="t-project" hidden></section>
 <section id="t-studio" hidden></section>
 <section id="t-sim" hidden></section>
-<section id="t-pro" hidden><div class="wf-pro-head"><div><span class="pill">PRO WORKSPACE · PREVIEW</span><h2>Harness Production Studio</h2><p class="muted">Reusable cavity maps, drawing layers, branch schedules, build reports and restore points. Manufacturer geometry and electrical suitability require independent verification.</p></div><button class="btn primary" id="proPrint">Print build pack</button></div><div id="proRoot"></div></section>
+<section id="t-pro" hidden><div class="wf-pro-head"><div><span class="pill">PRO WORKSPACE · PREVIEW</span><h2>Harness Production Studio</h2><p class="muted">Reusable cavity maps, drawing layers, branch schedules, build reports and restore points. Manufacturer geometry and electrical suitability require independent verification.</p></div><div class="row"><button class="btn primary" type="button" id="wf3dProLaunch">◈ Render 3D</button><button class="btn primary" id="proPrint">Print build pack</button></div></div><div id="proRoot"></div></section>
 <section id="t-draw">
 <section class="wf-phase card" id="wfPhasePanel" aria-label="Harness engineering tools">
 <h3>Harness engineering · Phase 1 <span class="pill">v0.18 preview</span></h3>
@@ -233,7 +233,7 @@ a{color:var(--accent)}
     <button class="btn" data-act="zout" aria-label="Zoom out">−</button>
     <button class="btn" data-act="zin" aria-label="Zoom in">+</button>
     <button class="btn" data-act="fit">Fit</button>
-    <button class="btn" data-act="exportDiagram">Export SVG</button><button class="btn" data-act="printDiagram">Print diagram</button><button class="btn danger" data-act="clearWires" title="Remove every wire but keep parts and zones">Delete all wires</button>
+    <button class="btn primary" id="wf3dLaunch" type="button" title="Build an interactive 3D model from the current routed drawing">◈ Render 3D</button><button class="btn" data-act="exportDiagram">Export SVG</button><button class="btn" data-act="printDiagram">Print diagram</button><button class="btn danger" data-act="clearWires" title="Remove every wire but keep parts and zones">Delete all wires</button>
     <button class="btn" data-act="undo" id="undoBtn">Undo</button><button class="btn" data-act="redo" id="redoBtn">Redo</button>
     <button class="btn" data-act="fw" id="fwBtn" aria-pressed="false">Firewall line</button>
     <button class="btn" data-act="tk" id="tkBtn" aria-pressed="false">Trunk line</button>
@@ -265,10 +265,10 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.19.0-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.20.0-3d-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <script>
-const APP_VERSION='0.19.0-preview';
+const APP_VERSION='0.20.0-3d-preview';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -615,7 +615,8 @@ function e90ProjectStarter(){
   W.forEach(w=>{if(/^ECU 16-pin/.test(w.sig))return;if(/CAN L(ow)?\b/i.test(w.sig))w.color='PUR';else if(/CAN H(igh)?\b/i.test(w.sig))w.color='BLU'});
   // Approved trunk topology baseline: one trunk-side DT6 with three cabin DT2s.
   // Physical cavity numbers, total boundary count, route lengths, and fuse assignments remain unverified.
-  W.splice(0,W.length,...W.filter(w=>w.a.p!==162&&w.b.p!==162&&!w.sig.startsWith('Fuse box slot → valved mufflers control +')&&!w.sig.startsWith('Valved mufflers control − → trunk ground bus')));
+  // 140/141 were discontinued ECU connector drawings; their six links cannot be assigned to replacement breakout cavities without confirmed pin data. Exclude them from the starter rather than retaining orphaned endpoints.
+  W.splice(0,W.length,...W.filter(w=>![140,141,162].includes(w.a.p)&&![140,141,162].includes(w.b.p)&&!w.sig.startsWith('Fuse box slot → valved mufflers control +')&&!w.sig.startsWith('Valved mufflers control − → trunk ground bus')));
   const cabinDt6PartIndex=parts.findIndex(p=>p.id===162);
   if(cabinDt6PartIndex>=0)parts.splice(cabinDt6PartIndex,1);
   wire(163,0,161,0,'DT6 GPO2 conductor → cabin DT2-A pin 1 (molded cavity mapping TBD)',16,'GRN',{loom:993,circuitType:'signal'});
@@ -2372,6 +2373,56 @@ document.addEventListener('change',e=>{
  el('wfValidation').addEventListener('click',()=>{csv('wireforge-validation-review.csv',validation());toast('Validation review exported')});
  renderBranches();
 })();
+
+
+/* WireForge 3D export bridge: captures editor-resolved pins/routes for a faithful diagram-derived 3D preview. */
+function wf3dBuildSnapshot(){
+ computeSides();
+ const parts=(S.parts||[]).map(p=>{
+   const t=T[p.t];if(!t)return null;
+   const dim=dims(p),pinData=t.node?[]:t.pins.map((pin,i)=>{
+     const matched=usedOn(p.id,i);return{number:String(pin.p),label:plabel(p,i),color:matched[0]?.color||'',used:matched.length>0};
+   });
+   return{id:p.id,name:p.name||t.name,type:p.t,category:t.fam||'dt',node:!!t.node,x:p.x,y:p.y,w:dim.w,h:dim.h,pins:pinData};
+ }).filter(Boolean);
+ const out=[];
+ for(const w of S.wires||[]){
+   if(!w.a||!w.b)continue;
+   const a=part(w.a.p),b=part(w.b.p);if(!a||!b)continue;
+   const g=geo(w);if(!g)continue;
+   const segments=g.segs||[];
+   const points=[];
+   for(const segment of segments){
+     if(segment.length!==4)continue;
+     const [p0,p1,p2,p3]=segment;
+     if(!points.length)points.push({x:+p0.x,y:+p0.y});
+     for(let j=1;j<=7;j++){
+       const t=j/7,u=1-t;
+       points.push({x:u*u*u*p0.x+3*u*u*t*p1.x+3*u*t*t*p2.x+t*t*t*p3.x,
+                    y:u*u*u*p0.y+3*u*u*t*p1.y+3*u*t*t*p2.y+t*t*t*p3.y});
+     }
+   }
+   if(points.length<2)points.push({x:g.A.x,y:g.A.y},{x:g.B.x,y:g.B.y});
+   out.push({id:w.id,sig:w.sig||'',color:w.color||'',awg:w.awg||'',loom:w.loom||'',tw:w.tw||'',
+       a:{p:w.a.p,i:w.a.i},b:{p:w.b.p,i:w.b.i},
+       fromPin:T[a.t]?.pins?.[w.a.i]?.p||'',toPin:T[b.t]?.pins?.[w.b.i]?.p||'',
+       len:+w.len>0?+w.len:null,points});
+ }
+ return{schema:'wireforge.3d.scene.v1',generatedAt:new Date().toISOString(),
+   projectName:String(S.projectName||S.name||'E90 LS Swap Harness'),sourceVersion:APP_VERSION,
+   parts,wires:out,looms:(S.looms||[]).map(l=>({id:l.id,name:l.name,color:l.color,cover:l.cover})),
+   branches:(S.pro?.branches||S.wfBranches||[]).map(b=>({id:b.id,name:b.name,length:b.length,diameter:b.diameter,sleeve:b.sleeve}))};
+}
+function wf3dOpen(){
+ try{
+   const snapshot=wf3dBuildSnapshot();
+   if(!snapshot.parts.length||!snapshot.wires.length){toast('Add connectors and wires before launching the 3D studio');return}
+   localStorage.setItem('wireforge-3d-scene-v1',JSON.stringify(snapshot));
+   window.location.href='render3d.html';
+ }catch(error){console.error('3D snapshot error:',error);toast('Cannot create 3D preview. Try downloading a project backup and freeing browser storage.')}
+}
+document.getElementById('wf3dLaunch')?.addEventListener('click',wf3dOpen);
+document.getElementById('wf3dProLaunch')?.addEventListener('click',wf3dOpen);
 
 /* ---------- start ---------- */
 ensureBook();
