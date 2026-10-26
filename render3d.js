@@ -59,8 +59,9 @@ function textSprite(text,color='#e8edf4',size=25){
  return sprite;
 }
 function roundedHousing(p,parent){
- const w=clamp((+p.w||100)/SCALE,.55,7);
- const h=clamp((+p.h||75)/SCALE,.4,6.5);
+ const n=Math.max(1,p.pins?.length||1),scale=Math.sqrt(n);
+ const w=clamp(.48+scale*.19,.58,3.2);
+ const h=clamp(.43+scale*.17,.54,2.95);
  const depth=clamp(Math.min(w,h)*.26,.16,.38);
  const px=(+p.x+(+p.w||100)/2)/SCALE;
  const pz=-(+p.y+(+p.h||75)/2)/SCALE;
@@ -102,10 +103,20 @@ function wirePath(w,wireIndex){
  if(raw.length<2)return [];
  const step=1/Math.max(1,raw.length-1);
  const rise=.12+(wireIndex%4)*.028;
- return raw.map((p,i)=>({
-  x:+p.x||0,y:+p.y||0,
-  height:.28+Math.sin(Math.PI*i*step)*rise
- }));
+ const center=id=>{const p=activeScene.parts.find(q=>String(q.id)===String(id));return p?{x:p.x+p.w/2,y:p.y+p.h/2}:null};
+ const start=center(w.a?.p),end=center(w.b?.p);
+ const orient=(center,reference)=>{
+  if(!center)return null;
+  const dx=(reference.x||0)-center.x,dy=(reference.y||0)-center.y,len=Math.hypot(dx,dy)||1;
+  return{x:center.x+dx/len*27,y:center.y+dy/len*27};
+ };
+ const first=orient(start,raw[Math.min(4,raw.length-1)]),last=orient(end,raw[Math.max(0,raw.length-5)]);
+ return raw.map((p,i)=>{
+   let x=+p.x||0,y=+p.y||0;
+   if(first&&i<5){const k=(5-i)/5;x=x*(1-k)+first.x*k;y=y*(1-k)+first.y*k}
+   if(last&&i>=raw.length-5){const k=(i-(raw.length-5)+1)/5;x=x*(1-k)+last.x*k;y=y*(1-k)+last.y*k}
+   return{x,y,height:.28+Math.sin(Math.PI*i*step)*rise};
+ });
 }
 function sleeveForLoom(loom,ws,parent){
  const w=ws.find(q=>Array.isArray(q.points)&&q.points.length>1);
