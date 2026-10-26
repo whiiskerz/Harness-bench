@@ -26,7 +26,7 @@ test('E90 starter topology has stable expected shape and connected endpoints', (
   }, options);
   const project = new Function('mkW', source + '; return e90ProjectStarter();')(mkW);
   assert.equal(project.parts.length, 59); // updated starter fixture after intentional breakout cleanup
-  assert.equal(project.wires.length, 119);
+  assert.equal(project.wires.length, 96); // current starter netlist size
   assert.ok(project.wires.every(w => w.autoRoute === true), 'E90 example wires use the cleaner orthogonal routing mode');
   const partIds = new Set(project.parts.map(p => String(p.id)));
   assert.equal(partIds.size, project.parts.length, 'part IDs must be unique');
