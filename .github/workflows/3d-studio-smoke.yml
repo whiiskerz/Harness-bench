@@ -1,0 +1,35 @@
+name: WireForge 3D studio smoke tests
+on:
+  push:
+    branches:
+      - main
+      - feature/wireforge-3d-harness-studio
+  pull_request:
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Check JavaScript syntax
+        run: |
+          node --check render3d.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          text=Path('index.html').read_text()
+          inline=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',text,re.S|re.I)
+          Path('/tmp/wireforge-inline.js').write_text('\n'.join(inline))
+          PY
+          node --check /tmp/wireforge-inline.js
+      - name: Test live editor-to-3D integration
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+          node tests/render3d-smoke.cjs
