@@ -14,7 +14,8 @@ let activeBrowser=null;
  await page.locator('#tabs [data-tab="draw"]').click();
  await page.locator('#wf3dLaunch').click();
  await page.waitForURL('**/render3d.html',{timeout:20000});
- await page.waitForFunction(()=>document.querySelector('#loading')?.hidden===true,null,{timeout:60000});
+ await page.waitForFunction(()=>document.querySelector('#loading')?.hidden===true || document.querySelector('#loadingTitle')?.textContent?.includes('Could not render'),null,{timeout:60000});
+ assert.equal(await page.locator('#loading').isHidden(),true,'3D engine failed before scene became ready; '+errors.join(' | '));
  const state=await page.evaluate(()=>({
    parts:+document.querySelector('#countParts').textContent,
    wires:+document.querySelector('#countWires').textContent,
