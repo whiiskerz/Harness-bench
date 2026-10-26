@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.22 — Studio visual polish and hardware showcase
+- Resolved CSS cascade ordering so the modern dark WireForge design consistently overrides the older UI palette.
+- Added three user-selectable 3D finishes (Carbon Ice, Forged Titanium, Obsidian Mono) without changing any electrical wire identification data; preferred finish is stored locally.
+- Added a Show/Exit Showcase camera control for isolated wire-exit closeups, with automatic selection, grid hiding and view restoration.
+- Rebalanced the 3D studio's key, fill, rim and ambient lighting for richer molded-plastic and wire-insulation appearance.
+- Preserved selection and isolation state when changing wire tracer, twist, pigtail and sleeving settings.
+- Kept v0.22's rear cavity exit geometry, wire-side views and related verification checks intact. This remains illustrative, not a manufacturer-certified part model.
+
 ## Unreleased — v0.22.0 indexed Deutsch rear exits (preview)
 - Replaced the single rear wire-origin area with indexed, distinct wire-side positions on Deutsch-style connector models.
 - Added visible rear elastomer aperture details, unused-cavity sealing-plug illustrations, open shrouds and real wire-side/pigtail transition geometry.
