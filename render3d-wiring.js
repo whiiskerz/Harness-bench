@@ -34,10 +34,10 @@ function tube(mesh,group,name,curve,radius,material,meta,segmentCount){
 }
 function braidTexture(){
  const c=document.createElement('canvas');c.width=96;c.height=96;
- const ctx=c.getContext('2d');ctx.fillStyle='#4c5460';ctx.fillRect(0,0,96,96);
+ const ctx=c.getContext('2d');ctx.fillStyle='#222d38';ctx.fillRect(0,0,96,96);
  for(let x=-96;x<192;x+=14){
-   ctx.strokeStyle='#868f9b';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+96,96);ctx.stroke();
-   ctx.strokeStyle='#1c2632';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x+96,0);ctx.lineTo(x,96);ctx.stroke();
+   ctx.strokeStyle='#435262';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+96,96);ctx.stroke();
+   ctx.strokeStyle='#151e29';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+96,0);ctx.lineTo(x,96);ctx.stroke();
  }
  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,9);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
 }
@@ -97,14 +97,15 @@ export function cableRenderer({mesh,wireGroup,loomGroup,labels,textSprite}){
        }
      }
    }
-   const core=tube(mesh,wireGroup,'Insulated '+(w.sig||'wire '+w.id),path,radius,shell(colors.base),{kind:'wire',id:w.id,wire:w});
+   const strandGroup=new THREE.Group();strandGroup.name='Wire run '+w.id;strandGroup.userData.wireId=String(w.id);wireGroup.add(strandGroup);
+   const core=tube(mesh,strandGroup,'Insulated '+(w.sig||'wire '+w.id),path,radius,shell(colors.base),{kind:'wire',id:w.id,wire:w});
    if(colors.tracer&&opts.showTracers!==false){
      const trace=stripedCurve(path,radius,0,1,.92);
-     if(trace)tube(mesh,wireGroup,'Longitudinal wire tracer '+w.id,trace,.008,shell(colors.tracer,.45));
+     if(trace)tube(mesh,strandGroup,'Longitudinal wire tracer '+w.id,trace,.008,shell(colors.tracer,.45));
    }
    const first=path.getTangentAt(.015),last=path.getTangentAt(.985);
-   collar(wireGroup,path.getPointAt(.025),first,radius*1.27,.052);
-   collar(wireGroup,path.getPointAt(.975),last,radius*1.27,.052);
+   collar(strandGroup,path.getPointAt(.025),first,radius*1.27,.052);
+   collar(strandGroup,path.getPointAt(.975),last,radius*1.27,.052);
    return core;
  }
  function makeLoom(loom,points,opts={}){
@@ -118,7 +119,7 @@ export function cableRenderer({mesh,wireGroup,loomGroup,labels,textSprite}){
    const path=curveFrom(pts);if(!path)return null;
    const mode=String(opts.sleeve||'braid'),radius=.115*clamp(+opts.ratio||1,.5,2);
    const material=mode==='braid'
-     ?new THREE.MeshStandardMaterial({map:cloth,color:'#d0d7e0',metalness:.04,roughness:.78,transparent:true,opacity:.90,side:THREE.DoubleSide})
+     ?new THREE.MeshStandardMaterial({map:cloth,color:'#7d909e',metalness:.02,roughness:.86,transparent:true,opacity:.94,side:THREE.DoubleSide})
      :new THREE.MeshPhysicalMaterial({color:mode==='smooth'?'#2e3941':'#394552',roughness:mode==='smooth'?.47:.83,metalness:.03,transparent:true,opacity:.88,side:THREE.DoubleSide});
    const obj=tube(mesh,loomGroup,'Harness sleeve · '+(loom.name||loom.id),path,radius,material);
    const geometry=mode==='convoluted'?new THREE.TorusGeometry(radius+.004,.017,6,14):null;
