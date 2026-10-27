@@ -1,0 +1,59 @@
+/* WireForge Blueprint — premium motorsport engineering UI */
+#t-blueprint{--wb-ice:#92e1ed;--wb-muted:var(--mute);--wb-line:var(--line);--wb-surface:var(--panel);--wb-shade:var(--panel2);max-width:1620px;margin:0 auto;padding-bottom:32px}
+.wb-hero{background:radial-gradient(ellipse at 90% 8%,rgba(104,161,183,.22),transparent 42%),linear-gradient(132deg,#142834,#101923 63%,#121a24);border:1px solid #4b7285;border-radius:20px;padding:clamp(22px,3vw,38px);box-shadow:0 18px 42px #0003;overflow:hidden;color:#eaf2f6}
+.wb-eyebrow{font:800 10px var(--mono,monospace);letter-spacing:2.3px;color:#8fc9d9}
+.wb-hero-split{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.wb-hero h2{font-family:var(--display,system-ui);font-weight:900;font-size:clamp(29px,4vw,54px);line-height:1.04;letter-spacing:.1px;margin:14px 0;max-width:780px;color:#eff9fd}
+.wb-hero h2 span{color:var(--wb-ice)}
+.wb-hero p{font-size:13px;color:#bad0dd;max-width:660px;line-height:1.8;margin:0}
+.wb-hero-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}
+.wb-hero-actions button{min-height:43px}
+.wb-hero-actions .btn.primary{background:linear-gradient(115deg,#ace9ec,#73bfd2);color:#152936;border:1px solid #b6ecf2}
+.wb-dial{flex-shrink:0;width:190px;height:190px;border-radius:50%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border:15px solid #364e61;box-shadow:inset 0 0 0 2px #9ec9d533,0 14px 40px #0003;position:relative}
+.wb-dial:before{content:"";position:absolute;inset:-15px;border-radius:50%;border:15px solid transparent;border-left-color:#97d8e8;border-top-color:#97d8e8;transform:rotate(-17deg);pointer-events:none}
+.wb-dial b{font:900 46px var(--display,system-ui);color:#e9fcff}
+.wb-dial small{font:700 10px var(--body,system-ui);letter-spacing:.4px;line-height:1.5;color:#a9c9d4}
+.wb-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:17px 0}
+.wb-stat{border:1px solid var(--line);background:linear-gradient(150deg,var(--panel2),var(--panel));border-radius:12px;padding:15px;display:grid;gap:5px}
+.wb-stat b{font:900 clamp(24px,2.5vw,35px) var(--display,system-ui);color:var(--fg)}
+.wb-stat span{font:750 10px var(--body,system-ui);text-transform:uppercase;color:var(--mute);letter-spacing:.65px}
+.wb-note{background:var(--panel);border:1px solid var(--line);border-left:4px solid #ddb680;border-radius:10px;padding:16px 18px;margin-bottom:26px}
+.wb-note strong{font-size:12px}.wb-note p{font-size:12px;color:var(--mute);margin:5px 0 0;line-height:1.65}
+.wb-section{margin-top:25px}
+.wb-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.wb-head h3{font:900 clamp(22px,2.2vw,30px) var(--display,system-ui);margin:7px 0;color:var(--fg)}
+.wb-head p{font-size:12px;color:var(--mute);max-width:750px;margin:0;line-height:1.6}
+.wb-zone-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.wb-zone{position:relative;display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;min-height:152px;padding:19px 19px 23px;background:linear-gradient(130deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;color:var(--fg);cursor:pointer;overflow:hidden;transition:border-color .2s,transform .2s,background .2s}
+.wb-zone:hover{border-color:#90bbc9;transform:translateY(-2px);background:linear-gradient(130deg,#223343,var(--panel2))}
+.wb-zone-index{font:900 22px var(--mono,monospace);letter-spacing:-1.4px}
+.wb-zone b{font:900 16px var(--display,system-ui);letter-spacing:.2px}
+.wb-zone small{color:var(--mute);font:600 11px var(--body,system-ui)}
+.wb-zone-line{position:absolute;bottom:0;left:0;right:0;height:3px}
+.wb-filters{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.wb-chips{display:flex;flex-wrap:wrap;gap:5px}
+.wb-chips button{border:1px solid var(--line);background:var(--panel);color:var(--mute);border-radius:8px;padding:8px 11px;font-size:11px;font-weight:800;cursor:pointer}
+.wb-chips button.active{color:var(--accent);border-color:var(--accent);background:var(--panel2)}
+#wbSearch{min-height:37px;width:min(100%,320px);border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--fg);padding:9px 12px;font-size:12px}
+.wb-connections{display:grid;gap:8px;max-height:560px;overflow-y:auto;padding-right:2px}
+.wb-connection{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:11px}
+.wb-connection>div{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 11px}
+.wb-connection strong{font-size:12px;color:var(--fg)}
+.wb-connection small{display:block;width:100%;font-size:11px;color:var(--mute);overflow-wrap:anywhere;line-height:1.5}
+.wb-connection button{font-size:11px;flex-shrink:0}
+.wb-status{font:800 9px var(--mono,monospace);letter-spacing:.5px;border-radius:7px;padding:6px 8px;white-space:nowrap}
+.wb-status.yes{color:#9edec2;background:#21463b}.wb-status.missing{color:#f4ad98;background:#59372f}
+.wb-questions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.wb-question{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:17px;display:flex;flex-direction:column;gap:11px}
+.wb-question-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.wb-question-top span{font:900 9px var(--mono,monospace);padding:5px 8px;background:var(--panel2);color:#f5c795;border-radius:7px}
+.wb-question-top b{font:850 14px var(--display,system-ui)}
+.wb-question p{font-size:12px;line-height:1.6;margin:0;color:var(--fg)}
+.wb-question small{font-size:11px;color:var(--mute);line-height:1.6}
+.wb-question label{display:flex;flex-direction:column;gap:5px;font:700 10px var(--body,system-ui);letter-spacing:.3px;color:var(--mute);margin-top:auto}
+.wb-question textarea{resize:vertical;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px;font:12px/1.5 var(--body,system-ui);color:var(--fg);min-height:72px}
+.wb-question textarea:focus,#wbSearch:focus{outline:2px solid var(--accent);outline-offset:1px}
+.wb-bottom{font-size:11px;color:var(--mute);margin-top:18px;padding:13px 0;line-height:1.7}
+@media(max-width:1050px){.wb-zone-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wb-hero-split{align-items:flex-start}.wb-dial{width:146px;height:146px;border-width:10px}.wb-dial:before{inset:-10px;border-width:10px}.wb-dial b{font-size:34px}}
+@media(max-width:700px){.wb-zone-grid,.wb-questions{grid-template-columns:1fr}.wb-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.wb-hero-split{flex-direction:column}.wb-dial{width:120px;height:120px;align-self:flex-start}.wb-dial b{font-size:28px}.wb-hero-actions .btn{flex:1 1 45%}.wb-connection{align-items:start;flex-direction:column}.wb-connection button{align-self:flex-end}.wb-head .btn{width:100%}#wbSearch{width:100%;max-width:none}}
+@media(prefers-reduced-motion:reduce){.wb-zone{transition:none!important}.wb-zone:hover{transform:none}}
