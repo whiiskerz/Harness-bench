@@ -97,7 +97,25 @@ function render(){
  '<section class="wb-section"><div class="wb-head"><div><span class="wb-eyebrow">03 / REAL-WORLD SIGNOFF</span><h3>What I still need from you</h3><p>Record physical evidence or answers for the missing details. Notes are saved with your WireForge project and never silently mark a circuit safe.</p></div><button class="btn" data-wb="download">Download questions</button></div><div class="wb-questions">'+questions.map((q,i)=>'<article class="wb-question"><div class="wb-question-top"><span>'+(i+1)+'. '+h(q.priority.toUpperCase())+'</span><b>'+h(q.title)+'</b></div><p>'+h(q.ask)+'</p><small>'+h(q.reason)+'</small><label>Physical confirmation / part number / measurement<textarea rows="2" data-wb-answer="'+h(q.id)+'" placeholder="Add what you actually verified…">'+h(S.wfExampleAnswers?.[q.id]||'')+'</textarea></label></article>').join('')+'</div></section>'+
  '<div class="wb-bottom">Sources: MaxxECU RACE LS terminated-harness connector reference; user-described E90 LS wiring; software layout design inspired by harness.design’s schematic/layout/part workflow and JC HarnessLab’s physical loom/3D approach. Functional topology ≠ pinout certification.</div>';
 }
+function refreshAreaPicker(){
+ const select=$('wfZoneJump');if(!select)return;
+ const old=select.value;
+ select.replaceChildren();
+ const all=document.createElement('option');all.value='';all.textContent='All areas (Fit)';select.add(all);
+ (S.zones||[]).forEach(zone=>{
+  const option=document.createElement('option');
+  option.value=zone.id;option.textContent=zone.name.replace(/^\\d+ · /,'');
+  select.add(option);
+ });
+ if([...select.options].some(o=>o.value===old))select.value=old;
+}
 function init(){
+ refreshAreaPicker();
+ $('wfZoneJump')?.addEventListener('focus',refreshAreaPicker);
+ $('wfZoneJump')?.addEventListener('change',event=>{
+  const id=event.target.value;
+  if(id)showZone(id);else{showTab('draw');fit()}
+ });
  document.addEventListener('click',event=>{
   const b=event.target.closest('[data-wb]');if(!b)return;
   switch(b.dataset.wb){
