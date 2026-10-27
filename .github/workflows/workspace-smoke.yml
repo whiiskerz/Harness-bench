@@ -1,0 +1,42 @@
+name: WireForge Project Vault and Validation Lab
+on:
+  pull_request:
+  push:
+    branches: [main]
+concurrency:
+  group: workspace-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  workspace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser setup
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Check workspace JavaScript syntax
+        run: |
+          node --check wireforge-workspace.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          text=Path('index.html').read_text()
+          Path('/tmp/wireforge-main.js').write_text('\n'.join(re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',text,re.S|re.I)))
+          PY
+          node --check /tmp/wireforge-main.js
+      - name: Test project save, restoration, import, continuity and validation
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+          node tests/workspace-smoke.cjs
+      - name: Upload responsive Project Vault screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wireforge-workspace-mobile-preview
+          path: wireforge-v023-project-vault-mobile.png
+          if-no-files-found: ignore

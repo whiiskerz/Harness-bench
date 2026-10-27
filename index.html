@@ -198,10 +198,11 @@ a{color:var(--accent)}
   <h1>Wire<span>Forge</span></h1>
   <p class="sub">Motorsport harness design · linked pinouts · wire schedules · build documentation</p>
   <label class="wf-finish-choice">FINISH <select id="wfEditorFinish" aria-label="WireForge interface finish"><option value="ice">Carbon Ice</option><option value="copper">Forged Titanium</option><option value="stealth">Obsidian</option></select></label>
+<div class="wf-top-actions" aria-label="Project actions"><button class="btn primary" id="wfQuickSave" type="button" title="Create or update the current named browser snapshot">Save to Browser</button><button class="btn" id="wfVaultOpen" type="button">My Projects</button><span id="wfSaveStatus" role="status" aria-live="polite">Autosave on · Checking browser storage…</span></div>
 </header>
 <nav id="tabs"></nav>
 
-<section id="t-project" hidden></section>
+<section id="t-project" hidden></section><section id="t-vault" hidden></section><section id="t-lab" hidden></section>
 <section id="t-studio" hidden></section>
 <section id="t-sim" hidden></section>
 <section id="t-pro" hidden><div class="wf-pro-head"><div><span class="pill">PRO WORKSPACE · PREVIEW</span><h2>Harness Production Studio</h2><p class="muted">Reusable cavity maps, drawing layers, branch schedules, build reports and restore points. Manufacturer geometry and electrical suitability require independent verification.</p></div><div class="row"><button class="btn primary" type="button" id="wf3dProLaunch">◈ Render 3D</button><button class="btn primary" id="proPrint">Print build pack</button></div></div><div id="proRoot"></div></section>
@@ -268,7 +269,7 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.22.1-showcase-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.23.0-workspace-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <style id="wfBlackglassTheme">
 /* Visual-only refresh. Semantic good/warning/error colors stay distinct. */
@@ -362,8 +363,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 :root[data-wf-finish="stealth"]:not([data-theme="light"]) #wf3dProLaunch{background:linear-gradient(130deg,#f4f6f9,#a9bccb);color:#19212b;border-color:#d5e3eb}
 @media(max-width:720px){.wf-finish-choice{width:100%;justify-content:space-between;margin:0}#wfEditorFinish{flex:1;max-width:220px}}
 </style>
+<link rel="stylesheet" href="./wireforge-workspace.css">
 <script>
-const APP_VERSION='0.22.1-showcase-preview';
+const APP_VERSION='0.23.0-workspace-preview';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -730,7 +732,7 @@ function e90ProjectStarter(){
 let S=Object.assign({scale:4,strip:.5,def:{awg:20,color:'BLK'},tab:'project'},e90ProjectStarter());
 try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&Array.isArray(o.parts))S=Object.assign(S,o)}}catch(e){}
 S.zones=(S.zones||[]).map((z,i)=>Object.assign({id:'zone-saved-'+i},z,{id:z.id||'zone-saved-'+i}));
-const save=()=>{CHKD=true;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{CHKD=true;try{localStorage.setItem(KEY,JSON.stringify(S));window.WFPro?.onAutosave?.(true);return true}catch(e){window.WFPro?.onAutosave?.(false);return false}};
 const nid=()=>S.nid++;
 const part=id=>S.parts.find(p=>p.id===+id);
 const wireById=id=>S.wires.find(w=>w.id===+id);
@@ -1733,14 +1735,15 @@ function rProject(){
  const partCount=(S.parts||[]).length,wireCount=(S.wires||[]).length,connected=new Set((S.wires||[]).flatMap(w=>[w.a.p,w.b.p])).size;
  const hasE90=(S.parts||[]).some(p=>p.t==='e90dt12'||/DT12_POWER_BREAKOUT/.test(p.name||''));
  document.getElementById('t-project').innerHTML=`
- <div class="dashboard-hero card"><div class="eyebrow">PROJECT DASHBOARD / 01</div><h2>E90 LS SWAP · MAXXECU RACE GEN 1</h2><p class="muted">Your BMW E90 is the starter project. Use it as a living example, then adapt the same workflow to future harnesses. Owner-supplied assignments are identified separately from verified manufacturer data.</p>
+ <div class="dashboard-hero card"><div class="eyebrow">PROJECT DASHBOARD / 01</div><h2>${esc(S.wfProjectName||'E90 LS SWAP · MAXXECU RACE GEN 1')}</h2><p class="muted">${hasE90?'This BMW E90 starter is an example. Adapt it for your own projects; owner-supplied assignments remain separate from verified manufacturer data.':'This is your active harness project. Use the Design, Validation Lab, Project Vault and Production Studio steps to build and review it.'}</p>
  <div class="row"><button class="btn primary" data-act="loadE90">${hasE90?'Reload E90 example':'Load E90 harness example'}</button><button class="btn" data-act="goMock">Open physical mock-up</button><button class="btn" data-act="goChecks">Run electrical checks</button><button class="btn" data-act="goDraw">Open wiring diagram</button></div></div>
  <div class="dash-stats"><div class="card stat"><span>COMPONENTS</span><b>${partCount}</b><small>in active drawing</small></div><div class="card stat"><span>WIRE RUNS</span><b>${wireCount}</b><small>drawn connections</small></div><div class="card stat"><span>CONNECTED PARTS</span><b>${connected}</b><small>touching a wire</small></div><div class="card stat"><span>DESIGN STATUS</span><b class="status-warn">IN PROGRESS</b><small>verify before fabrication</small></div></div>
- <h3>Example harness architecture</h3><p class="muted">A quick visual orientation for the build. This is a system overview, not a pin-accurate schematic. Use Draw, Pinouts and Checks for detailed work.</p>
+ <div class="wf-dashboard-next"><h3>Your workflow</h3><p>1. Design the harness → 2. Check the wiring → 3. Save a named project → 4. Prepare build documentation. Working changes auto-save locally; named snapshots are separate.</p><div class="row"><button class="btn primary" data-tab="draw">1 · Design</button><button class="btn" data-tab="lab">2 · Validation Lab</button><button class="btn" data-tab="vault">3 · Project Vault</button><button class="btn" data-tab="pro">4 · Production</button></div></div><div id="wfE90Dashboard" ${hasE90?'':'hidden'}><h3>Example harness architecture</h3><p class="muted">A quick visual orientation for the build. This is a system overview, not a pin-accurate schematic. Use Draw, Pinouts and Checks for detailed work.</p>
  <div class="system-map card"><div class="sys-node power"><b>TRUNK POWER</b><span>Battery · main protection</span><span>Switched fuse distribution</span></div><div class="sys-arrow">↓</div><div class="sys-node ecu"><b>MAXXECU RACE</b><span>DT12 power / GPOs</span><span>DT8 analog + control</span></div><div class="sys-split"><div class="sys-branch"><div class="sys-arrow">↙</div><div class="sys-node"><b>FUEL SYSTEM</b><span>Leash dual relay board</span><span>535 lift / 525 staged pump</span></div></div><div class="sys-branch"><div class="sys-arrow">↓</div><div class="sys-node"><b>DRIVER / TRANS</b><span>CAN keypad · 8HP</span><span>Keep chassis CAN separate</span></div></div><div class="sys-branch"><div class="sys-arrow">↘</div><div class="sys-node"><b>ENGINE / BODY</b><span>Coils · A/C · fan interface</span><span>Flex fuel · nitrous SSR</span></div></div></div></div>
  <div class="call"><b>v0.9.0 trunk-to-cabin DT6:</b> pin 1 = GPO2 → Leash fuel-pump A−; pin 2 = GPO3 → Leash fuel-pump B−; pin 3 = GPO7 → nitrous heater relay terminal 85; pin 4 = nitrous pressure signal → AIN2; pin 5 = +5 V sensor supply; pin 6 = ECU sensor ground. Cabin-side DT2s split these into GPO2/GPO3, GPO7/AIN2, and +5 V/sensor ground. The heater relay uses switched +12 V on 86, heater + on 87, and a dedicated contact fuse holder whose rating and load-wire gauge remain TBD.</div><div class="call"><b>Design status:</b> this is a cleaner zoned starter drawing, not a verified finished harness. High-current cable gauge, fuse strategy, sensor current draw, routed lengths, connector orientation, crimp specification and torque must be confirmed before fabrication.</div>
  <div class="grid2"><div class="card"><div class="hd"><b>Confirmed from your notes</b><span class="pill ok">Owner supplied</span></div><ul class="tight"><li>MaxxECU Race Gen 1.</li><li>DT12: GPO2 fuel pump 1, GPO3 fuel pump 2, GPO6 A/C clutch, ECU switched +12V; alternator excite unused for the self-exciting Speedway alternator.</li><li>DT8 analog: +5V, dedicated sensor ground, paddle AIN1, fuel-pressure signal, A/C-pressure signal and fan PWM/GPO5.</li><li>DT8 CAN/control: CAN L/H, brake DIN1, shifter inputs, flex-fuel DIN5, nitrous GPO4 to SSR.</li><li>BMW X60001 interface: pin 20 fan-PWM interface, pin 38 brake switch, pins 7/8 chassis CAN L/H.</li><li>CAN keypad and owner-mapped six-position 8HP interface.</li></ul></div>
- <div class="card"><div class="hd"><b>Critical design rules</b><span class="pill wn">Verify first</span></div><ul class="tight"><li>ECU GPOs are low-side triggers; they do not power pumps or other loads directly.</li><li>Keep MaxxECU sensor ground isolated from chassis/engine ground.</li><li>Do not bridge BMW chassis CAN into the standalone CAN bus without verified topology and compatibility.</li><li>8HP cavity orientation, Leash terminal behavior, fuse sizes, wire gauges and high-current paths remain to be verified.</li><li>Do not treat the drawing as a production-ready harness until every pinout, current load, protection device and endpoint has been checked.</li></ul></div></div>
+ <div class="card"><div class="hd"><b>Critical design rules</b><span class="pill wn">Verify first</span></div><ul class="tight"><li>ECU GPOs are low-side triggers; they do not power pumps or other loads directly.</li><li>Keep MaxxECU sensor ground isolated from chassis/engine ground.</li><li>Do not bridge BMW chassis CAN into the standalone CAN bus without verified topology and compatibility.</li><li>8HP cavity orientation, Leash terminal behavior, fuse sizes, wire gauges and high-current paths remain to be verified.</li><li>Do not treat the drawing as a production-ready harness until every pinout, current load, protection device and endpoint has been checked.</li></ul></div></div></div>
+ ${hasE90?'':'<div class="call"><b>General harness project:</b> Add components in Harness Designer, assign actual cavity IDs, check schematic continuity and missing data in Validation Lab, then save a named browser project. All physical parts and electrical ratings still need independent verification.</div>'}
  <div class="card"><div class="hd"><b>Recommended workflow</b><span class="pill">Design → verify → build</span></div><ol class="tight"><li><b>Draw:</b> place components and connect actual cavities.</li><li><b>Pinouts:</b> inspect every endpoint, signal, color and gauge.</li><li><b>Checks:</b> resolve duplicate pins, missing details and fuse-sizing warnings.</li><li><b>Wire list / Cut list / Parts list:</b> export shop paperwork from the same design.</li><li><b>Backup:</b> save a JSON snapshot before major changes.</li></ol><div class="row"><button class="btn primary" data-act="goDraw">Start drawing</button><button class="btn" data-act="exportDiagram">Export current SVG</button><button class="btn" data-act="bkQuick">Copy project backup</button></div></div>`;
 }
 
@@ -1999,10 +2002,10 @@ function proAttach(){
  document.getElementById('proPrint')?.addEventListener('click',()=>{showTab('pro');document.body.classList.add('wf-pro-print');window.print();setTimeout(()=>document.body.classList.remove('wf-pro-print'),1000)});
 }
 
-const TABS=[['pro','Production Studio'],['project','Dashboard'],['draw','Harness Designer'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
-const RENDER={pro:rPro,project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
+const TABS=[['project','Overview'],['draw','Harness Designer'],['lab','Validation Lab'],['vault','Project Vault'],['pro','Production Studio'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
+const RENDER={lab:()=>window.WFPro?.renderLab?.(),vault:()=>window.WFPro?.renderVault?.(),pro:rPro,project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
-const TAB_GROUP={pro:'Build',project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
+const TAB_GROUP={lab:'Validation',vault:'Project',pro:'Build',project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
 let lastTabGroup='';
 tabsEl.innerHTML=TABS.map(([k,l])=>{const g=TAB_GROUP[k]||'Workspace',head=g!==lastTabGroup?'<div class="nav-label">'+g+'</div>':'';lastTabGroup=g;return head+'<button role="tab" data-tab="'+k+'">'+l+'</button>'}).join('');
 function showTab(k){
@@ -2207,12 +2210,12 @@ document.addEventListener('click',e=>{
     const ids=new Set(grp.map(w=>w.id));S.wires=S.wires.filter(w=>!ids.has(w.id));
     S.wires.slice(-grp.length*2).forEach(nameEnds);S.examples=false;MSEL.clear();selection={type:'part',id:pl.id};save();renderInsp();draw();hint();toast('Sub-harness made: '+grp.length+' wire'+(grp.length>1?'s':'')+' through a DT'+size+' pair');break}
    case'designSave':{const n=(document.getElementById('dsn').value||'').trim()||('Design '+(designList().length+1)),a=designList().filter(x=>x.name!==n);a.push({name:n,parts:S.parts.length,wires:S.wires.length,data:JSON.stringify(S)});designPut(a);rSave();toast('Saved "'+n+'"');break}
-   case'designLoad':{const x=designList()[+b.dataset.i];if(!x)break;commit();const o=JSON.parse(x.data);o.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});S=Object.assign(S,o,{tab:'save'});S.parts=S.parts.filter(p=>T[p.t]);selection=null;pending=null;save();rSave();toast('Loaded "'+x.name+'"');break}
+   case'designLoad':{const x=designList()[+b.dataset.i];if(!x)break;commit();const o=JSON.parse(x.data);o.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});S=Object.assign(S,o,{tab:'save',wfVaultId:null});S.parts=S.parts.filter(p=>T[p.t]);selection=null;pending=null;save();rSave();toast('Loaded "'+x.name+'"');break}
    case'designDel':{const a=designList();a.splice(+b.dataset.i,1);designPut(a);rSave();break}
    case'clearWires':{if(!S.wires.length){toast('There are no wires to delete');break}if(!confirm('Delete all '+S.wires.length+' wires? Parts, connector pinouts, zones, and loom definitions will be kept. This cannot be undone after you leave the current session.'))break;commit();const count=S.wires.length;S.wires=[];selection=null;pending=null;canMode=false;canQ=[];save();draw();renderInsp();syncBar();toast('Deleted '+count+' wires; parts and zones kept');break}
    case'toggleRoute':{S.route=S.route==='curved'?'ortho':'curved';save();draw();toast(S.route==='curved'?'Curved wires':'90° routing');break}
    case'clearAll':{commit();S.parts=[];S.wires=[];S.zones=[];S.examples=false;selection=null;pending=null;S.view=null;save();showTab(S.tab);break}
-   case'loadEx':{commit();Object.assign(S,starter());S.zones=[];selection=null;pending=null;save();showTab('draw');break}
+   case'loadEx':{commit();Object.assign(S,starter());S.zones=[];S.wfVaultId=null;S.wfProjectName='Starter Harness';selection=null;pending=null;save();showTab('draw');break}
    case'bookAdd':{ensureBook();let id='NEW-'+(Date.now().toString().slice(-6));while(S.circuitBook.some(x=>x.id===id))id+='X';S.circuitBook.push({id,kind:'Circuit',name:'New circuit',from:'',to:'',cavity:'',wire:'',status:'Planned / unverified',notes:''});save();showTab('book');toast('Record added');break;}
    case'bookDelete':{ensureBook();S.circuitBook=S.circuitBook.filter(x=>x.id!==d.id);save();showTab('book');break;}
    case'bookCSV':copy(bookCSV(),b);break;
@@ -2220,7 +2223,7 @@ document.addEventListener('click',e=>{
    case'bookReset':if(confirm('Restore the starter harness records? This replaces the current Harness Book records only.')){S.circuitBook=JSON.parse(JSON.stringify(BOOK_SEED));save();showTab('book');}break;
    case'bkCopy':copy(JSON.stringify(S),b);break;
    case'bkLoad':{try{const o=JSON.parse(document.getElementById('bk').value);const check=validateBackupObject(o);if(check.errors.length)throw new Error(check.errors.slice(0,3).join('; '));
-     S=Object.assign(S,o,{examples:false,tab:'save'});S.parts=S.parts.filter(p=>T[p.t]);S.nid=Math.max(S.nid||1,...S.parts.map(p=>+p.id||0),...S.wires.map(w=>+w.id||0))+1;selection=null;save();toast('Backup loaded and validated')}catch(x){toast('Backup not loaded: '+(x?.message||'invalid backup'))}break}
+     S=Object.assign(S,o,{examples:false,tab:'save',wfVaultId:null});S.parts=S.parts.filter(p=>T[p.t]);S.nid=Math.max(S.nid||1,...S.parts.map(p=>+p.id||0),...S.wires.map(w=>+w.id||0))+1;selection=null;save();toast('Backup loaded and validated')}catch(x){toast('Backup not loaded: '+(x?.message||'invalid backup'))}break}
   }
 });
 document.addEventListener('input',e=>{
@@ -2543,4 +2546,5 @@ proAttach();
 if(S.tab==='draw'&&!S.view)requestAnimationFrame(fit);
 </script>
 
+<input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import WireForge project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js" defer></script>
 </body></html>
