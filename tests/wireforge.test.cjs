@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const script = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
+const scriptStart = html.indexOf('<script>');
+const script = html.slice(scriptStart + 8, html.indexOf('</script>', scriptStart));
 
 function functionSource(name, endMarker) {
   const start = script.indexOf('function ' + name + '(');
