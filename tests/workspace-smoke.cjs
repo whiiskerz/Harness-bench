@@ -11,7 +11,7 @@ const fs=require('node:fs');
   assert.equal(await page.locator('#wfQuickSave').count(),1);
   const original=await page.evaluate(()=>({parts:S.parts.length,wires:S.wires.length,version:APP_VERSION}));
   assert.ok(original.parts>15&&original.wires>15);
-  assert.match(original.version,/0\.23/);
+  assert.match(original.version,/^0\.\d+\.\d+/,'Valid version format, independent of new features');
   await page.locator('#wfQuickSave').click();
   const first=await page.evaluate(()=>{
    const a=WFPro.snapshotList(),p=WFPro.readSnapshot(a[0].id);
