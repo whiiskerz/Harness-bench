@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — v0.23 Project Vault and Validation Lab (preview)
+- Added one-click named Save to Browser with explicit autosave status, Save As, rename, restore, delete, and independent local project snapshots.
+- Added Project Vault with portable project JSON import/export, validations, and destructive-action confirmations.
+- Added a simplified four-step Overview: design, validate, save, and build.
+- Added a Validation Lab with structured conflict/review/unverified findings, filtered issue inspection, CSV/JSON reports and modeled pin-to-pin continuity checks.
+- Reuses existing compatibility rules without falsely claiming physical connector or electrical certification. Unknown manufacturer fit, fuses and electrical ratings remain unverified.
+- Added responsive premium workspaces and Chromium persistence/continuity regression tests. Browser saves are local only; cloud sync and billing are not implemented.
+
 ## v0.22.1 — Studio visual polish and hardware showcase
 - Resolved CSS cascade ordering so the modern dark WireForge design consistently overrides the older UI palette.
 - Added three user-selectable, synchronized editor and 3D finishes (Carbon Ice, Forged Titanium, Obsidian Mono) without changing any electrical wire identification data; preference is stored locally.
