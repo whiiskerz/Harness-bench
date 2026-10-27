@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.24 preview — E90 Blueprint / vehicle-zone redesign
+- Reworked the starter E90 LS harness into six generously spaced front-to-rear planning zones: engine bay, DME/firewall, cabin, 8HP underbody, left-trunk distribution, and right-trunk nitrous.
+- The layout groups actual model part dimensions in nonoverlapping columns with 88+ layout units of air and quick zone-focus controls. Existing user-saved layouts are never moved automatically.
+- Restored four ECU-to-cabin logical signal links (GPO2, GPO3, GPO7, AIN2) lost when obsolete ECU stub drawings were removed. Sources correspond to the Race LS terminated-harness 12-pin C/E and 16-pin 7/4 functions; Deutsch molded cavity mapping and mating-half orientation remain unverified.
+- Added E90 Blueprint: live modeled continuity coverage for 16 key circuit paths, source provenance notes, a physically unverified question ledger with locally saved user answers, zone navigation, 3D shortcut and portable JSON report.
+- Emphasizes that a connected schematic path is NOT electrically safe, physically verified, dimensionally accurate or ready for manufacture.
+- Added browser regression checks for 59-part / 94-wire starter, 6 zones with no geometry overlaps, 4 restored signal paths, exports, saved answers, and phone layouts.
+
 ## Unreleased — v0.23 Project Vault and Validation Lab (preview)
 - Added one-click named Save to Browser with explicit autosave status, Save As, rename, restore, delete, and independent local project snapshots.
 - Added Project Vault with portable project JSON import/export, validations, and destructive-action confirmations.
