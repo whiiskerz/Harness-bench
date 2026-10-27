@@ -6,7 +6,7 @@ Design in Harness Designer, check with Validation Lab, save named versions in Pr
 
 ## Browser saving
 
-Existing working autosave remains. Project Vault stores independent named snapshots locally. Save to Browser creates a named snapshot on the first click and updates that snapshot subsequently. Save a new copy creates an independent version. Users can load, rename, delete and download versions. Loads and deletions ask for confirmation. Portable project JSON can be imported and exported. New blank project requires confirmation.
+Existing working autosave remains. Project Vault stores independent named snapshots locally. Save to Browser creates a named snapshot on the first click and updates that snapshot subsequently. Save a new copy creates an independent version. Users can load, rename, delete and download versions. Loads and deletions ask for confirmation. Portable project JSON can be imported and exported. New blank project requires confirmation. Earlier saved designs from the previous Backup screen can be migrated into Project Vault while keeping the originals intact.
 
 Up to 16 named versions are stored in separate browser localStorage entries. Storage quota, browser blocking and corrupted project files must be handled as failures rather than silently claiming success. Named snapshots are not automatically updated; users must click Save to Browser to update them.
 
