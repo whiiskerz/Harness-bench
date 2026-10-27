@@ -135,6 +135,39 @@ async function importFile(file){
   save();showTab('project');saveStatus();showMessage('Imported project. Choose Save to Browser to keep a named copy.');
  }catch(e){showMessage('Import rejected: '+(e?.message||'Invalid JSON project'),'error')}
 }
+function legacyHash(text){
+ let h=2166136261;for(const c of String(text||'')){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}
+ return(h>>>0).toString(16);
+}
+function oldProjects(){
+ const already=new Set(snapshotList().map(m=>m.legacyKey).filter(Boolean));
+ const entries=typeof designList==='function'?designList():[];
+ return entries.filter(e=>e&&typeof e.data==='string'&&!already.has(legacyHash(e.name+'|'+e.data)));
+}
+function migrateLegacy(){
+ const old=oldProjects();
+ if(!old.length){showMessage('No older saved designs to transfer');return}
+ if(!confirm('Copy '+old.length+' older saved designs into Project Vault? The originals will be left untouched.'))return;
+ let migrated=0,invalid=0;
+ for(const entry of old){
+  try{
+   const project=JSON.parse(entry.data),validation=validateBackupObject(project);
+   if(validation.errors.length){invalid++;continue}
+   const rows=snapshotList();if(rows.length>=MAX_SAVES)break;
+   const name=nameClean(entry.name||project.wfProjectName||'Imported older design');
+   const id=newId(),time=new Date().toISOString(),legacyKey=legacyHash(entry.name+'|'+entry.data);
+   const data=clone(project);data.wfVaultId=id;data.wfProjectName=name;
+   const pack={schema:'wireforge.saved-project.v1',version:1,createdAt:time,updatedAt:time,name,project:data};
+   const json=JSON.stringify(pack);
+   localStorage.setItem(PREFIX+id,json);
+   try{setList([{id,name,createdAt:time,updatedAt:time,parts:data.parts.length,wires:data.wires.length,bytes:json.length,legacyKey},...rows])}
+   catch(e){localStorage.removeItem(PREFIX+id);throw e}
+   migrated++;
+  }catch(e){invalid++}
+ }
+ renderVault();
+ showMessage(migrated+' older design(s) copied to Vault'+(invalid?'; '+invalid+' could not be imported':''));
+}
 function projectCard(m){
  const active=m.id===projectId();
  return '<article class="wf-pro-project '+(active?'is-active':'')+'"><div class="wf-pro-project-top"><div><b>'+escText(m.name)+'</b><small>'+escText(prettyDate(m.updatedAt))+'</small></div><span class="wf-pro-tag '+(active?'active':'')+'">'+(active?'Active':'Saved')+'</span></div>'+
@@ -146,6 +179,7 @@ function renderVault(){
  root.innerHTML='<div class="wf-pro-hero"><div class="wf-eyebrow">WIRE FORGE / PROJECT MANAGEMENT</div><h2>Project Vault</h2><p>Keep multiple harness designs in this browser. Name versions, export portable backups and reopen previous builds without losing your current wiring editor tools.</p>'+
  '<div class="wf-pro-hero-actions"><button class="btn primary" data-wfv="quick">Save active project</button><button class="btn" data-wfv="as">Save a new copy</button><button class="btn" data-wfv="exportCurrent">Download active backup</button></div></div>'+
  '<div class="wf-pro-notice"><b>Where your work lives</b><p>WireForge auto-saves your active work in this browser. The named projects below are separate snapshots and update only when you click Save to Browser. Clearing site data, changing browsers or private mode can remove both. Download JSON backups for long-term storage.</p></div>'+
+ (oldProjects().length?'<div class="wf-pro-notice"><b>Have older saved designs?</b><p>'+oldProjects().length+' saved design(s) from the earlier Backup tab can be safely copied into Project Vault without deleting the originals. <button class="btn" data-wfv="migrate" style="margin-top:9px">Bring older saves into Vault</button></p></div>':'')+
  '<div class="wf-pro-vault-top"><div><h3>Saved projects <span class="wf-pro-counter">'+rows.length+' / '+MAX_SAVES+'</span></h3><p class="muted">Active project: '+escText(name)+'</p></div><div class="wf-pro-vault-tools"><button class="btn" data-wfv="import">Import JSON</button><button class="btn" data-wfv="blank">New blank project</button></div></div>'+
  '<div class="wf-pro-project-grid">'+(rows.map(projectCard).join('')||'<div class="wf-pro-empty"><b>Your project library is empty</b><p>Use “Save active project” to create a named recovery point. You can come back to it anytime on this device.</p><button class="btn primary" data-wfv="quick">Save your first project</button></div>')+'</div>'+
  '<div class="wf-pro-footnote">For team sharing, download a project file and send it securely. Browser Vault is local storage, not encrypted cloud sync, version control, or an account subscription.</div>';
@@ -273,6 +307,7 @@ function init(){
     case'remove':removeNamed(id);break;
     case'import':$('wfOpenImport')?.click();break;
     case'blank':startBlank();break;
+    case'migrate':migrateLegacy();break;
    }
   }
   if(btn.dataset.wfl){
@@ -290,6 +325,6 @@ function init(){
  // Detect browser save failures in the underlying editor autosave.
  saveStatus();
 }
-window.WFPro={renderVault,renderLab,saveNamed,loadNamed,labReport,traceCavities,onAutosave,readSnapshot,snapshotList,importFile,exportCurrent};
+window.WFPro={renderVault,renderLab,saveNamed,loadNamed,labReport,traceCavities,onAutosave,readSnapshot,snapshotList,importFile,exportCurrent,migrateLegacy};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
