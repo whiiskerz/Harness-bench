@@ -269,7 +269,7 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.23.0-workspace-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.24.0-blueprint-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <style id="wfBlackglassTheme">
 /* Visual-only refresh. Semantic good/warning/error colors stay distinct. */
@@ -365,7 +365,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 </style>
 <link rel="stylesheet" href="./wireforge-workspace.css">
 <script>
-const APP_VERSION='0.23.0-workspace-preview';
+const APP_VERSION='0.24.0-blueprint-preview';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -722,6 +722,15 @@ function e90ProjectStarter(){
   wire(164,1,161,3,'DT6 AIN2 conductor → cabin DT2-B pin 2 (molded cavity mapping TBD)',18,'PUR',{loom:993,circuitType:'signal'});
   wire(165,0,161,4,'DT6 +5V conductor → cabin DT2-C pin 1 (molded cavity mapping TBD)',18,'RED',{loom:993,circuitType:'sensor-power'});
   wire(165,1,161,5,'DT6 sensor-ground conductor → cabin DT2-C pin 2 (molded cavity mapping TBD)',18,'BLK',{loom:993,circuitType:'sensor-ground'});
+  // Four logical ECU-side signal links were accidentally lost with retired ECU
+  // 140/141 drawings. Keep the original 12-/16-pin source devices instead.
+  // Manufacturer source: Race LS 12-pin C/E and 16-pin 7/4, respectively.
+  // Cabin DT2 functional assignments are owner-described; molded cavity mapping
+  // and physical mating orientation MUST be confirmed before fabrication.
+  wire(101,2,163,0,'MaxxECU 12-pin C / GPO2 → cabin DT2-A fuel-pump trigger (logical map)',14,'GRN',{circuitType:'signal',review:'Needs verification',verification:'owner-described'});
+  wire(101,4,163,1,'MaxxECU 12-pin E / GPO3 → cabin DT2-A staged-pump trigger (logical map)',14,'YEL',{circuitType:'signal',review:'Needs verification',verification:'owner-described'});
+  wire(102,6,164,0,'MaxxECU 16-pin 7 / GPO7 → cabin DT2-B nitrous-heater trigger (logical map)',14,'ORG',{circuitType:'signal',review:'Needs verification',verification:'owner-described'});
+  wire(102,3,164,1,'MaxxECU 16-pin 4 / AIN2 ← cabin DT2-B nitrous-pressure signal (logical map)',18,'PUR',{circuitType:'signal',review:'Needs verification',verification:'owner-described'});
   parts.find(p=>p.id===106).name='Trunk chassis ground point — ring-terminal stack';
   parts.find(p=>p.id===110).name='BMW EKP control wire — DME-box source cavity TBD';
   parts.find(p=>p.id===131).name='Valved mufflers — output assignment unresolved (verify ECU config)';
@@ -1183,23 +1192,49 @@ function addPart(id){
 /* restore custom types used by saved parts */
 S.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});
 /* ---------- E90 example layout by zone ---------- */
+/* Example build map: locations are planning zones, not measured vehicle coordinates.
+ * Generous clearances follow schematic layout guidance and preserve a readable
+ * physical front-to-rear order. Existing saved user layouts are never auto-moved.
+ */
 const E90ZONES=[
- ['Engine bay','#ff8a1f',[112,118,119,120,122,125,127,128,129,133,144,149]],
- ['DME box','#e0b13a',[101,102,103,107,108,110,114,115,117,126,145,146,148,154,158]],
- ['Cabin','#4a86e8',[142,143,152,111,116,123,130,163,164,165,167,168]],
- ['Left trunk plate / cubby','#3fae6a',[104,105,106,109,113,124,131,134,151,155,156,157,159,160,161,166,169]],
- ['Right trunk cubby / plate','#63a56b',[121,147,170]]];
+ ['01 · LS ENGINE / FRONT BAY','#76b8cb',[118,119,120,122,125,127,128,129,144,145,146,148,149,115,143]],
+ ['02 · DME BOX / FIREWALL','#94abbf',[101,102,103,107,108,110,114,126,133,134,158,117]],
+ ['03 · DRIVER / CABIN','#8896cb',[142,152,154,111,113,123,163,164,165,167,168]],
+ ['04 · UNDERBODY / 8HP','#ba9fbd',[112,116,130]],
+ ['05 · LEFT TRUNK / POWER','#83b79c',[104,105,106,109,124,155,156,157,159,160,161,166,169,131]],
+ ['06 · RIGHT TRUNK / NITROUS','#c3a380',[121,147,170,151]]
+];
 function e90Layout(force=false){
-  if(!S.lay&&!force)return;S.lay=0;S.zones=[];const GAP=36,PAD=30,TOP=70,MAXH=1500;let x=0;
-  E90ZONES.forEach(([name,col,ids])=>{
-    const ps=ids.map(i=>part(i)).filter(Boolean);if(!ps.length)return;
-    let cx=x+PAD,cy=TOP,colW=0,right=x;
-    ps.forEach(p=>{const d=dims(p);if(cy>TOP&&cy+d.h>MAXH){cx+=colW+GAP;cy=TOP;colW=0}
-      p.x=cx;p.y=cy;cy+=d.h+GAP;colW=Math.max(colW,d.w);right=Math.max(right,cx+d.w)});
-    const h=Math.min(MAXH,Math.max(...ps.map(p=>p.y+dims(p).h)))+PAD-0;
-    S.zones.push({id:'zone-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-'),name,col,x:x,y:0,w:Math.max(420,right+PAD-x),h:Math.max(620,h)});x=right+PAD+90;
-  });
-  S.view=null;save();
+ if(!S.lay&&!force)return;
+ S.lay=0;S.zones=[];
+ const PADX=84,PADY=130,GAPX=106,GAPY=88,GAPZONE=210,ROWS=6,MINW=540,MINH=1260;
+ let zoneX=0,lowest=0,positions=0;
+ E90ZONES.forEach(([name,col,ids])=>{
+   const ps=ids.map(id=>part(id)).filter(Boolean);
+   if(!ps.length)return;
+   let colX=zoneX+PADX,bottom=0,lastRight=colX;
+   for(let i=0;i<ps.length;i+=ROWS){
+     const column=ps.slice(i,i+ROWS);
+     let y=PADY,widest=0;
+     column.forEach(p=>{
+       const d=dims(p);
+       p.x=colX;p.y=y;
+       y+=d.h+GAPY;
+       widest=Math.max(widest,d.w);
+       positions++;
+     });
+     bottom=Math.max(bottom,y-GAPY+PADY);
+     lastRight=colX+widest;
+     colX=lastRight+GAPX;
+   }
+   const width=Math.max(MINW,lastRight-zoneX+PADX);
+   const height=Math.max(MINH,bottom);
+   const zoneId='zone-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+   S.zones.push({id:zoneId,name,col,x:zoneX,y:0,w:width,h:height});
+   zoneX+=width+GAPZONE;lowest=Math.max(lowest,height);
+ });
+ S.wfE90Layout='spacious-v2';S.view=null;
+ save();
 }
 try{e90Layout()}catch(e){}
 S.parts=S.parts.filter(p=>T[p.t]);
