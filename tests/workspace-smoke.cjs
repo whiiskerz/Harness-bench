@@ -43,6 +43,14 @@ const fs=require('node:fs');
   await page.locator('[data-wfv="load"][data-id="'+first.id+'"]').click();
   const restored=await page.evaluate(()=>({id:S.wfVaultId,wire:S.wires[0].sig}));
   assert.equal(restored.id,first.id);assert.notEqual(restored.wire,'Smoke modified circuit');
+  await page.evaluate(()=>{const legacy={name:'Legacy shop job',data:JSON.stringify(S),parts:S.parts.length,wires:S.wires.length};designPut([legacy])});
+  await page.locator('#wfVaultOpen').click();
+  assert.equal(await page.locator('[data-wfv="migrate"]').count(),1);
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('[data-wfv="migrate"]').click();
+  assert.equal(await page.locator('.wf-pro-project').count(),3,'Legacy design migration should add a third independent save');
+  assert.equal(await page.evaluate(()=>designList().length),1,'Original legacy backup must remain untouched');
+
   page.once('dialog',dialog=>dialog.accept());
   await page.locator('#wfOpenImport').setInputFiles({name:'saved.json',mimeType:'application/json',buffer:Buffer.from(exported)});
   await page.waitForFunction(()=>S.wires[0].sig==='Smoke modified circuit');
