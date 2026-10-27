@@ -104,7 +104,7 @@ function refreshAreaPicker(){
  const all=document.createElement('option');all.value='';all.textContent='All areas (Fit)';select.add(all);
  (S.zones||[]).forEach(zone=>{
   const option=document.createElement('option');
-  option.value=zone.id;option.textContent=zone.name.replace(/^\\d+ · /,'');
+  option.value=zone.id;option.textContent=zone.name.replace(/^\d+ · /,'');
   select.add(option);
  });
  if([...select.options].some(o=>o.value===old))select.value=old;
