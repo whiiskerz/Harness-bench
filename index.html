@@ -207,8 +207,10 @@ a{color:var(--accent)}
 <section id="t-sim" hidden></section>
 <section id="t-pro" hidden><div class="wf-pro-head"><div><span class="pill">PRO WORKSPACE · PREVIEW</span><h2>Harness Production Studio</h2><p class="muted">Reusable cavity maps, drawing layers, branch schedules, build reports and restore points. Manufacturer geometry and electrical suitability require independent verification.</p></div><div class="row"><button class="btn primary" type="button" id="wf3dProLaunch">◈ Render 3D</button><button class="btn primary" id="proPrint">Print build pack</button></div></div><div id="proRoot"></div></section>
 <section id="t-draw">
+<div class="wf-draw-intro"><div><div class="wb-eyebrow">WIRE FORGE / SCHEMATIC EDITOR</div><h2>Harness Designer <span>·</span> Design → Route → Verify</h2><p>Draw cavity-to-cavity connections, arrange hardware, then review the wiring in Blueprint, Loom Studio or 3D. Drag parts to adjust the layout.</p></div><div class="wf-draw-intro-actions"><button class="btn primary" data-tab="blueprint">E90 Blueprint</button><button class="btn" data-tab="lab">Validation Lab</button></div></div>
+<details class="wf-advanced" id="wfAdvanced"><summary>Advanced engineering tools <small>Routing audit · branches · cut lists · snap · locking</small></summary>
 <section class="wf-phase card" id="wfPhasePanel" aria-label="Harness engineering tools">
-<h3>Harness engineering · Phase 1 <span class="pill">v0.18 preview</span></h3>
+<h3>Engineering workbench <span class="pill">ADVANCED</span></h3>
 <p class="muted">Routing diagnostics, physical branch records, ECU pin schedule and manufacturing estimates. These tools do not certify a harness.</p>
 <div class="row" style="flex-wrap:wrap;gap:8px">
 <button class="btn" id="wfRouteAudit" type="button">Analyze routing</button>
@@ -220,7 +222,7 @@ a{color:var(--accent)}
 <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:10px"><label>Branch name <input id="wfBranchName" placeholder="Engine → firewall"></label><label>Bundle ID <input id="wfBranchLoom" placeholder="990"></label><label>Branch length (in) <input id="wfBranchLength" type="number" min="0" step=".1" placeholder="Measured"></label><label>Branch diameter (mm) <input id="wfBranchDiameter" type="number" min="0" step=".1" placeholder="Estimate"></label></div>
 <div id="wfBranchRows" class="muted" style="margin-top:10px"></div><div id="wfPhaseResults" aria-live="polite" style="margin-top:10px"></div>
 </section><aside class="wf-workspace" id="wfWorkspace" aria-label="Harness editor tools">
-<div class="wf-top"><h2>Harness workspace <small style="font-size:12px;color:var(--mute)">BETA · v0.17 preview</small></h2><span id="wfStatus" class="pill">Ready</span></div>
+<div class="wf-top"><h2>Harness diagnostics <small style="font-size:12px;color:var(--mute)">LIVE</small></h2><span id="wfStatus" class="pill">Ready</span></div>
 <div class="wf-metrics" id="wfMetrics" aria-live="polite"></div>
 <div class="wf-actions">
 <button type="button" id="wfRefresh">Run wiring audit</button>
@@ -230,8 +232,9 @@ a{color:var(--accent)}
 <button type="button" id="wfPinExport">Export connector pinouts CSV</button>
 <button type="button" id="wfLoomExport">Export harness bundles CSV</button>
 </div>
-<div class="wf-help">Snap changes positions and can be undone. Locked parts cannot be dragged. Electrical findings require independent verification. Electrical findings require manual verification against component datasheets.</div>
+<div class="wf-help">Snap changes positions and can be undone. Locked parts cannot be dragged. Electrical findings require independent verification against component datasheets.</div>
 <div class="wf-issues" id="wfIssues"></div></aside>
+</details>
   <div class="bar">
     <button class="btn" data-tab="blueprint" title="E90 zone map and completion board">E90 Blueprint</button><button class="btn primary" data-act="lib" id="libBtn" aria-pressed="false">+ Add part</button>
     <button class="btn" data-act="zout" aria-label="Zoom out">−</button>
