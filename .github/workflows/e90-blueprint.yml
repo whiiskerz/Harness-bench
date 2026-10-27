@@ -1,0 +1,44 @@
+name: WireForge E90 Blueprint layout and source checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+concurrency:
+  group: e90-blueprint-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  e90-blueprint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Verify JavaScript parse
+        run: |
+          node --check wireforge-blueprint.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text()
+          block=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.I|re.S)
+          Path('/tmp/wireforge-core.js').write_text('\n'.join(block))
+          PY
+          node --check /tmp/wireforge-core.js
+      - name: Test readable E90 schematic, route integrity and verification reports
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+          node tests/e90-blueprint-smoke.cjs
+      - name: Upload Blueprint previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e90-blueprint-desktop-mobile
+          if-no-files-found: ignore
+          path: |
+            wireforge-e90-blueprint-desktop.png
+            wireforge-e90-blueprint-mobile.png
+            wireforge-e90-harness-designer.png
