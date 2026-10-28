@@ -120,7 +120,7 @@ function renderActive(p,q,issues,spec){
  };
  const title=p.partName;
  return '<div class="dt-inspector-head"><div><span class="dt-eyebrow">ASSEMBLY / '+escapeHtml(p.family)+' '+p.count+' POSITION</span><h3>'+escapeHtml(title)+'</h3><p>'+q.populatedA+' schematic-side wired cavities · '+q.plannedB+' mate leads planned · '+q.confirmedB+' owner-confirmed</p></div><div class="dt-inspector-actions"><button class="btn" data-dta="plan">Plan mates from drawing</button><button class="btn primary" data-dta="render3d">Preview A + B in 3D</button></div></div>'+
- '<div class="dt-assembly-halves"><article><div class="dt-half-top"><span>HALF A · SCHEMATIC SIDE</span><b>'+escapeHtml(p.sideA.toUpperCase())+'</b></div><div class="dt-case"><span>'+p.family+'</span><strong>'+p.count+' WAY</strong><small>'+escapeHtml(front.toUpperCase())+' CONTACTS</small></div><label>Actual housing part number<input data-dt-key="aHousing" placeholder="e.g. '+escapeHtml(p.suggestedA)+'" value="'+escapeHtml(p.aHousing)+'"></label><small class="dt-suggestion">Reference example: '+escapeHtml(p.suggestedA)+' · enter exact installed PN</small></article>'+
+ '<div class="dt-key-select"><label>Polarization / insert key <select data-dt-key="key"><option value="A" '+(p.key==='A'?'selected':'')+'>A</option><option value="B" '+(p.key==='B'?'selected':'')+'>B</option><option value="C" '+(p.key==='C'?'selected':'')+'>C</option><option value="D" '+(p.key==='D'?'selected':'')+'>D</option></select></label><small>8- and 12-way keys must match both physical halves; smaller connectors may not use lettered keys.</small></div><div class="dt-assembly-halves"><article><div class="dt-half-top"><span>HALF A · SCHEMATIC SIDE</span><b>'+escapeHtml(p.sideA.toUpperCase())+'</b></div><div class="dt-case"><span>'+p.family+'</span><strong>'+p.count+' WAY</strong><small>'+escapeHtml(front.toUpperCase())+' CONTACTS</small></div><label>Actual housing part number<input data-dt-key="aHousing" placeholder="e.g. '+escapeHtml(p.suggestedA)+'" value="'+escapeHtml(p.aHousing)+'"></label><small class="dt-suggestion">Reference example: '+escapeHtml(p.suggestedA)+' · enter exact installed PN</small></article>'+
  '<div class="dt-mate-coupler"><div class="dt-coupler-lines">↔</div><strong>MATe</strong><small>matching family<br>cavity count<br>keying · contacts</small></div>'+
  '<article><div class="dt-half-top"><span>HALF B · COMPANION</span><b>'+escapeHtml(p.sideB.toUpperCase())+'</b></div><div class="dt-case mate"><span>'+p.family+'</span><strong>'+p.count+' WAY</strong><small>'+escapeHtml(back.toUpperCase())+' CONTACTS</small></div><label>Actual mating housing part number<input data-dt-key="bHousing" placeholder="e.g. '+escapeHtml(p.suggestedB)+'" value="'+escapeHtml(p.bHousing)+'"></label><small class="dt-suggestion">Reference example: '+escapeHtml(p.suggestedB)+' · confirm keying, boots and seals</small></article></div>'+
  '<div class="dt-compat"><div><h4>Mating & contact check</h4><p>'+escapeHtml(p.family)+' nominal wire range '+spec.min+'–'+spec.max+' AWG · contacts size '+spec.contacts+' (illustrative catalog range, not application sign-off)</p></div><div class="dt-compat-lines">'+(issues.slice(0,12).map(issue=>'<p class="dt-audit '+issue.severity+'"><span>'+(issue.severity==='error'?'×':issue.severity==='review'?'!':'?')+'</span>'+escapeHtml(issue.message)+'</p>').join('')||'<p class="dt-audit ok">No modeled issues found. Physical verification still required.</p>')+'</div></div>'+
@@ -130,6 +130,10 @@ function renderActive(p,q,issues,spec){
 }
 function setup(){
  const root=$('t-dt');if(!root)return;
+ document.addEventListener('click',e=>{
+  const button=e.target.closest('[data-dt-open]');if(!button)return;
+  selected=String(button.dataset.dtOpen);showTab('dt');
+ });
  root.addEventListener('click',e=>{
   const b=e.target.closest('[data-dta]');if(!b)return;
   const act=b.dataset.dta;
