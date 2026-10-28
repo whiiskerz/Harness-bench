@@ -114,7 +114,7 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData
    box(assembly,'Deutsch shell mating rim',w*.94,h*.93,.10,0,caseY,front-.002,plastic('#343d46',.73),.08);
    box(assembly,'Deutsch mating interface recess',w*.80,h*.79,.023,0,caseY,front+.060,inner,.065);
    const wedgeName=String(p.wedgeColor||'').toUpperCase();
-   const wedgeColor=/^#[0-9A-F]{6}$/.test(wedgeName)?wedgeName:/(ORANGE|ORG)/.test(wedgeName)?'#e38b4e':'#57b44c';
+   const wedgeColor=/^#[0-9A-F]{6}$/.test(wedgeName)?wedgeName:/(ORANGE|ORG)/.test(wedgeName)?'#e38b4e':pair?.sideA==='plug'?'#e38b4e':'#57b44c';
    const wedge=plastic(wedgeColor,.63);
    // Common DT wedges are green; a specific part's wedge variant may differ.
    box(assembly,'Deutsch secondary wedgelock (visual)',w*.70,h*.70,.029,0,caseY,front+.089,wedge,.046);
