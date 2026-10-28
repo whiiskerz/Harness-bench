@@ -1,0 +1,37 @@
+name: WireForge two-sided Deutsch termination
+on:
+  pull_request:
+  push:
+    branches: [main]
+concurrency:
+  group: dt-termination-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  dt-termination:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax and mating evidence rules
+        run: |
+          node --check wireforge-dt-assemblies.js
+          node --check wireforge-dt-model.mjs
+          node --test tests/deutsch-termination.test.mjs
+      - name: Set up Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Test physical termination workflow in browser
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+          node tests/deutsch-termination-smoke.cjs
+      - name: Preserve desktop/mobile screen QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deutsch-terminations-mobile
+          path: wireforge-v026-assembly-mobile.png
+          if-no-files-found: ignore

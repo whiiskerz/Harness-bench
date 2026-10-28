@@ -46,7 +46,7 @@ export function makePair(part,wires=[],record={}){
   const connected=matches.length>0;
   cavities.push({
    index:i,number:String(part.pins?.[i]?.number??(i+1)),label:String(part.pins?.[i]?.label||''),
-   a:{connected,wires:matches.map(w=>({id:w.id,sig:w.sig||'',color:w.color||'',awg:+w.awg||0})),color:matches[0]?.color||'',awg:+matches[0]?.awg||0,aSealPart:String(explicit.aSealPart||''),aSealConfirmed:!!explicit.aSealConfirmed},
+   a:{connected,wires:matches.map(w=>({id:w.id,sig:w.sig||'',color:w.color||'',awg:+w.awg||0})),color:matches[0]?.color||'',awg:+matches[0]?.awg||0,aSealPart:String(explicit.aSealPart||''),aSealConfirmed:!!explicit.aSealConfirmed,terminationState:explicit.aTerminationState==='owner-confirmed'?'owner-confirmed':connected?'planned':'unassigned',contactPart:String(explicit.aContactPart||''),destination:String(explicit.aDestination||''),evidence:String(explicit.aEvidence||'').slice(0,600)},
    b:{state,destination:String(explicit.destination||''),color,awg,
       contactPart:String(explicit.contactPart||''),sealPart:String(explicit.sealPart||''),
       evidence:String(explicit.evidence||'').slice(0,600),sealed:!!explicit.sealed}
@@ -90,6 +90,8 @@ export function auditPair(pair){
     if(b.state==='owner-confirmed')add('review','Mating-side cavity '+(c.index+1)+' is owner-confirmed but opposite schematic side has no wire.',c.index);
     if(b.state==='unassigned')add('unknown','Unused mate-side cavity '+(c.index+1)+' requires a recorded sealing plug or active termination.',c.index);
    }
+  if(a.connected&&a.terminationState!=='owner-confirmed')add('review','Side A cavity '+(c.index+1)+' is a drawn wire but its actual crimp/contact has not been owner-confirmed.',c.index);
+  if(a.connected&&a.terminationState==='owner-confirmed'&&(!a.contactPart||!a.destination||!a.evidence))add('review','Side A cavity '+(c.index+1)+' owner confirmation is missing a contact part, physical destination or evidence.',c.index);
   if(a.wires.length>1)add('review','Schematic cavity '+(c.index+1)+' has '+a.wires.length+' direct wires. Check actual splice/contact capacity.',c.index);
   for(const [side,gauge] of [['A',a.awg],['B',b.awg]]){
    if(gauge&&(gauge<spec.min||gauge>spec.max))add('error','Side '+side+' cavity '+(c.index+1)+' uses '+gauge+' AWG outside typical '+pair.family+' range '+spec.min+'–'+spec.max+' AWG.',c.index);
@@ -106,8 +108,10 @@ export function pairSummary(pair){
  const populatedA=pair.cavities.filter(c=>c.a.connected).length;
  const plannedB=pair.cavities.filter(c=>c.b.state==='planned').length;
  const confirmedB=pair.cavities.filter(c=>c.b.state==='owner-confirmed').length;
+ const confirmedA=pair.cavities.filter(c=>c.a.connected&&c.a.terminationState==='owner-confirmed'&&!!c.a.contactPart&&!!c.a.destination&&!!c.a.evidence).length;
  const sealedB=pair.cavities.filter(c=>c.b.state==='sealed').length;
  return {partId:pair.partId,count:pair.count,populatedA,plannedB,confirmedB,sealedB,
   missingB:pair.cavities.filter(c=>c.a.connected&&!['planned','owner-confirmed'].includes(c.b.state)).length,
-  issues,hasError:issues.some(x=>x.severity==='error'),completeRecord:!!pair.aHousing&&!!pair.bHousing&&pair.cavities.every(c=>c.a.connected?(c.b.state==='owner-confirmed'&&!!c.b.contactPart&&!!c.b.destination&&!!c.b.evidence):(!!c.a.aSealPart&&c.a.aSealConfirmed&&c.b.state==='sealed'&&!!c.b.sealPart))};
+  confirmedA,pairedTerminations:pair.cavities.filter(c=>c.a.connected&&c.a.terminationState==='owner-confirmed'&&!!c.a.contactPart&&!!c.a.destination&&!!c.a.evidence&&c.b.state==='owner-confirmed'&&!!c.b.contactPart&&!!c.b.destination&&!!c.b.evidence).length,
+  issues,hasError:issues.some(x=>x.severity==='error'),completeRecord:!issues.some(x=>x.severity==='error')&&!!pair.aHousing&&!!pair.bHousing&&pair.cavities.every(c=>c.a.connected?(c.a.terminationState==='owner-confirmed'&&!!c.a.contactPart&&!!c.a.destination&&!!c.a.evidence&&c.b.state==='owner-confirmed'&&!!c.b.contactPart&&!!c.b.destination&&!!c.b.evidence):(!!c.a.aSealPart&&c.a.aSealConfirmed&&c.b.state==='sealed'&&!!c.b.sealPart))};
 }

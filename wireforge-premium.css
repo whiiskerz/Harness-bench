@@ -136,3 +136,42 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
  #tabs #wfAdvancedNav:not([hidden]){display:flex;flex-direction:row;align-items:center;gap:4px;flex-shrink:0}
  #tabs #wfAdvancedNav .nav-label{display:none}
 }
+
+/* WireForge v0.26 — serious build-shop workspace */
+.wrap>header{border-bottom:1px solid var(--line);background:linear-gradient(112deg,var(--panel),var(--bg) 70%);box-shadow:0 3px 18px #00000018}
+.wrap>header h1{font-size:clamp(27px,2.4vw,36px);letter-spacing:-.035em}
+#tabs button[role="tab"]:focus-visible,.btn:focus-visible,.dt-part:focus-visible,.dt-zone:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#tabs button[role="tab"][aria-selected="true"]{background:linear-gradient(90deg,var(--panel2),var(--panel));border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.wrap>section:not([hidden]){animation:wfOpen .18s ease-out}
+@keyframes wfOpen{from{opacity:.66;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.dt-pro-hero{background:radial-gradient(ellipse at 96% 8%,#437b8e5c,transparent 48%),linear-gradient(132deg,#192d3b,#0b1620 70%);border-color:#62889b}
+.dt-pro-kpis>div{border-radius:13px;background:linear-gradient(153deg,var(--panel),var(--panel2));border:1px solid var(--line);box-shadow:0 8px 24px #00000013}
+.dt-pro-kpis>div:last-child b{color:var(--good)}
+.dt-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:15px 0 19px}
+.dt-steps>div{display:grid;grid-template-columns:35px 1fr;grid-template-rows:auto auto;gap:2px 11px;align-items:center;padding:15px 17px;background:linear-gradient(133deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px}
+.dt-steps span{grid-row:1/3;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--accent) 17%,var(--panel));color:var(--accent);font:900 12px var(--mono)}
+.dt-steps b{color:var(--fg);font:800 12px var(--body)}
+.dt-steps small{color:var(--mute);font:650 10px/1.45 var(--body)}
+.dt-inspector{background:var(--panel);border-color:var(--line);box-shadow:0 8px 26px #00000014}
+.dt-matrix-head{margin-top:18px}
+.dt-ready-strip{display:flex;gap:13px;align-items:flex-start;padding:14px 17px;background:color-mix(in srgb,var(--warn) 7%,var(--panel2));border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:10px}
+.dt-ready-strip strong{font:850 11px var(--mono);white-space:nowrap;color:var(--warn)}
+.dt-ready-strip span{font:600 11px/1.55 var(--body);color:var(--mute)}
+.dt-table-scroll{scrollbar-color:var(--accent) var(--panel2);scrollbar-width:thin;box-shadow:inset 0 2px 6px #0000000c}
+.dt-table{min-width:1190px}
+.dt-table th,.dt-table td{padding:12px 11px}
+.dt-table th{position:sticky;top:0;z-index:2;background:var(--panel2);box-shadow:0 1px var(--line)}
+.dt-table tbody tr:hover{background:color-mix(in srgb,var(--accent) 4%,var(--panel))}
+.dt-table th:first-child,.dt-table td:first-child{position:sticky;left:0;z-index:1;background:var(--panel);box-shadow:1px 0 var(--line)}
+.dt-table thead th:first-child{z-index:3;background:var(--panel2)}
+.dt-table select[data-dt-field="aTerminationState"]{border-color:color-mix(in srgb,var(--warn) 48%,var(--line));font-weight:850}
+.dt-table select[data-dt-field="aTerminationState"]:has(option[value="owner-confirmed"]:checked){border-color:var(--good);color:var(--good)}
+.dt-table input:focus-visible,.dt-table textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.dt-list{border-radius:14px}
+.dt-pro-hero .dt-actions>.btn,.dt-inspector-actions>.btn{min-height:42px}
+.dt-case{box-shadow:inset 0 2px 0 #ffffff18,0 12px 27px #0003}
+.dt-mate-coupler strong{color:var(--accent)}
+.dt-footnote{border-top:1px solid var(--line);padding-top:14px}
+@media(max-width:1120px){.dt-steps{grid-template-columns:1fr}.dt-steps>div{grid-template-columns:34px 1fr}}
+@media(max-width:760px){.dt-ready-strip{flex-direction:column;gap:6px}.dt-pro-kpis>div{padding:11px}.dt-pro-hero h2{letter-spacing:-.5px}.dt-table{min-width:1190px}}
+@media(prefers-reduced-motion:reduce){.wrap>section:not([hidden]){animation:none!important}}
