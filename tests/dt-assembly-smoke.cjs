@@ -40,7 +40,7 @@ let currentBrowser;
  assert.equal(record.r.cavities[0].state,'owner-confirmed');
  assert.equal(record.p.cavities[0].b.contactPart,'1062-16-0122');
  assert.equal(record.p.sideA,'receptacle');assert.equal(record.p.sideB,'plug');
- assert.equal(WFDT.findings().some(f=>f.partId===161&&f.severity==='error'),false,'matching housing PNs are compatible');
+ assert.equal(await page.evaluate(()=>WFDT.findings().some(f=>f.partId===161&&f.severity==='error')),false,'matching housing PNs are compatible');
  // Wrong role must be flagged by Validation Lab.
  await sideB.fill('DT04-6P');await sideB.blur();
  assert.ok(await page.evaluate(()=>WFDT.findings().some(q=>q.partId===161&&q.severity==='error'&&q.message.includes('same type'))));
