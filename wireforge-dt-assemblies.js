@@ -123,11 +123,39 @@ function render(){
  '<div class="dt-pro-grid"><aside class="dt-list"><div class="dt-list-head"><h3>Connector library <small>'+total+' in project</small></h3><label class="dt-find"><span>Find assembly</span><input id="dtSearch" type="search" placeholder="DT6, CAN, GPO2…" value="'+escapeHtml(filter)+'"></label><label class="dt-toggle"><input type="checkbox" id="dtShowMissing" '+(showOnlyMissing?'checked':'')+'> Needs confirmation only</label></div><div class="dt-scroll">'+(list.map(p=>{const q=pairSummary(p),isActive=String(p.partId)===selected;return'<button class="dt-part '+(isActive?'active':'')+'" data-dta="select" data-id="'+p.partId+'"><span class="dt-part-top"><b>'+escapeHtml(p.partName)+'</b><small>'+escapeHtml(p.family)+' · '+p.count+'P</small></span><span class="dt-pair-chip">'+q.populatedA+' drawn · '+q.pairedTerminations+' paired sign-offs</span><span class="dt-pair-progress"><i style="width:'+(q.populatedA?Math.round(q.pairedTerminations/q.populatedA*100):0)+'%"></i></span></button>'}).join('')||'<p class="dt-nothing">No assemblies match the filter.</p>')+'</div></aside>'+
  '<main class="dt-inspector">'+(active?renderActive(active,asummary,issues,spec):'<div class="dt-nothing">Add a Deutsch DT/DTM/DTP connector to begin building an assembly.</div>')+'</main></div>';
 }
+/* Interactive two-half continuity board: modeled, not physically verified. */
+const dtWirePalette={RED:'#e96d65',BLK:'#485867',GRN:'#5ac198',BLU:'#74a2e7',YEL:'#eed080',PUR:'#c4a4ee',ORG:'#e7a56e',WHT:'#e9f4fa',BRN:'#b59072',GRY:'#8b9baa',PNK:'#dd98bd'};
+const dtColor=c=>{const x=String(c||'').toUpperCase().split(/[\/+,\s]/)[0];return /^#[0-9A-F]{6}$/.test(x)?x:dtWirePalette[x]||'#8797a5'};
+function pairDiagram(pair){
+ const n=Math.min(pair.cavities.length,64),height=116+n*37,esc=escapeHtml;
+ const rows=pair.cavities.slice(0,n).map((c,i)=>{
+  const y=104+i*37,sa=c.a.connected,sb=['planned','owner-confirmed'].includes(c.b.state);
+  const verified=sa&&c.a.terminationState==='owner-confirmed'&&c.b.state==='owner-confirmed';
+  const color=verified?'#77d7b4':sa&&sb?'#c9a972':'#b16b6b';
+  const status=verified?'BOTH VERIFIED':sa&&sb?'MATE PLANNED':'MATE UNASSIGNED';
+  const detail='Cavity '+(i+1)+'; schematic: '+c.a.wires.map(w=>w.sig||w.id).join('; ')+'; mate: '+(c.b.destination||c.b.state);
+  return '<g class="dt-graphic-cavity" data-dt-focus="'+i+'" tabindex="0" role="button" aria-label="Inspect cavity '+(i+1)+'"><rect x="14" y="'+(y-15)+'" width="790" height="31" rx="7" fill="'+(i%2?'#20313e':'#192a37')+'"/>'+
+  '<text x="32" y="'+(y+4)+'" fill="#c2d2dc" font-size="12" font-weight="700" font-family="system-ui">'+(i+1)+'</text>'+
+  '<line x1="98" y1="'+y+'" x2="235" y2="'+y+'" stroke="'+(sa?dtColor(c.a.color):'#516270')+'" stroke-width="'+(sa?5:2)+'" stroke-linecap="round"/>'+
+  '<path d="M235 '+y+' H580" stroke="'+color+'" stroke-width="2.4" stroke-dasharray="'+(verified?'0':'8 6')+'"/>'+
+  '<line x1="580" y1="'+y+'" x2="720" y2="'+y+'" stroke="'+(sb?dtColor(c.b.color):'#516270')+'" stroke-width="'+(sb?5:2)+'" stroke-linecap="round"/>'+
+  '<circle cx="235" cy="'+y+'" r="8" fill="#253947" stroke="#b9d7e7" stroke-width="2"/><circle cx="580" cy="'+y+'" r="8" fill="#253947" stroke="#b9d7e7" stroke-width="2"/>'+
+  '<text x="405" y="'+(y-7)+'" text-anchor="middle" font-size="10" font-family="system-ui" fill="'+color+'">'+status+'</text>'+
+  '<title>'+esc(detail)+'</title></g>';
+ }).join('');
+ return '<section class="dt-graphic" aria-label="Two-half connector cavity map"><div class="dt-graphic-head"><div><span class="dt-eyebrow">TWO-HALF ASSEMBLY VIEW</span><h4>Every cavity. Both terminations.</h4><p>Drawn side A conductors and separately documented mate-side B leads. Select a cavity to jump to its termination fields. Dashed paths require real inspection.</p></div><div class="dt-graphic-legend"><span>● Both verified</span><span>⋯ Planned</span><span>○ Unassigned</span></div></div>'+
+ '<div class="dt-graphic-scroll"><svg viewBox="0 0 820 '+height+'" class="dt-graphic-svg" role="img" aria-label="'+esc(pair.family)+' two-sided cavity overview">'+
+ '<defs><linearGradient id="dt-housing-fill" x2="1" y2="1"><stop offset="0" stop-color="#718390"/><stop offset=".5" stop-color="#475966"/><stop offset="1" stop-color="#2b3d4a"/></linearGradient></defs>'+
+ '<rect x="88" y="34" width="155" height="'+(height-48)+'" rx="19" fill="url(#dt-housing-fill)" stroke="#9cabb5" stroke-width="2"/><rect x="575" y="34" width="155" height="'+(height-48)+'" rx="19" fill="url(#dt-housing-fill)" stroke="#9cabb5" stroke-width="2"/>'+
+ '<rect x="229" y="45" width="15" height="'+(height-72)+'" rx="6" fill="#dfa16e"/><rect x="574" y="45" width="15" height="'+(height-72)+'" rx="6" fill="#75bb87"/>'+
+ '<text x="163" y="21" text-anchor="middle" fill="#d2e1e8" font-size="13" font-weight="800">'+esc(pair.sideA.toUpperCase())+' · A</text><text x="650" y="21" text-anchor="middle" fill="#d2e1e8" font-size="13" font-weight="800">'+esc(pair.sideB.toUpperCase())+' · B</text>'+
+ rows+'</svg></div><p class="dt-graphic-foot">Concept view only: schematic cavity indices may not equal molded pin numbers or physical rear-view orientation. Do not manufacture based only on this diagram.</p></section>';
+}
 function renderActive(p,q,issues,spec){
  const front=p.sideA==='plug'?'socket':'pin',back=p.sideB==='plug'?'socket':'pin';
  const row=(c)=>{
   const b=c.b;
-  return '<tr><th scope="row"><span class="dt-cavity">'+(c.index+1)+'</span></th>'+
+  return '<tr id="dt-cavity-row-'+c.index+'"><th scope="row"><span class="dt-cavity">'+(c.index+1)+'</span></th>'+
    '<td><div class="dt-side-a"><b>'+escapeHtml(c.a.wires.map(x=>x.sig||'Wire '+x.id).join('; ')||'No schematic conductor')+'</b><small>'+(c.a.connected?escapeHtml((c.a.color||'Color TBD')+' · '+(c.a.awg||'AWG TBD')):'Unassigned on A')+'</small>'+
    (c.a.connected?'<select data-dt-index="'+c.index+'" data-dt-field="aTerminationState" aria-label="Side A physical termination cavity '+(c.index+1)+'"><option value="planned" '+(c.a.terminationState!=='owner-confirmed'?'selected':'')+'>A physical crimp unverified</option><option value="owner-confirmed" '+(c.a.terminationState==='owner-confirmed'?'selected':'')+'>A physical crimp confirmed</option></select><input data-dt-index="'+c.index+'" data-dt-field="aContactPart" aria-label="Side A contact part cavity '+(c.index+1)+'" value="'+escapeHtml(c.a.contactPart)+'" placeholder="Side A contact PN"><input data-dt-index="'+c.index+'" data-dt-field="aDestination" aria-label="Side A physical destination cavity '+(c.index+1)+'" value="'+escapeHtml(c.a.destination)+'" placeholder="Actual physical source / wire"><textarea rows="2" data-dt-index="'+c.index+'" data-dt-field="aEvidence" aria-label="Side A inspection evidence cavity '+(c.index+1)+'" placeholder="Crimp photo, inspection ID, continuity reading…">'+escapeHtml(c.a.evidence)+'</textarea>':'<input data-dt-index="'+c.index+'" data-dt-field="aSealPart" aria-label="Side A unused cavity seal part '+(c.index+1)+'" placeholder="Side A seal plug PN" value="'+escapeHtml(c.a.aSealPart)+'"><select data-dt-index="'+c.index+'" data-dt-field="aSealConfirmed" aria-label="Side A seal installation '+(c.index+1)+'"><option value="false" '+(!c.a.aSealConfirmed?'selected':'')+'>A seal unverified</option><option value="true" '+(c.a.aSealConfirmed?'selected':'')+'>A seal owner-confirmed</option></select>')+'</div></td>'+
    '<td><select aria-label="Mate-side state cavity '+(c.index+1)+'" data-dt-index="'+c.index+'" data-dt-field="state" class="dt-status '+b.state+'">'+
@@ -143,6 +171,7 @@ function renderActive(p,q,issues,spec){
  '<div class="dt-mate-coupler"><div class="dt-coupler-lines">↔</div><strong>MATE</strong><small>matching family<br>cavity count<br>keying · contacts</small></div>'+
  '<article><div class="dt-half-top"><span>HALF B · COMPANION</span><b>'+escapeHtml(p.sideB.toUpperCase())+'</b></div><div class="dt-case mate"><span>'+p.family+'</span><strong>'+p.count+' WAY</strong><small>'+escapeHtml(back.toUpperCase())+' CONTACTS</small></div><label>Actual mating housing part number<input data-dt-key="bHousing" placeholder="e.g. '+escapeHtml(p.suggestedB)+'" value="'+escapeHtml(p.bHousing)+'"></label><small class="dt-suggestion">Reference example: '+escapeHtml(p.suggestedB)+' · confirm keying, boots and seals</small></article></div>'+
  '<div class="dt-compat"><div><h4>Mating & contact check</h4><p>'+escapeHtml(p.family)+' nominal wire range '+spec.min+'–'+spec.max+' AWG · contacts size '+spec.contacts+' (illustrative catalog range, not application sign-off)</p></div><div class="dt-compat-lines">'+(issues.slice(0,12).map(issue=>'<p class="dt-audit '+issue.severity+'"><span>'+(issue.severity==='error'?'×':issue.severity==='review'?'!':'?')+'</span>'+escapeHtml(issue.message)+'</p>').join('')||'<p class="dt-audit ok">No modeled issues found. Physical verification still required.</p>')+'</div></div>'+
+ pairDiagram(p)+
  '<div class="dt-ready-strip"><strong>'+(q.completeRecord?'ASSEMBLY RECORD COMPLETE':'ASSEMBLY RECORD INCOMPLETE')+'</strong><span>'+q.pairedTerminations+' / '+q.populatedA+' populated cavities have documented crimps on both halves. “Complete” refers to recorded evidence, not an independently certified harness.</span></div>'+
  '<div class="dt-matrix-head"><div><h4>Two-sided cavity termination matrix</h4><p>Document housing PN, contact PN, physical wire destination and crimp/continuity evidence on BOTH A and B before declaring a position complete. A drawn wire is not a confirmed crimp.</p></div><button class="btn" data-dta="export">Export CSV</button></div>'+
  '<div class="dt-table-scroll"><table class="dt-table"><thead><tr><th>CAVITY*</th><th>HALF A / SCHEMATIC</th><th>HALF B / TERMINATION</th><th>INSULATION / AWG</th><th>CONTACT / PLUG</th><th>EVIDENCE</th></tr></thead><tbody>'+p.cavities.map(row).join('')+'</tbody></table></div>'+
@@ -155,12 +184,24 @@ function setup(){
   selected=String(button.dataset.dtOpen);showTab('dt');
  });
  root.addEventListener('click',e=>{
+  const selectedCavity=e.target.closest('[data-dt-focus]');
+  if(selectedCavity){
+    const row=$('dt-cavity-row-'+selectedCavity.dataset.dtFocus);
+    row?.scrollIntoView({behavior:'smooth',block:'center'});
+    row?.classList.add('dt-row-focus');
+    setTimeout(()=>row?.classList.remove('dt-row-focus'),1800);
+    return;
+  }
   const b=e.target.closest('[data-dta]');if(!b)return;
   const act=b.dataset.dta;
   if(act==='select'){selected=b.dataset.id;render()}
   if(act==='export')exportMatrix();
   if(act==='plan')planCurrent();
   if(act==='render3d')typeof wf3dOpen==='function'?wf3dOpen():toast('Open Harness Designer to render the 3D assembly.');
+ });
+ root.addEventListener('keydown',e=>{
+  const cavity=e.target.closest('[data-dt-focus]');
+  if(cavity&&(e.key==='Enter'||e.key===' ')){e.preventDefault();cavity.dispatchEvent(new MouseEvent('click',{bubbles:true}));}
  });
  root.addEventListener('change',e=>{
   const field=e.target;
