@@ -288,7 +288,8 @@ function updateMateInspector(){
  if(!summary){target.textContent='No mate record found for this component.';return}
  target.textContent='HALF A · '+summary.sideA.toUpperCase()+' ('+(summary.verifiedA?'housing PN entered':'housing PN unverified')+')\n'+
    'HALF B · '+summary.sideB.toUpperCase()+' ('+(summary.verifiedB?'housing PN entered':'housing PN unverified')+')\n'+
-   summary.populatedA+' schematic terminations · '+summary.plannedB+' mate leads planned · '+summary.confirmedB+' owner-confirmed\n'+
+   summary.populatedA+' drawn A-side wires · '+summary.confirmedA+' A crimps verified · '+summary.confirmedB+' B crimps verified\n'+
+   summary.pairedTerminations+' paired crimp records · '+summary.plannedB+' mate leads planned\n'+
    summary.issues.length+' engineering flags · Housing geometry is representative, not manufacturer CAD.';
 }
 function choose(kind,id,meshObj=null){
