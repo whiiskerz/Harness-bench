@@ -223,6 +223,11 @@ function labFindings(){
    }
   }catch(e){push('unknown','Compatibility','Compatibility engine could not analyze the current diagram. Check endpoint definitions.')}
  }
+ // Check two-sided connector terminations independently of the schematic net.
+ // A mate-side planning lead must never be misrepresented as a verified crimp.
+ for(const issue of window.WFDT?.findings?.()||[]){
+   push(issue.severity,issue.category,issue.message,null,issue.partId??null);
+ }
  // A project is NEVER labeled electrically safe simply because no rule fired.
  return rows;
 }
