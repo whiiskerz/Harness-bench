@@ -29,7 +29,13 @@ const matching={aHousing:'DT04-6P',bHousing:'DT06-6S',cavities:{0:{state:'owner-
 pair=makePair(dt,wires,matching);
 assert.equal(pairSummary(pair).confirmedB,1);
 assert.equal(auditPair(pair).filter(x=>x.severity==='error').length,0);
-assert.equal(pairSummary(pair).completeRecord,true);
+assert.equal(pairSummary(pair).completeRecord,false,'Unused A and B cavities still require documented sealing plugs');
+const roleBad=makePair(dt,wires,{...matching,aHousing:'DT04-6S',bHousing:'DT06-6P'});
+assert.ok(auditPair(roleBad).some(x=>x.severity==='error'&&x.message.includes('suffix')));
+const sealDetails={...matching,cavities:{...matching.cavities}};
+for(let i=1;i<6;i++)sealDetails.cavities[i]={state:'sealed',sealPart:'114017'};
+const sealed=makePair(dt,wires,sealDetails);
+assert.ok(auditPair(sealed).some(x=>x.message.includes('Side A cavity')));
 const broken=makePair(dt,wires,{...matching,bHousing:'DT04-6P'});
 assert.ok(auditPair(broken).some(x=>x.severity==='error'&&x.message.includes('same type')));
 const oversized=makePair(dt,wires,{...matching,cavities:{0:{...matching.cavities[0],awg:10}}});
