@@ -50,7 +50,7 @@ let currentBrowser;
  await sideB.fill('DT04-6P');await sideB.blur();
  assert.ok(await page.evaluate(()=>WFDT.findings().some(q=>q.partId===161&&q.severity==='error'&&q.message.includes('same type'))));
  await page.locator('#tabs [data-tab="lab"]').click();
- assert.match(await page.locator('#wfLabRows').textContent(),/Mating halves/i);
+ assert.match(await page.locator('#wfLabRows').textContent(),/Both mating housings|mating halves/i);
  await page.locator('#tabs [data-tab="dt"]').click();
  await page.locator('[data-dta="select"][data-id="161"]').click();
  await sideB.fill('DT06-6S');await sideB.blur();
