@@ -113,5 +113,5 @@ export function pairSummary(pair){
  return {partId:pair.partId,count:pair.count,populatedA,plannedB,confirmedB,sealedB,
   missingB:pair.cavities.filter(c=>c.a.connected&&!['planned','owner-confirmed'].includes(c.b.state)).length,
   confirmedA,pairedTerminations:pair.cavities.filter(c=>c.a.connected&&c.a.terminationState==='owner-confirmed'&&!!c.a.contactPart&&!!c.a.destination&&!!c.a.evidence&&c.b.state==='owner-confirmed'&&!!c.b.contactPart&&!!c.b.destination&&!!c.b.evidence).length,
-  issues,hasError:issues.some(x=>x.severity==='error'),completeRecord:!!pair.aHousing&&!!pair.bHousing&&pair.cavities.every(c=>c.a.connected?(c.a.terminationState==='owner-confirmed'&&!!c.a.contactPart&&!!c.a.destination&&!!c.a.evidence&&c.b.state==='owner-confirmed'&&!!c.b.contactPart&&!!c.b.destination&&!!c.b.evidence):(!!c.a.aSealPart&&c.a.aSealConfirmed&&c.b.state==='sealed'&&!!c.b.sealPart))};
+  issues,hasError:issues.some(x=>x.severity==='error'),completeRecord:!issues.some(x=>x.severity==='error')&&!!pair.aHousing&&!!pair.bHousing&&pair.cavities.every(c=>c.a.connected?(c.a.terminationState==='owner-confirmed'&&!!c.a.contactPart&&!!c.a.destination&&!!c.a.evidence&&c.b.state==='owner-confirmed'&&!!c.b.contactPart&&!!c.b.destination&&!!c.b.evidence):(!!c.a.aSealPart&&c.a.aSealConfirmed&&c.b.state==='sealed'&&!!c.b.sealPart))};
 }
