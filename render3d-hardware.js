@@ -152,7 +152,9 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData
      }else{
        // An unused cavity is visually capped by a *sample* sealing plug.
        // Confirm real plug installation, type, size and color on the build sheet.
-       tube('Unpopulated-cavity sealing plug (illustrative)',r*.68,.065,rear-.221,plastic('#72818d',.77));
+       if(pair?.cavities[i]?.a?.aSealPart)
+         tube('Side A sealing plug (owner specified · check installed)',r*.68,.065,rear-.221,plastic('#72818d',.77));
+       else tube('Side A empty cavity · sealing NOT confirmed',r*.68,.025,rear-.218,shadow);
      }
      const local=new THREE.Vector3(x,y,rear-.235);
      const world=assembly.localToWorld(local.clone());
