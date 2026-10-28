@@ -33,7 +33,18 @@ function setCavity(partId,index,key,value){
  const pair=candidates().find(p=>String(p.partId)===String(partId));if(!pair)return;
  const r=record(partId);r.cavities=r.cavities||{};
  const item=r.cavities[index]||{};
- if(key==='state'){
+ if(key==='aTerminationState'){
+   if(value==='owner-confirmed'){
+     const p=pair.cavities[index],hA=parseHousing(r.aHousing),hB=parseHousing(r.bHousing);
+     if(!p.a.connected||!hA||!hB||!item.aContactPart?.trim()||!item.aDestination?.trim()||!item.aEvidence?.trim()){
+       toast('Side A physical crimp needs both actual housings, contact PN, destination and inspection evidence before confirmation.');render();return;
+     }
+     if(auditPair({...pair,aHousing:r.aHousing,bHousing:r.bHousing}).some(x=>x.severity==='error')){
+       toast('Resolve mating part mismatch before recording Side A as confirmed.');render();return;
+     }
+   }
+   item.aTerminationState=value==='owner-confirmed'?'owner-confirmed':'planned';
+ }else if(key==='state'){
    if(value==='owner-confirmed'){
      const housingA=parseHousing(r.aHousing),housingB=parseHousing(r.bHousing);
      const p=pair.cavities[index],destination=item.destination||'',contactPart=item.contactPart||'',evidence=item.evidence||'';
@@ -73,10 +84,10 @@ function planCurrent(){
  toast('Created '+n+'-cavity plan; no physical terminations have been confirmed.');
 }
 function exportMatrix(){
- const all=candidates(),lines=[['Part','Connector','Family','Cavity index (unverified molded position)','Side A housing','Side A wire(s)','Side A color','Side A AWG','Side B housing','Side B state','Side B target','Side B color','Side B AWG','Side B contact PN','Side B seal PN','Owner evidence','Findings']];
+ const all=candidates(),lines=[['Part','Connector','Family','Cavity index (unverified molded position)','Side A housing','Side A wire(s)','Side A color','Side A AWG','Side A physical state','Side A contact PN','Side A destination','Side A evidence','Side B housing','Side B state','Side B target','Side B color','Side B AWG','Side B contact PN','Side B seal PN','Owner evidence','Findings']];
  for(const p of all)for(const c of p.cavities){
    const findings=auditPair(p).filter(q=>q.cavity==null||q.cavity===c.index).map(q=>q.message).join('; ');
-   lines.push([p.partId,p.partName,p.family,c.index+1,p.aHousing,c.a.wires.map(x=>x.sig).join(' | '),c.a.color,c.a.awg,p.bHousing,c.b.state,c.b.destination,c.b.color,c.b.awg,c.b.contactPart,c.b.sealPart,c.b.evidence,findings]);
+   lines.push([p.partId,p.partName,p.family,c.index+1,p.aHousing,c.a.wires.map(x=>x.sig).join(' | '),c.a.color,c.a.awg,c.a.terminationState,c.a.contactPart,c.a.destination,c.a.evidence,p.bHousing,c.b.state,c.b.destination,c.b.color,c.b.awg,c.b.contactPart,c.b.sealPart,c.b.evidence,findings]);
  }
  const text=lines.map(row=>row.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
  const blob=new Blob(['\uFEFF'+text],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
@@ -96,6 +107,7 @@ function render(){
  const numCavities=all.reduce((s,p)=>s+p.count,0);
  const plan=all.reduce((s,p)=>s+pairSummary(p).plannedB,0);
  const confirmed=all.reduce((s,p)=>s+pairSummary(p).confirmedB,0);
+ const paired=all.reduce((s,p)=>s+pairSummary(p).pairedTerminations,0);
  const problems=all.flatMap(x=>auditPair(x)).filter(x=>x.severity==='error').length;
  const list=all.filter(p=>{
    if(filter&&!String(p.partName+' '+p.family+' '+p.partId).toLowerCase().includes(filter))return false;
@@ -105,8 +117,8 @@ function render(){
  const asummary=pairSummary(active),issues=active?auditPair(active):[];
  const spec=active?familySpec(active.family):null;
  root.innerHTML='<div class="dt-pro-hero"><div><span class="dt-eyebrow">WIRE FORGE / CONNECTOR ENGINEERING</span><h2>Deutsch Assembly Studio</h2><p>Engineer both ends of each inline connection: matching housings, complementary pin/socket contacts, independent rear terminations, wedgelocks and physical verification records.</p><div class="dt-actions"><button class="btn primary" data-dta="render3d">View complete 3D pair</button><button class="btn" data-dta="export">Export both-side pin schedule</button><button class="btn" data-tab="lab">Open Validation Lab</button></div></div><div class="dt-pro-symbol" aria-hidden="true"><span>04</span><i></i><span>06</span><small>RECEPTACLE · PLUG</small></div></div>'+
- '<div class="dt-pro-kpis"><div><b>'+total+'</b><span>Deutsch assemblies</span></div><div><b>'+numCavities+'</b><span>Paired cavity positions</span></div><div><b>'+plan+'</b><span>Mate leads planned</span></div><div><b>'+confirmed+'</b><span>Owner-confirmed tails</span></div><div><b>'+problems+'</b><span>Compatibility conflicts</span></div></div>'+
- '<div class="dt-note"><strong>Two physical halves, two independent terminations.</strong> WireForge can draw both housings and provisional mate-side pigtails, but a matched schematic net is <em>not</em> proof that both real halves are crimped or even installed. Suggested part numbers and cavity indices must be verified against TE manufacturer drawings.</div>'+
+ '<div class="dt-pro-kpis"><div><b>'+total+'</b><span>Deutsch assemblies</span></div><div><b>'+numCavities+'</b><span>Paired cavity positions</span></div><div><b>'+plan+'</b><span>Mate leads planned</span></div><div><b>'+confirmed+'</b><span>Verified mate tails</span></div><div><b>'+paired+'</b><span>Both sides signed off</span></div></div>'+
+ '<div class="dt-note"><strong>Two physical halves, two independently documented terminations.</strong> WireForge can draw both housings and provisional mate-side pigtails, but a matched schematic net is <em>not</em> proof that both real halves are crimped or even installed. Suggested part numbers and cavity indices must be verified against TE manufacturer drawings.</div>'+
  '<div class="dt-pro-grid"><aside class="dt-list"><div class="dt-list-head"><h3>Connector library <small>'+total+' in project</small></h3><label class="dt-find"><span>Find assembly</span><input id="dtSearch" type="search" placeholder="DT6, CAN, GPO2…" value="'+escapeHtml(filter)+'"></label><label class="dt-toggle"><input type="checkbox" id="dtShowMissing" '+(showOnlyMissing?'checked':'')+'> Needs confirmation only</label></div><div class="dt-scroll">'+(list.map(p=>{const q=pairSummary(p),isActive=String(p.partId)===selected;return'<button class="dt-part '+(isActive?'active':'')+'" data-dta="select" data-id="'+p.partId+'"><span class="dt-part-top"><b>'+escapeHtml(p.partName)+'</b><small>'+escapeHtml(p.family)+' · '+p.count+'P</small></span><span class="dt-pair-chip">'+q.populatedA+' schematic / '+q.confirmedB+' confirmed mate</span><span class="dt-pair-progress"><i style="width:'+(q.populatedA?Math.round(q.confirmedB/q.populatedA*100):0)+'%"></i></span></button>'}).join('')||'<p class="dt-nothing">No assemblies match the filter.</p>')+'</div></aside>'+
  '<main class="dt-inspector">'+(active?renderActive(active,asummary,issues,spec):'<div class="dt-nothing">Add a Deutsch DT/DTM/DTP connector to begin building an assembly.</div>')+'</main></div>';
 }
@@ -116,7 +128,7 @@ function renderActive(p,q,issues,spec){
   const b=c.b;
   return '<tr><th scope="row"><span class="dt-cavity">'+(c.index+1)+'</span></th>'+
    '<td><div class="dt-side-a"><b>'+escapeHtml(c.a.wires.map(x=>x.sig||'Wire '+x.id).join('; ')||'No schematic conductor')+'</b><small>'+(c.a.connected?escapeHtml((c.a.color||'Color TBD')+' · '+(c.a.awg||'AWG TBD')):'Unassigned on A')+'</small>'+
-   (c.a.connected?'':'<input data-dt-index="'+c.index+'" data-dt-field="aSealPart" aria-label="Side A unused cavity seal part '+(c.index+1)+'" placeholder="Side A seal plug PN" value="'+escapeHtml(c.a.aSealPart)+'"><select data-dt-index="'+c.index+'" data-dt-field="aSealConfirmed" aria-label="Side A seal installation '+(c.index+1)+'"><option value="false" '+(!c.a.aSealConfirmed?'selected':'')+'>A seal unverified</option><option value="true" '+(c.a.aSealConfirmed?'selected':'')+'>A seal owner-confirmed</option></select>')+'</div></td>'+
+   (c.a.connected?'<select data-dt-index="'+c.index+'" data-dt-field="aTerminationState" aria-label="Side A physical termination cavity '+(c.index+1)+'"><option value="planned" '+(c.a.terminationState!=='owner-confirmed'?'selected':'')+'>A physical crimp unverified</option><option value="owner-confirmed" '+(c.a.terminationState==='owner-confirmed'?'selected':'')+'>A physical crimp confirmed</option></select><input data-dt-index="'+c.index+'" data-dt-field="aContactPart" aria-label="Side A contact part cavity '+(c.index+1)+'" value="'+escapeHtml(c.a.contactPart)+'" placeholder="Side A contact PN"><input data-dt-index="'+c.index+'" data-dt-field="aDestination" aria-label="Side A physical destination cavity '+(c.index+1)+'" value="'+escapeHtml(c.a.destination)+'" placeholder="Actual physical source / wire"><textarea rows="2" data-dt-index="'+c.index+'" data-dt-field="aEvidence" aria-label="Side A inspection evidence cavity '+(c.index+1)+'" placeholder="Crimp photo, inspection ID, continuity reading…">'+escapeHtml(c.a.evidence)+'</textarea>':'<input data-dt-index="'+c.index+'" data-dt-field="aSealPart" aria-label="Side A unused cavity seal part '+(c.index+1)+'" placeholder="Side A seal plug PN" value="'+escapeHtml(c.a.aSealPart)+'"><select data-dt-index="'+c.index+'" data-dt-field="aSealConfirmed" aria-label="Side A seal installation '+(c.index+1)+'"><option value="false" '+(!c.a.aSealConfirmed?'selected':'')+'>A seal unverified</option><option value="true" '+(c.a.aSealConfirmed?'selected':'')+'>A seal owner-confirmed</option></select>')+'</div></td>'+
    '<td><select aria-label="Mate-side state cavity '+(c.index+1)+'" data-dt-index="'+c.index+'" data-dt-field="state" class="dt-status '+b.state+'">'+
    [['planned','Planned lead'],['owner-confirmed','Owner-confirmed'],['unassigned','No assignment'],['sealed','Sealed (record plug)']].map(([val,label])=>'<option value="'+val+'" '+(b.state===val?'selected':'')+'>'+label+'</option>').join('')+'</select>'+
    '<input data-dt-index="'+c.index+'" data-dt-field="destination" aria-label="Mate destination cavity '+(c.index+1)+'" placeholder="Mate wire destination" value="'+escapeHtml(b.destination)+'"></td>'+
@@ -130,7 +142,7 @@ function renderActive(p,q,issues,spec){
  '<div class="dt-mate-coupler"><div class="dt-coupler-lines">↔</div><strong>MATe</strong><small>matching family<br>cavity count<br>keying · contacts</small></div>'+
  '<article><div class="dt-half-top"><span>HALF B · COMPANION</span><b>'+escapeHtml(p.sideB.toUpperCase())+'</b></div><div class="dt-case mate"><span>'+p.family+'</span><strong>'+p.count+' WAY</strong><small>'+escapeHtml(back.toUpperCase())+' CONTACTS</small></div><label>Actual mating housing part number<input data-dt-key="bHousing" placeholder="e.g. '+escapeHtml(p.suggestedB)+'" value="'+escapeHtml(p.bHousing)+'"></label><small class="dt-suggestion">Reference example: '+escapeHtml(p.suggestedB)+' · confirm keying, boots and seals</small></article></div>'+
  '<div class="dt-compat"><div><h4>Mating & contact check</h4><p>'+escapeHtml(p.family)+' nominal wire range '+spec.min+'–'+spec.max+' AWG · contacts size '+spec.contacts+' (illustrative catalog range, not application sign-off)</p></div><div class="dt-compat-lines">'+(issues.slice(0,12).map(issue=>'<p class="dt-audit '+issue.severity+'"><span>'+(issue.severity==='error'?'×':issue.severity==='review'?'!':'?')+'</span>'+escapeHtml(issue.message)+'</p>').join('')||'<p class="dt-audit ok">No modeled issues found. Physical verification still required.</p>')+'</div></div>'+
- '<div class="dt-matrix-head"><div><h4>Two-sided cavity termination matrix</h4><p>Every cavity shows its source-side wire and independent companion-side record. Status defaults to planning only.</p></div><button class="btn" data-dta="export">Export CSV</button></div>'+
+ '<div class="dt-matrix-head"><div><h4>Two-sided cavity termination matrix</h4><p>Document housing PN, contact PN, physical wire destination and crimp/continuity evidence on BOTH A and B before declaring a position complete. A drawn wire is not a confirmed crimp.</p></div><button class="btn" data-dta="export">Export CSV</button></div>'+
  '<div class="dt-table-scroll"><table class="dt-table"><thead><tr><th>CAVITY*</th><th>HALF A / SCHEMATIC</th><th>HALF B / TERMINATION</th><th>INSULATION / AWG</th><th>CONTACT / PLUG</th><th>EVIDENCE</th></tr></thead><tbody>'+p.cavities.map(row).join('')+'</tbody></table></div>'+
  '<div class="dt-footnote">*Cavity numbers shown here are diagram indices. The real front and rear molded numbering can be mirrored. Do not finalize a mating-side termination without verifying manufacturer cavity orientation, contact size/part and wire seal specifications.</div>';
 }
