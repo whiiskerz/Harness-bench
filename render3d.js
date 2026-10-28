@@ -4,6 +4,7 @@ import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { hardwareRenderer, hardwareClass } from './render3d-hardware.js';
 import { cableRenderer } from './render3d-wiring.js';
 import { pigtailGuides } from './render3d-cavities.mjs';
+import { makePair, pairSummary } from './wireforge-dt-model.mjs';
 
 const STORAGE='wireforge-3d-scene-v1';
 const $=id=>document.getElementById(id);
@@ -136,14 +137,14 @@ function build(sceneData,resetCamera=true){
  if(worldRoot){scene.remove(worldRoot);worldRoot.traverse(obj=>{if(obj.geometry)obj.geometry.dispose();const materials=obj.material?[].concat(obj.material):[];for(const material of materials){if(material.map)material.map.dispose();if(material.dispose)material.dispose()}})}
  worldRoot=new THREE.Group();scene.add(worldRoot);
  for(const name of ['parts','wires','loom','labels'])layer(worldRoot,name);
- hardware=hardwareRenderer({mesh,group:groups.parts,labels:groups.labels,textSprite,colorOf,sceneData});
+ hardware=hardwareRenderer({mesh,group:groups.parts,labels:groups.labels,textSprite,colorOf,sceneData,assemblyOptions:{showMates:$('showMates')?.checked!==false,gap:Number($('mateGap')?.value||35)}});
  cables=cableRenderer({mesh,wireGroup:groups.wires,loomGroup:groups.loom,labels:groups.labels,textSprite});
  selectable.length=0;selected=null;selectedMesh=null;selectedMeta=null;isolateRuns=beforeIsolation;
  const looms=Array.isArray(sceneData.looms)?sceneData.looms:[];
  const wireGroups=new Map();
  sceneData.wires.forEach(w=>{const id=String(w.loom||'');if(id){if(!wireGroups.has(id))wireGroups.set(id,[]);wireGroups.get(id).push(w)}});
  for(const p of sceneData.parts){if(!finite(p.x)||!finite(p.y))continue;if(p.node)spliceNode(p,groups.parts);else hardware.build(p)}
- let paintedWires=0,paintedSleeves=0;
+ let paintedWires=0,paintedSleeves=0,paintedMateLeads=0;
  const exitAudit=[];
  const twistPairs=new Map();
  for(const w of sceneData.wires){
@@ -177,13 +178,48 @@ function build(sceneData,resetCamera=true){
    const points=wirePath(representative,sceneData.wires.indexOf(representative));
    if(cables.makeLoom(loom,points,{sleeve:$('sleeve').value,ratio:Number($('radius').value)/100,pigtail:Number($('pigtailLength')?.value||35)/SCALE}))paintedSleeves++;
  }
+ // Secondary side leads are independent cable pieces leaving the companion
+ // housing's OWN rear seal positions. Unless owners marked them explicitly
+ // confirmed, they are PLANNING VISUALS — not fabricated terminations.
+ const mateExitAudit=[];
+ if($('showMateTails')?.checked!==false&&$('showMates')?.checked!==false){
+   for(const [pid,exits] of hardware.matePortDetails){
+     for(const q of exits){
+       if(q.status!=='planned'&&q.status!=='owner-confirmed')continue;
+       const src=q.position,dir=q.direction;
+       const scatter=q.position.clone().sub(q.rearCenter);
+       const base=src.clone().addScaledVector(dir,.14);
+       const next=src.clone().addScaledVector(dir,.42).addScaledVector(scatter,-.13);
+       const tip=src.clone().addScaledVector(dir,.86).addScaledVector(scatter,-.25);
+       tip.y+=.035+(q.index%3)*.025;
+       const toPlain=p=>({x:p.x*SCALE,y:-p.z*SCALE,height:p.y});
+       const pts=[toPlain(src),toPlain(base),toPlain(next),toPlain(tip)];
+       const w={id:'mate-'+pid+'-'+q.index,sig:'Mate '+pid+' cavity '+(q.index+1)+' · '+q.status,
+        color:q.color||'GRY',awg:q.awg||20};
+       if(cables.makeWire(w,pts,q.index,null,{showTracers:$('wireTracers')?.checked!==false})){
+         paintedMateLeads++;
+         const p0=new THREE.Vector3(pts[0].x/SCALE,pts[0].height,-pts[0].y/SCALE);
+         mateExitAudit.push({partId:pid,index:q.index,status:q.status,
+           startError:p0.distanceTo(src),direction:[dir.x,dir.y,dir.z],
+           points:pts.length});
+       }
+     }
+   }
+ }
+ window.__WF3D_MATE_EXIT_AUDIT=mateExitAudit;
+ window.__WF3D_MATES=[...hardware.matePortDetails.entries()].map(([id,exits])=>{
+   const summary=hardware.mateSummaries.get(id)||{};
+   return {id,summary,exits:exits.map(q=>({index:q.index,status:q.status,
+      p:[q.position.x,q.position.y,q.position.z],
+      direction:[q.direction.x,q.direction.y,q.direction.z]}))};
+ });
  window.__WF3D_EXIT_AUDIT=exitAudit;
  window.__WF3D_REAR_PORTS=[...hardware.portDetails.entries()].map(([id,list])=>({
    id,exits:list.map(p=>({index:p.index,cavity:p.cavity,used:p.used,
      p:[p.position.x,p.position.y,p.position.z],direction:[p.direction.x,p.direction.y,p.direction.z],
      rearCenter:[p.rearCenter.x,p.rearCenter.y,p.rearCenter.z]}))
  }));
- window.__WF3D_STATS={models:{...hardware.models},paintedWires,paintedSleeves,wireCount:sceneData.wires.length,
+ window.__WF3D_STATS={models:{...hardware.models},paintedWires,paintedSleeves,paintedMateLeads,assembledPairs:hardware.mateSummaries.size,wireCount:sceneData.wires.length,
   distinctRearCavities:window.__WF3D_REAR_PORTS.reduce((n,p)=>n+p.exits.length,0),
  auditedRearEnds:exitAudit.reduce((n,p)=>n+(p.fromError!==null?1:0)+(p.toError!==null?1:0),0)};
  if($('hardwareMix'))$('hardwareMix').textContent=Object.entries(hardware.models).filter(([,n])=>n>0).map(([k,n])=>n+' '+k).join(' · ');
@@ -197,6 +233,7 @@ function build(sceneData,resetCamera=true){
  $('selected').textContent='Select any component or wire for details.';
  updateLayerVisibility();
  if(beforeSelection)choose(beforeSelection.kind,beforeSelection.id);
+ updateMateInspector();
  updateSearch();
  if(resetCamera)fit();
  $('loading').hidden=true;
@@ -242,6 +279,18 @@ function updateSearch(){
  }
  if(!items.length){const p=document.createElement('p');p.className='sub';p.textContent='No matching components or wires.';list.append(p)}
 }
+function updateMateInspector(){
+ const target=$('matingStatus'),edit=$('editAssembly');if(!target)return;
+ const found=selectedMeta?.kind==='part'&&hardwareClass(selectedMeta.item)==='deutsch';
+ if(edit)edit.disabled=!found;
+ if(!found){target.textContent='Select a Deutsch housing to inspect its receptacle, plug and mate-side termination status.';return}
+ const summary=hardware?.mateSummaries?.get(String(selectedMeta.id));
+ if(!summary){target.textContent='No mate record found for this component.';return}
+ target.textContent='HALF A · '+summary.sideA.toUpperCase()+' ('+(summary.verifiedA?'housing PN entered':'housing PN unverified')+')\n'+
+   'HALF B · '+summary.sideB.toUpperCase()+' ('+(summary.verifiedB?'housing PN entered':'housing PN unverified')+')\n'+
+   summary.populatedA+' schematic terminations · '+summary.plannedB+' mate leads planned · '+summary.confirmedB+' owner-confirmed\n'+
+   summary.issues.length+' engineering flags · Housing geometry is representative, not manufacturer CAD.';
+}
 function choose(kind,id,meshObj=null){
  if(selectedMesh&&selectedMesh.material&&selectedMesh.material.emissive)
   selectedMesh.material.emissive.setHex(0x000000);
@@ -263,6 +312,7 @@ function choose(kind,id,meshObj=null){
   if(meshObj?.userData.meta?.kind==='cavity')info+='\nSelected front cavity: '+(meshObj.userData.meta.pin?.number||String(meshObj.userData.meta.index+1))+'\n'+(meshObj.userData.meta.pin?.used?'Wire populated':'No wire assigned · simulated rear cavity plug');
  }
  $('selected').textContent=info;
+ updateMateInspector();
  applyWireIsolation();
  updateSearch();
 }
@@ -432,6 +482,9 @@ function init(){
  $('studioFinish').addEventListener('change',()=>{const v=$('studioFinish').value;document.body.dataset.finish=v;try{localStorage.setItem('wireforge-3d-finish',v)}catch(e){}updateBackground()});
  $('showcaseBtn').addEventListener('click',()=>setShowcase());
  $('search').addEventListener('input',updateSearch);
+ $('editAssembly').addEventListener('click',()=>{if(selectedMeta?.kind!=='wire'&&selectedMeta?.id!=null&&hardwareClass(selectedMeta.item)==='deutsch'){window.location.href='./index.html?dt='+encodeURIComponent(selectedMeta.id)}else $('selected').textContent='Select a Deutsch assembly to edit both ends.'});
+ for(const id of ['showMates','showMateTails','mateGap'])$(id).addEventListener('change',()=>{if(activeScene)build(activeScene,false)});
+ $('mateGap').addEventListener('input',()=>$('mateGapValue').textContent=$('mateGap').value+'%');
  $('savePng').addEventListener('click',savePNG);
  $('saveGlb').addEventListener('click',saveGLB);
  $('saveJson').addEventListener('click',()=>{if(activeScene)download(new Blob([JSON.stringify(activeScene,null,2)],{type:'application/json'}),filename('json'))});
@@ -443,7 +496,7 @@ function init(){
  $('focusSelection').addEventListener('click',focus);
  $('isolateRuns').addEventListener('click',()=>{if(!selectedMeta&& !isolateRuns){$('selected').textContent='Select a wire or connector to isolate its connected runs.';return}isolateRuns=!isolateRuns;applyWireIsolation()});
  document.querySelectorAll('[data-hardware-focus]').forEach(b=>b.addEventListener('click',()=>{const category=b.dataset.hardwareFocus,p=activeScene?.parts.find(q=>hardwareClass(q)===category);if(!p)return;choose('part',p.id);focus();if(showcaseState){isolateRuns=true;updateLayerVisibility()}}));
- $('clearSelection').addEventListener('click',()=>{selectedMeta=null;selected=null;isolateRuns=false;$('selected').textContent='No selection';applyWireIsolation();updateSearch()});
+ $('clearSelection').addEventListener('click',()=>{selectedMeta=null;selected=null;isolateRuns=false;$('selected').textContent='No selection';applyWireIsolation();updateSearch();updateMateInspector()});
  let raw=null;
  try{raw=localStorage.getItem(STORAGE)}catch(e){}
  if(!raw)throw new Error('No 3D scene snapshot found. Return to WireForge Harness Designer and click Render 3D.');

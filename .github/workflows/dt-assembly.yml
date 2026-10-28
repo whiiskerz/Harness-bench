@@ -1,0 +1,48 @@
+name: Deutsch mating assemblies · two-sided QA
+on:
+  pull_request:
+  push:
+    branches: [main]
+concurrency:
+  group: deutsch-mates-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  dt-assembly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright and Three.js
+        run: |
+          npm install --no-save playwright three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Verify independent data model and scripts
+        run: |
+          node tests/deutsch-mates.test.mjs
+          node --check wireforge-dt-assemblies.js
+          node --check render3d-hardware.js
+          node --check render3d.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('render3d.html')
+          s=p.read_text().replace('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js','/node_modules/three/build/three.module.js').replace('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/','/node_modules/three/examples/jsm/')
+          p.write_text(s)
+          PY
+      - name: Exercise two-sided connector termination and 3D hardware
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+          node tests/dt-assembly-smoke.cjs
+      - name: Save desktop, mobile and 3D assembly screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wireforge-v025-mated-connectors-qa
+          path: |
+            wireforge-v025-dt-assembly-desktop.png
+            wireforge-v025-dt-assembly-mobile.png
+            wireforge-v025-3d-complete-mates.png
+          if-no-files-found: ignore

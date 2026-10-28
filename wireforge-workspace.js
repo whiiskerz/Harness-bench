@@ -223,14 +223,20 @@ function labFindings(){
    }
   }catch(e){push('unknown','Compatibility','Compatibility engine could not analyze the current diagram. Check endpoint definitions.')}
  }
+ // Check two-sided connector terminations independently of the schematic net.
+ // A mate-side planning lead must never be misrepresented as a verified crimp.
+ for(const issue of window.WFDT?.findings?.()||[]){
+   push(issue.severity,issue.category,issue.message,null,issue.partId??null);
+ }
  // A project is NEVER labeled electrically safe simply because no rule fired.
  return rows;
 }
+const prioritizedFindings=()=>labFindings().sort((a,b)=>({error:0,review:1,unknown:2}[a.severity]??3)-({error:0,review:1,unknown:2}[b.severity]??3));
 let labFilter='all',labQuery='',lastRun=null;
 function labReport(){return {app:'WireForge',version:APP_VERSION,date:new Date().toISOString(),project:metaName(),parts:S.parts.length,wires:S.wires.length,findings:labFindings(),notice:'Schematic consistency review only. Unknown ratings, pinouts, physical mating halves, contact seals, fuse properties and ECU current limits are not automatically verified.'}}
 function renderLab(){
  const root=$('t-lab');if(!root)return;
- const all=labFindings(),counts={error:0,review:0,unknown:0};all.forEach(x=>counts[x.severity]++);
+ const all=prioritizedFindings(),counts={error:0,review:0,unknown:0};all.forEach(x=>counts[x.severity]++);
  const allowed=all.filter(x=>(labFilter==='all'||x.severity===labFilter)&&(!labQuery||String(x.message+' '+x.category).toLowerCase().includes(labQuery)));
  const connected=(S.wires||[]).reduce((n,w)=>n+Number(!!part(w.a?.p)&&!!part(w.b?.p)),0);
  const opts=[];
@@ -282,7 +288,7 @@ function labExport(){
  download('wireforge-'+fileName(r.project)+'-validation.csv','\uFEFF'+csv,'text/csv');
 }
 function inspectFinding(index){
- const row=labFindings()[+index];if(!row)return;
+ const row=prioritizedFindings()[+index];if(!row)return;
  if(row.wireId!=null&&wireById(row.wireId))selection={type:'wire',id:+row.wireId};
  else if(row.partId!=null&&part(row.partId))selection={type:'part',id:+row.partId};
  else return;

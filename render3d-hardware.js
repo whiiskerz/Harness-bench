@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { cavityLayout } from './render3d-cavities.mjs';
+import { deutschFamily, makePair, pairSummary } from './wireforge-dt-model.mjs';
 
 /*
  * WireForge v0.21 procedural hardware models.
@@ -13,7 +14,7 @@ export function hardwareClass(part){
  const name=String(part?.name||'').toLowerCase();
  if(type==='dual'||type==='e90leash1'||/leash (?:dual|single|relay)/.test(name))return 'leash';
  if(/^relay(?:4|5)?$/.test(type)||/relay (?:socket|module)/.test(name))return 'relay';
- if(/^(?:e90)?dt(?:m|p)?\d+/i.test(type)||/\b(?:dtm|dtp|dt)[- ]?(?:2|3|4|6|8|12|16|24)\b/i.test(name))return 'deutsch';
+ if(deutschFamily(part)||/^(?:e90)?dt(?:m|p)?\d+/i.test(type))return 'deutsch';
  if(/^mxrace/.test(type)||(/maxxecu/.test(name)&&/ecu|race/i.test(name)))return 'ecu';
  if(/^(?:pdb|gbus|fuse|bat|bmwbig|bmwsmall|starter|speedwayalt)/.test(type))return 'power';
  return 'generic';
@@ -34,8 +35,8 @@ export function cavityGrid(n){
 }
 const v=(x,y,z)=>new THREE.Vector3(x,y,z);
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData}){
- const ports=new Map(),portDetails=new Map(),models={deutsch:0,leash:0,relay:0,ecu:0,power:0,generic:0},scale=78;
+export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData,assemblyOptions={}}){
+ const ports=new Map(),portDetails=new Map(),matePortDetails=new Map(),mateSummaries=new Map(),models={deutsch:0,leash:0,relay:0,ecu:0,power:0,generic:0},scale=78;
  const plastic=(color,roughness=.68)=>new THREE.MeshPhysicalMaterial({color,roughness,metalness:.045,clearcoat:.12,clearcoatRoughness:.34});
  const metal=(color='#b2bdc7')=>new THREE.MeshStandardMaterial({color,roughness:.34,metalness:.75});
  const rubber=plastic('#20252c',.84),shadow=plastic('#11171d',.76);
@@ -92,7 +93,8 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData
  }
  function deutsch(p){
    const n=Math.max(1,Math.min(64,Array.isArray(p.pins)?p.pins.length:1));
-   const family=connectorFamily(p),layout=cavityLayout(n,family),{cols,rows,spacing}=layout;
+   const pair=makePair(p,sceneData?.wires||[],p.dtMate||{});
+   const family=pair?.family||connectorFamily(p),layout=cavityLayout(n,family),{cols,rows,spacing}=layout;
    const w=Math.max(.65,cols*spacing+.37);
    const h=Math.max(.58,rows*spacing+.36);
    const length=family==='DTP'?1.04:family==='DTM'?.82:.91;
@@ -104,7 +106,7 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData
    assembly.rotation.y=connectorDirection(p);
    group.add(assembly);
    const title=String(p.name||'').toUpperCase();
-   const female=/\bDT(?:M|P)?06[- ]|SOCKET|PLUG\b/.test(title),male=/\bDT(?:M|P)?04[- ]|RECEPTACLE\b/.test(title);
+   const female=pair?.sideA==='plug',male=!female;
    const shell=plastic(p.shellColor||'#535d65',.70);
    const inner=plastic('#303a42',.85),seal=plastic('#a86b48',.84);
    const housing=box(assembly,'Deutsch '+family+' molded main shell',w,h,length,0,caseY,0,shell,.11,{kind:'part',id:p.id,part:p});
@@ -112,7 +114,7 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData
    box(assembly,'Deutsch shell mating rim',w*.94,h*.93,.10,0,caseY,front-.002,plastic('#343d46',.73),.08);
    box(assembly,'Deutsch mating interface recess',w*.80,h*.79,.023,0,caseY,front+.060,inner,.065);
    const wedgeName=String(p.wedgeColor||'').toUpperCase();
-   const wedgeColor=/^#[0-9A-F]{6}$/.test(wedgeName)?wedgeName:/(ORANGE|ORG)/.test(wedgeName)?'#e38b4e':'#57b44c';
+   const wedgeColor=/^#[0-9A-F]{6}$/.test(wedgeName)?wedgeName:/(ORANGE|ORG)/.test(wedgeName)?'#e38b4e':pair?.sideA==='plug'?'#e38b4e':'#57b44c';
    const wedge=plastic(wedgeColor,.63);
    // Common DT wedges are green; a specific part's wedge variant may differ.
    box(assembly,'Deutsch secondary wedgelock (visual)',w*.70,h*.70,.029,0,caseY,front+.089,wedge,.046);
@@ -132,7 +134,7 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData
    const r=clamp(spacing*.255,.027,.070);
    for(const cavity of layout.points){
      const i=cavity.index,x=cavity.x,y=caseY+cavity.y;
-     const meta={kind:'cavity',id:p.id,part:p,pin:p.pins?.[i],index:i};
+     const meta={kind:'cavity',id:p.id,part:p,pin:p.pins?.[i],index:i,side:'A'};
      const used=!!p.pins?.[i]?.used;
      // Cylinder primitives are normally along Y: turn them to face +Z/-Z.
      const tube=(name,rad,len,z,material,meta)=>{
@@ -150,7 +152,9 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData
      }else{
        // An unused cavity is visually capped by a *sample* sealing plug.
        // Confirm real plug installation, type, size and color on the build sheet.
-       tube('Unpopulated-cavity sealing plug (illustrative)',r*.68,.065,rear-.221,plastic('#72818d',.77));
+       if(pair?.cavities[i]?.a?.aSealPart)
+         tube('Side A sealing plug (owner specified · check installed)',r*.68,.065,rear-.221,plastic('#72818d',.77));
+       else tube('Side A empty cavity · sealing NOT confirmed',r*.68,.025,rear-.218,shadow);
      }
      const local=new THREE.Vector3(x,y,rear-.235);
      const world=assembly.localToWorld(local.clone());
@@ -161,6 +165,58 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData
    }
    setPorts(p,terminals);
    portDetails.set(String(p.id),detail);
+   if(pair)mateSummaries.set(String(p.id),{...pairSummary(pair),family:pair.family,sideA:pair.sideA,sideB:pair.sideB,aHousing:pair.aHousing||pair.suggestedA,bHousing:pair.bHousing||pair.suggestedB,verifiedA:!!pair.aHousing,verifiedB:!!pair.bHousing});
+   // Separate mating half with its own front contacts, wedgelock and rear
+   // cavity exits. B-side wires default to PLANNED until explicitly confirmed.
+   if(pair&&assemblyOptions.showMates!==false){
+     const gap=.26+clamp(Number(assemblyOptions.gap)||0,0,100)*.011;
+     const other=new THREE.Group();
+     other.name=pair.family+' '+n+'-way '+pair.sideB+' · companion half';
+     other.rotation.y=Math.PI;
+     other.position.z=length+gap;
+     assembly.add(other);
+     const mateShell=plastic('#66717d',.63),mateInner=plastic('#2c343d',.88);
+     box(other,'Mating '+pair.sideB+' thermoplastic housing',w*.974,h*.965,length*.94,0,caseY,0,mateShell,.095,{kind:'part',id:p.id,part:p,side:'B'});
+     box(other,'Mate molded interface collar',w*.93,h*.91,.11,0,caseY,front-.01,mateShell,.075);
+     box(other,'Mate interfacial elastomer seal',w*.80,h*.80,.035,0,caseY,front+.064,seal,.06);
+     box(other,'Mate polarized insert and keyed rim',w*.74,h*.73,.028,0,caseY,front+.096,mateInner,.044);
+     box(other,'Mate terminal wedgelock',w*.68,h*.67,.024,0,caseY,front+.107,pair.sideB==='plug'?orange:green,.032);
+     box(other,'Mate rear elastomer grommet',w*.88,h*.83,.055,0,caseY,rear-.07,seal,.045);
+     box(other,'Mate connector rear boot shoulder',w*.89,h*.75,.115,0,caseY,rear-.145,rubber,.045);
+     box(other,'Mate external locking ramp',w*.45,.075,length*.41,0,caseY+h*.52,front*.29,mateShell,.035);
+     box(other,'Mate latch capture',w*.24,.055,.15,0,caseY+h*.57,front*.65,mateInner,.021);
+     for(const side of [-1,1]){
+       box(other,'Mate grip ribs',.055,h*.29,length*.43,side*w*.492,caseY,-length*.12,mateShell,.020);
+       box(other,'Mate polarized side rail',.060,h*.55,length*.41,side*w*.489,caseY,front*.28,mateInner,.019);
+     }
+     const mateTerminals=[];
+     for(const cavity of layout.points){
+       const i=cavity.index,x=cavity.x,y=caseY+cavity.y;
+       const entry=pair.cavities[i],b=entry.b;
+       const hasLead=b.state==='planned'||b.state==='owner-confirmed';
+       const mdata={kind:'cavity',id:p.id,part:p,pin:p.pins?.[i],index:i,side:'B',status:b.state};
+       const drill=(name,radius,depth,z,material)=>{
+         const m=cylinder(other,name,radius,depth,x,y,z,material,18,mdata);
+         m.rotation.x=Math.PI/2;return m;
+       };
+       drill('Mate front contact cavity',r*1.29,.032,front+.116,shadow);
+       drill('Mate '+(pair.sideB==='plug'?'socket contact':'pin contact')+' '+(i+1),r*.69,.043,front+.140,hasLead?gold:mateInner);
+       if(pair.sideB==='receptacle'&&hasLead)drill('Mate exposed male terminal',r*.33,.052,front+.184,gold);
+       drill('Mate rear silicone cable aperture',r*1.30,.042,rear-.201,seal);
+       if(hasLead)drill('Mate '+b.state+' insulation transition',r*.76,.049,rear-.230,plastic(colorOf(b.color||'BLK'),.52));
+       else if(b.state==='sealed')drill('Mate sealing plug specified but not independently verified',r*.66,.057,rear-.242,plastic('#7f919b',.73));
+       else drill('Mate empty unassigned cavity',r*.68,.02,rear-.235,shadow);
+       const local=new THREE.Vector3(x,y,rear-.270);
+       const world=other.localToWorld(local.clone());
+       const total=assembly.localToWorld(world.clone());
+       const rearCenter=assembly.localToWorld(other.localToWorld(new THREE.Vector3(0,caseY,rear-.270)));
+       const direction=new THREE.Vector3(0,0,-1).applyQuaternion(other.quaternion).applyQuaternion(assembly.quaternion).normalize();
+       mateTerminals.push({position:total,rearCenter,direction,index:i,partId:p.id,
+         family,status:b.state,color:b.color,awg:b.awg,
+         destination:b.destination,contactPart:b.contactPart,side:'B'});
+     }
+     matePortDetails.set(String(p.id),mateTerminals);
+   }
    // A rear neck outlines the grommet but stays open so individual wires are visible.
    const bootDepth=.18,bootRadius=Math.max(.30,w*.29);
    for(const side of [-1,1]){
@@ -280,5 +336,5 @@ export function hardwareRenderer({mesh,group,labels,textSprite,colorOf,sceneData
    const i=Number(pin);
    return points[Number.isInteger(i)&&i>=0&&i<points.length?i:0].clone();
  }
- return {build,port,portInfo,ports,portDetails,models};
+ return {build,port,portInfo,ports,portDetails,matePortDetails,mateSummaries,models};
 }

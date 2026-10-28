@@ -196,13 +196,13 @@ a{color:var(--accent)}
 <div class="wrap">
 <header>
   <h1>Wire<span>Forge</span></h1>
-  <p class="sub">Motorsport harness design · linked pinouts · wire schedules · build documentation</p>
+  <p class="sub">Precision wiring CAD · connector assembly · engineering review</p><span class="wf-app-trust" title="Local-first workspace; not electrical certification">LOCAL-FIRST STUDIO</span>
   <label class="wf-finish-choice">FINISH <select id="wfEditorFinish" aria-label="WireForge interface finish"><option value="ice">Carbon Ice</option><option value="copper">Forged Titanium</option><option value="stealth">Obsidian</option></select></label>
 <div class="wf-top-actions" aria-label="Project actions"><button class="btn primary" id="wfQuickSave" type="button" title="Create or update the current named browser snapshot">Save to Browser</button><button class="btn" id="wfVaultOpen" type="button">My Projects</button><span id="wfSaveStatus" role="status" aria-live="polite">Autosave on · Checking browser storage…</span></div>
 </header>
 <nav id="tabs"></nav>
 
-<section id="t-project" hidden></section><section id="t-blueprint" hidden></section><section id="t-vault" hidden></section><section id="t-lab" hidden></section>
+<section id="t-project" hidden></section><section id="t-blueprint" hidden></section><section id="t-dt" hidden></section><section id="t-vault" hidden></section><section id="t-lab" hidden></section>
 <section id="t-studio" hidden></section>
 <section id="t-sim" hidden></section>
 <section id="t-pro" hidden><div class="wf-pro-head"><div><span class="pill">PRO WORKSPACE · PREVIEW</span><h2>Harness Production Studio</h2><p class="muted">Reusable cavity maps, drawing layers, branch schedules, build reports and restore points. Manufacturer geometry and electrical suitability require independent verification.</p></div><div class="row"><button class="btn primary" type="button" id="wf3dProLaunch">◈ Render 3D</button><button class="btn primary" id="proPrint">Print build pack</button></div></div><div id="proRoot"></div></section>
@@ -236,7 +236,7 @@ a{color:var(--accent)}
 <div class="wf-issues" id="wfIssues"></div></aside>
 </details>
   <div class="bar">
-    <label class="wf-zone-jump">FOCUS AREA <select id="wfZoneJump" aria-label="Focus physical planning area"><option value="">All areas (Fit)</option></select></label><button class="btn" data-tab="blueprint" title="E90 zone map and completion board">E90 Blueprint</button><button class="btn primary" data-act="lib" id="libBtn" aria-pressed="false">+ Add part</button>
+    <label class="wf-zone-jump">FOCUS AREA <select id="wfZoneJump" aria-label="Focus physical planning area"><option value="">All areas (Fit)</option></select></label><button class="btn" data-tab="blueprint" title="E90 zone map and completion board">E90 Blueprint</button><button class="btn" data-tab="dt" title="Edit both halves of a Deutsch inline connector">DT Assemblies</button><button class="btn primary" data-act="lib" id="libBtn" aria-pressed="false">+ Add part</button>
     <button class="btn" data-act="zout" aria-label="Zoom out">−</button>
     <button class="btn" data-act="zin" aria-label="Zoom in">+</button>
     <button class="btn" data-act="fit">Fit</button>
@@ -272,7 +272,7 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.24.0-blueprint-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>WireForge <b id="appVersion">v0.25.0-assembly-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <style id="wfBlackglassTheme">
 /* Visual-only refresh. Semantic good/warning/error colors stay distinct. */
@@ -368,8 +368,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 </style>
 <link rel="stylesheet" href="./wireforge-workspace.css">
 <link rel="stylesheet" href="./wireforge-blueprint.css">
+<link rel="stylesheet" href="./wireforge-premium.css">
 <script>
-const APP_VERSION='0.24.0-blueprint-preview';
+const APP_VERSION='0.25.0-assembly-preview';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1279,6 +1280,7 @@ function renderInspBase(){
      <label><span>Name on drawing</span><input data-pn="name" value="${esc(p.name)}"></label>
      ${t.fz?fuseSection(p,t):''}
      ${t.node?'':`<h3>Pin labels</h3><div class="plist">${t.pins.map((pin,i)=>`<label><span>${esc(pin.p)}</span><input data-pl="${i}" value="${esc((p.pl&&p.pl[i])||'')}" placeholder="${esc(pin.l||'name this pin')}"></label>`).join('')}</div>`}
+     ${window.WFDT?.candidates?.().some(q=>q.partId===p.id)?`<div class="row"><button class="btn primary" type="button" data-dt-open="${p.id}">Edit both DT terminations</button></div>` : ''}
      <div class="row"><button class="btn" data-act="flip">Flip pin side</button><button class="btn" data-act="dupPart">Duplicate</button><button class="btn danger" data-act="delPart">Delete part</button></div>`;
   }else if(selection&&selection.type==='zone'){
     const z=(S.zones||[]).find(q=>q.id===selection.id);if(!z){selection=null;return renderInsp()}
@@ -1775,7 +1777,7 @@ function rProject(){
  const hasE90=(S.parts||[]).some(p=>p.t==='e90dt12'||/DT12_POWER_BREAKOUT/.test(p.name||''));
  document.getElementById('t-project').innerHTML=`
  <div class="dashboard-hero card"><div class="eyebrow">PROJECT DASHBOARD / 01</div><h2>${esc(S.wfProjectName||'E90 LS SWAP · MAXXECU RACE GEN 1')}</h2><p class="muted">${hasE90?'This BMW E90 starter is an example. Adapt it for your own projects; owner-supplied assignments remain separate from verified manufacturer data.':'This is your active harness project. Use the Design, Validation Lab, Project Vault and Production Studio steps to build and review it.'}</p>
- <div class="row"><button class="btn primary" data-act="loadE90">${hasE90?'Reload E90 example':'Load E90 harness example'}</button><button class="btn" data-tab="blueprint">Open E90 Blueprint</button><button class="btn" data-act="goMock">Open physical mock-up</button><button class="btn" data-act="goChecks">Run electrical checks</button><button class="btn" data-act="goDraw">Open wiring diagram</button></div></div>
+ <div class="row"><button class="btn primary" data-act="loadE90">${hasE90?'Reload E90 example':'Load E90 harness example'}</button><button class="btn" data-tab="blueprint">Open E90 Blueprint</button><button class="btn" data-tab="dt">Deutsch Assembly Studio</button><button class="btn" data-act="goMock">Open physical mock-up</button><button class="btn" data-act="goChecks">Run electrical checks</button><button class="btn" data-act="goDraw">Open wiring diagram</button></div></div>
  <div class="dash-stats"><div class="card stat"><span>COMPONENTS</span><b>${partCount}</b><small>in active drawing</small></div><div class="card stat"><span>WIRE RUNS</span><b>${wireCount}</b><small>drawn connections</small></div><div class="card stat"><span>CONNECTED PARTS</span><b>${connected}</b><small>touching a wire</small></div><div class="card stat"><span>DESIGN STATUS</span><b class="status-warn">IN PROGRESS</b><small>verify before fabrication</small></div></div>
  <div class="wf-dashboard-next"><h3>Your workflow</h3><p>1. Design the harness → 2. Check the wiring → 3. Save a named project → 4. Prepare build documentation. Working changes auto-save locally; named snapshots are separate.</p><div class="row"><button class="btn primary" data-tab="blueprint">1 · E90 Blueprint</button><button class="btn" data-tab="draw">Harness Designer</button><button class="btn" data-tab="lab">2 · Validation Lab</button><button class="btn" data-tab="vault">3 · Project Vault</button><button class="btn" data-tab="pro">4 · Production</button></div></div><div id="wfE90Dashboard" ${hasE90?'':'hidden'}><h3>Example harness architecture</h3><p class="muted">A quick visual orientation for the build. This is a system overview, not a pin-accurate schematic. Use Draw, Pinouts and Checks for detailed work.</p>
  <div class="system-map card"><div class="sys-node power"><b>TRUNK POWER</b><span>Battery · main protection</span><span>Switched fuse distribution</span></div><div class="sys-arrow">↓</div><div class="sys-node ecu"><b>MAXXECU RACE</b><span>DT12 power / GPOs</span><span>DT8 analog + control</span></div><div class="sys-split"><div class="sys-branch"><div class="sys-arrow">↙</div><div class="sys-node"><b>FUEL SYSTEM</b><span>Leash dual relay board</span><span>535 lift / 525 staged pump</span></div></div><div class="sys-branch"><div class="sys-arrow">↓</div><div class="sys-node"><b>DRIVER / TRANS</b><span>CAN keypad · 8HP</span><span>Keep chassis CAN separate</span></div></div><div class="sys-branch"><div class="sys-arrow">↘</div><div class="sys-node"><b>ENGINE / BODY</b><span>Coils · A/C · fan interface</span><span>Flex fuel · nitrous SSR</span></div></div></div></div>
@@ -2041,13 +2043,32 @@ function proAttach(){
  document.getElementById('proPrint')?.addEventListener('click',()=>{showTab('pro');document.body.classList.add('wf-pro-print');window.print();setTimeout(()=>document.body.classList.remove('wf-pro-print'),1000)});
 }
 
-const TABS=[['project','Overview'],['blueprint','E90 Blueprint'],['draw','Harness Designer'],['lab','Validation Lab'],['vault','Project Vault'],['pro','Production Studio'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
-const RENDER={blueprint:()=>window.WFBlueprint?.render?.(),lab:()=>window.WFPro?.renderLab?.(),vault:()=>window.WFPro?.renderVault?.(),pro:rPro,project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
+const TABS=[['project','Overview'],['blueprint','E90 Blueprint'],['dt','Deutsch Assemblies'],['draw','Harness Designer'],['lab','Validation Lab'],['vault','Project Vault'],['pro','Production Studio'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
+const RENDER={dt:()=>window.WFDT?.render?.(),blueprint:()=>window.WFBlueprint?.render?.(),lab:()=>window.WFPro?.renderLab?.(),vault:()=>window.WFPro?.renderVault?.(),pro:rPro,project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
-const TAB_GROUP={blueprint:'Workspace',lab:'Validation',vault:'Project',pro:'Build',project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
-let lastTabGroup='';
-tabsEl.innerHTML=TABS.map(([k,l])=>{const g=TAB_GROUP[k]||'Workspace',head=g!==lastTabGroup?'<div class="nav-label">'+g+'</div>':'';lastTabGroup=g;return head+'<button role="tab" data-tab="'+k+'">'+l+'</button>'}).join('');
+const TAB_GROUP={dt:'Connectors',blueprint:'Workspace',lab:'Validation',vault:'Project',pro:'Build',project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
+const NAV_CORE=new Set(['project','blueprint','draw','dt','lab','vault','pro']);
+const navBtn=([k,l])=>'<button type="button" role="tab" data-tab="'+k+'">'+l+'</button>';
+const navCore=TABS.filter(([k])=>NAV_CORE.has(k)).map(navBtn).join('');
+let lastAdvancedGroup='';
+const navAdvanced=TABS.filter(([k])=>!NAV_CORE.has(k)).map(([k,l])=>{
+ const group=TAB_GROUP[k]||'Tools',heading=group!==lastAdvancedGroup?'<div class="nav-label">'+group+'</div>':'';
+ lastAdvancedGroup=group;return heading+navBtn([k,l]);
+}).join('');
+tabsEl.innerHTML='<div class="nav-label">CORE WORKSPACE</div>'+navCore+
+ '<button class="wf-more-trigger" id="wfMoreTools" type="button" aria-controls="wfAdvancedNav" aria-expanded="false">＋ Advanced tools</button>'+
+ '<div class="wf-nav-advanced" id="wfAdvancedNav" role="group" aria-label="Additional professional tools" hidden>'+navAdvanced+'</div>';
+document.getElementById('wfMoreTools').addEventListener('click',e=>{
+ e.stopPropagation();
+ const extra=document.getElementById('wfAdvancedNav');extra.hidden=!extra.hidden;
+ e.currentTarget.setAttribute('aria-expanded',String(!extra.hidden));
+ e.currentTarget.textContent=extra.hidden?'＋ Advanced tools':'− Hide advanced tools';
+});
 function showTab(k){
+  if(!NAV_CORE.has(k)){
+   const extra=document.getElementById('wfAdvancedNav'),toggle=document.getElementById('wfMoreTools');
+   if(extra&&toggle){extra.hidden=false;toggle.setAttribute('aria-expanded','true');toggle.textContent='− Hide advanced tools';}
+  }
   S.tab=k;save();
   TABS.forEach(([t])=>{document.getElementById('t-'+t).hidden=t!==k});
   tabsEl.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===k));
@@ -2520,7 +2541,7 @@ function wf3dBuildSnapshot(){
    const dim=dims(p),pinData=t.node?[]:t.pins.map((pin,i)=>{
      const matched=usedOn(p.id,i);return{number:String(pin.p),label:plabel(p,i),color:matched[0]?.color||'',used:matched.length>0};
    });
-   return{id:p.id,name:p.name||t.name,type:p.t,category:t.fam||'dt',node:!!t.node,x:p.x,y:p.y,w:dim.w,h:dim.h,pins:pinData};
+   return{id:p.id,name:p.name||t.name,type:p.t,category:t.fam||'dt',node:!!t.node,x:p.x,y:p.y,w:dim.w,h:dim.h,pins:pinData,dtMate:S.dtAssemblies?.[p.id]||null};
  }).filter(Boolean);
  const out=[];
  for(const w of S.wires||[]){
@@ -2546,7 +2567,7 @@ function wf3dBuildSnapshot(){
        len:+w.len>0?+w.len:null,points});
  }
  return{schema:'wireforge.3d.scene.v1',generatedAt:new Date().toISOString(),
-   projectName:String(S.projectName||S.name||'E90 LS Swap Harness'),sourceVersion:APP_VERSION,
+   projectName:String(S.wfProjectName||S.projectName||S.name||'Untitled WireForge Harness'),sourceVersion:APP_VERSION,
    parts,wires:out,looms:(S.looms||[]).map(l=>({id:l.id,name:l.name,color:l.color,cover:l.cover})),
    branches:(S.pro?.branches||S.wfBranches||[]).map(b=>({id:b.id,name:b.name,length:b.length,diameter:b.diameter,sleeve:b.sleeve}))};
 }
@@ -2587,4 +2608,5 @@ if(S.tab==='draw'&&!S.view)requestAnimationFrame(fit);
 
 <input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import WireForge project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js" defer></script>
 <script src="./wireforge-blueprint.js" defer></script>
+<script type="module" src="./wireforge-dt-assemblies.js"></script>
 </body></html>
