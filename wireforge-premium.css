@@ -129,3 +129,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .dt-key-select label{display:flex;flex-direction:row;align-items:center;gap:10px;color:var(--muted);font:800 10px var(--body)}
 .dt-key-select select{width:81px;min-height:36px;font-weight:800}
 .dt-key-select small{color:var(--muted);font:650 10px var(--body)}
+
+@media(max-width:760px){
+ #tabs .wf-more-trigger{display:block;white-space:nowrap;min-height:37px;min-width:120px;margin:0 6px;border-color:var(--line);text-align:center}
+ #tabs #wfAdvancedNav[hidden]{display:none!important}
+ #tabs #wfAdvancedNav:not([hidden]){display:flex;flex-direction:row;align-items:center;gap:4px;flex-shrink:0}
+ #tabs #wfAdvancedNav .nav-label{display:none}
+}
