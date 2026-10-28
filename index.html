@@ -2047,9 +2047,28 @@ const TABS=[['project','Overview'],['blueprint','E90 Blueprint'],['dt','Deutsch 
 const RENDER={dt:()=>window.WFDT?.render?.(),blueprint:()=>window.WFBlueprint?.render?.(),lab:()=>window.WFPro?.renderLab?.(),vault:()=>window.WFPro?.renderVault?.(),pro:rPro,project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
 const TAB_GROUP={dt:'Connectors',blueprint:'Workspace',lab:'Validation',vault:'Project',pro:'Build',project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
-let lastTabGroup='';
-tabsEl.innerHTML=TABS.map(([k,l])=>{const g=TAB_GROUP[k]||'Workspace',head=g!==lastTabGroup?'<div class="nav-label">'+g+'</div>':'';lastTabGroup=g;return head+'<button role="tab" data-tab="'+k+'">'+l+'</button>'}).join('');
+const NAV_CORE=new Set(['project','blueprint','draw','dt','lab','vault','pro']);
+const navBtn=([k,l])=>'<button type="button" role="tab" data-tab="'+k+'">'+l+'</button>';
+const navCore=TABS.filter(([k])=>NAV_CORE.has(k)).map(navBtn).join('');
+let lastAdvancedGroup='';
+const navAdvanced=TABS.filter(([k])=>!NAV_CORE.has(k)).map(([k,l])=>{
+ const group=TAB_GROUP[k]||'Tools',heading=group!==lastAdvancedGroup?'<div class="nav-label">'+group+'</div>':'';
+ lastAdvancedGroup=group;return heading+navBtn([k,l]);
+}).join('');
+tabsEl.innerHTML='<div class="nav-label">CORE WORKSPACE</div>'+navCore+
+ '<button class="wf-more-trigger" id="wfMoreTools" type="button" aria-controls="wfAdvancedNav" aria-expanded="false">＋ Advanced tools</button>'+
+ '<div class="wf-nav-advanced" id="wfAdvancedNav" role="group" aria-label="Additional professional tools" hidden>'+navAdvanced+'</div>';
+document.getElementById('wfMoreTools').addEventListener('click',e=>{
+ e.stopPropagation();
+ const extra=document.getElementById('wfAdvancedNav');extra.hidden=!extra.hidden;
+ e.currentTarget.setAttribute('aria-expanded',String(!extra.hidden));
+ e.currentTarget.textContent=extra.hidden?'＋ Advanced tools':'− Hide advanced tools';
+});
 function showTab(k){
+  if(!NAV_CORE.has(k)){
+   const extra=document.getElementById('wfAdvancedNav'),toggle=document.getElementById('wfMoreTools');
+   if(extra&&toggle){extra.hidden=false;toggle.setAttribute('aria-expanded','true');toggle.textContent='− Hide advanced tools';}
+  }
   S.tab=k;save();
   TABS.forEach(([t])=>{document.getElementById('t-'+t).hidden=t!==k});
   tabsEl.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===k));
