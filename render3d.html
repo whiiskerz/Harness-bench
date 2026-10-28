@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1119">
-<title>WireForge · 3D Connector Exit Studio</title>
+<title>WireForge Pro · Mated Connector 3D Studio</title>
 <style>
 :root{color-scheme:dark;--bg:#0a0d13;--panel:#121924;--panel2:#1b2432;--edge:#2b3646;--type:#f1f5f9;--muted:#a1afc2;--accent:#f4ac3c;--ok:#65d7ad;--radius:15px;font:14px/1.45 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
 *{box-sizing:border-box}html,body{margin:0;height:100%;min-width:300px;background:var(--bg);color:var(--type)}
@@ -167,6 +167,32 @@ body[data-finish="stealth"] #showcaseBtn{background:linear-gradient(140deg,#3541
 @media(prefers-reduced-motion:reduce){.button{transition:none!important}.button:hover{transform:none}}
 
 
+
+/* v0.25 studio refresh */
+:root{--accent:#93d6e3;--edge:#304451;--panel:#101923;--panel2:#1a2934;--type:#ecf5fa;--muted:#9bb6c4}
+header{background:linear-gradient(115deg,#101b25,#152a37 75%,#111a25);box-shadow:0 12px 30px #0003}
+.brand{font-size:21px}.logo{background:linear-gradient(135deg,#a0e0eb,#558da5);border:1px solid #d7f8fc63;box-shadow:inset 0 1px #ffffff7a,0 8px 20px #28597544;color:#09232c}
+.brand b{color:#9fdded}
+.panel{background:linear-gradient(180deg,#14202b,#0f1720);padding:18px}
+.panel h3{color:#aac3cf;font-weight:850;letter-spacing:1.2px}
+.button{border-color:#405564;background:linear-gradient(180deg,#273b49,#1a2a36);border-radius:9px}
+.button.primary{background:linear-gradient(125deg,#aae7ef,#68b8ca);color:#0d2530;border-color:#a5e1ee;box-shadow:0 6px 20px #24687b36}
+.button.primary:hover{background:#b7eff1;color:#11252f}
+.pill{background:#21414d;color:#b1e9f3;border:1px solid #4c7a89}
+.kpi{background:#1b2c39;border-color:#365163}
+.stage{background:radial-gradient(ellipse at 50% 25%,#263e4d,#0c1721 62%,#070c13)}
+.mate-controls{border:1px solid #3a5261;background:linear-gradient(150deg,#1d313d,#14212c);border-radius:12px;padding:12px 13px;margin:8px 0}
+.mate-controls .check{font-size:12px;margin:7px 0}.mate-controls .field{margin:12px 0 4px}
+.mate-help{border-top:1px solid #3d5765;padding-top:10px;color:#a8c2d0;font-size:11px;line-height:1.55}
+.mate-help b{color:#b4e0e7}
+.mate-inspector{border-radius:11px;background:#172833;border:1px solid #3d5868;padding:14px;color:#b3cbd8;font:650 11px/1.7 system-ui;margin-top:12px;white-space:pre-line}
+.mate-inspector b{color:#ebf9fc}
+#editAssembly{color:#c8edf0;border-color:#618390}
+#editAssembly:disabled{opacity:.48;cursor:not-allowed}
+body[data-finish="copper"] .mate-controls,body[data-finish="copper"] .mate-inspector{background:#2b2925;border-color:#64594b}
+body[data-finish="stealth"] .mate-controls,body[data-finish="stealth"] .mate-inspector{background:#1c252e;border-color:#516071}
+@media(max-width:810px){.panel{padding:13px}.mate-inspector{font-size:10px}.mate-controls{padding:10px}}
+
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}
@@ -176,15 +202,21 @@ body[data-finish="stealth"] #showcaseBtn{background:linear-gradient(140deg,#3541
 <div class="layout">
 <header>
 <a class="brand" href="./index.html" title="Return to harness editor"><span class="logo">W</span><span>Wire<b>Forge</b></span></a>
-<div class="meta"><span class="pill">3D Pigtail Studio · v0.22.1</span><small>Built by @whiiskerzbuilt</small><a class="button" href="./index.html">← Back to editor</a></div>
+<div class="meta"><span class="pill">3D ASSEMBLY STUDIO · v0.25</span><small>Built by @whiiskerzbuilt</small><a class="button" href="./index.html">← Back to editor</a></div>
 </header>
 <main class="shell">
 <aside class="panel">
-<h2>Realism controls</h2>
-<p class="sub">More realistic Deutsch connector wire-side exits, rear seals and individual cavity pigtails, using your live harness drawing. Select a Deutsch connector and tap WIRE SIDE for its rear face.</p>
+<h2>Assembly controls</h2>
+<p class="sub">Full Deutsch-style mating pairs: independent DT04-style receptacle and DT06-style plug housings, both cavity faces, silicone rear seals and two-sided pigtail exits. Engineering preview, not certified manufacturer geometry.</p>
 <div class="toolrow"><button class="button primary" id="savePng">Save PNG</button><button class="button" id="saveGlb">Export GLB</button></div>
 <div class="toolrow"><button class="button" id="saveJson">Scene JSON</button><button class="button" id="loadJson">Import scene</button><input id="fileImport" type="file" accept="application/json,.json"></div>
-<h3>Hardware spotlight</h3><div class="quick-models"><button class="button" data-hardware-focus="deutsch">Deutsch-style</button><button class="button" data-hardware-focus="leash">Leash boards</button><button class="button" data-hardware-focus="relay">Relays</button><button class="button" data-hardware-focus="ecu">ECU housings</button></div><div class="model-caption">Procedural hardware concepts, not manufacturer CAD. Actual molded cavity locations and dimensions require drawings or scans.</div><h3>Model layers</h3>
+<h3>Hardware spotlight</h3><div class="quick-models"><button class="button" data-hardware-focus="deutsch">Deutsch-style</button><button class="button" data-hardware-focus="leash">Leash boards</button><button class="button" data-hardware-focus="relay">Relays</button><button class="button" data-hardware-focus="ecu">ECU housings</button></div><div class="model-caption">Procedural hardware concepts, not manufacturer CAD. Actual molded cavity locations and dimensions require drawings or scans.</div><h3>Mated Deutsch connectors</h3><div class="mate-controls">
+ <label class="check">Show both connector halves <input id="showMates" type="checkbox" checked></label>
+ <label class="check">Show mating-side pigtails <input id="showMateTails" type="checkbox" checked></label>
+ <label class="field">Connector separation <span id="mateGapValue">35%</span><input type="range" id="mateGap" min="0" max="100" step="5" value="35" aria-label="Explode mating halves"></label>
+ <div class="mate-help"><b>Half A</b> schematic wires · <b>Half B</b> planned or owner-confirmed tails. Unassigned cavities remain open, not invented as wired.</div>
+ </div>
+ <h3>Model layers</h3>
 <label class="check">Connector housings <input id="layerParts" type="checkbox" checked></label>
 <label class="check">Individual wires <input id="layerWires" type="checkbox" checked></label>
 <label class="check">Harness sleeving <input id="layerLoom" type="checkbox" checked></label>
@@ -213,7 +245,7 @@ body[data-finish="stealth"] #showcaseBtn{background:linear-gradient(140deg,#3541
 <h3>Search parts and circuits</h3><label class="field"><input type="search" id="search" placeholder="e.g. DT12, GPO2, CAN"></label>
 <div class="list" id="itemList"></div>
 <h3>Selection</h3><div class="detail" id="selected">Select a wire or connector in the 3D view, or use the searchable project list.</div>
-<div class="toolrow"><button class="button" id="focusSelection">Focus selected</button><button class="button" id="clearSelection">Clear</button></div>
+<div class="toolrow"><button class="button" id="focusSelection">Focus selected</button><button class="button" id="editAssembly">Edit DT mating half</button><button class="button" id="clearSelection">Clear</button></div><div id="matingStatus" class="mate-inspector">Select a Deutsch-style assembly to see Side A / Side B termination records.</div>
 </aside>
 </main>
 </div>
