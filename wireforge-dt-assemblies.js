@@ -46,6 +46,11 @@ function setCavity(partId,index,key,value){
      }
    }
    item.state=value;
+ }else if(key==='aSealConfirmed'){
+   if(value==='true'&&(!item.aSealPart||!item.evidence)){
+     toast('Record the Side A sealing plug part and evidence before confirming it installed.');render();return;
+   }
+   item.aSealConfirmed=value==='true';
  }else if(key==='awg')item.awg=value===''?'':Math.max(0,Math.min(24,Number(value)||0));
  else item[key]=String(value||'').trim().slice(0,key==='evidence'?600:200);
  r.cavities[index]=item;
@@ -110,7 +115,8 @@ function renderActive(p,q,issues,spec){
  const row=(c)=>{
   const b=c.b;
   return '<tr><th scope="row"><span class="dt-cavity">'+(c.index+1)+'</span></th>'+
-   '<td><div class="dt-side-a"><b>'+escapeHtml(c.a.wires.map(x=>x.sig||'Wire '+x.id).join('; ')||'No schematic conductor')+'</b><small>'+(c.a.connected?escapeHtml((c.a.color||'Color TBD')+' · '+(c.a.awg||'AWG TBD')):'Unassigned on A')+'</small></div></td>'+
+   '<td><div class="dt-side-a"><b>'+escapeHtml(c.a.wires.map(x=>x.sig||'Wire '+x.id).join('; ')||'No schematic conductor')+'</b><small>'+(c.a.connected?escapeHtml((c.a.color||'Color TBD')+' · '+(c.a.awg||'AWG TBD')):'Unassigned on A')+'</small>'+
+   (c.a.connected?'':'<input data-dt-index="'+c.index+'" data-dt-field="aSealPart" aria-label="Side A unused cavity seal part '+(c.index+1)+'" placeholder="Side A seal plug PN" value="'+escapeHtml(c.a.aSealPart)+'"><select data-dt-index="'+c.index+'" data-dt-field="aSealConfirmed" aria-label="Side A seal installation '+(c.index+1)+'"><option value="false" '+(!c.a.aSealConfirmed?'selected':'')+'>A seal unverified</option><option value="true" '+(c.a.aSealConfirmed?'selected':'')+'>A seal owner-confirmed</option></select>')+'</div></td>'+
    '<td><select aria-label="Mate-side state cavity '+(c.index+1)+'" data-dt-index="'+c.index+'" data-dt-field="state" class="dt-status '+b.state+'">'+
    [['planned','Planned lead'],['owner-confirmed','Owner-confirmed'],['unassigned','No assignment'],['sealed','Sealed (record plug)']].map(([val,label])=>'<option value="'+val+'" '+(b.state===val?'selected':'')+'>'+label+'</option>').join('')+'</select>'+
    '<input data-dt-index="'+c.index+'" data-dt-field="destination" aria-label="Mate destination cavity '+(c.index+1)+'" placeholder="Mate wire destination" value="'+escapeHtml(b.destination)+'"></td>'+
