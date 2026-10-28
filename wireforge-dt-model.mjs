@@ -46,7 +46,7 @@ export function makePair(part,wires=[],record={}){
   const connected=matches.length>0;
   cavities.push({
    index:i,number:String(part.pins?.[i]?.number??(i+1)),label:String(part.pins?.[i]?.label||''),
-   a:{connected,wires:matches.map(w=>({id:w.id,sig:w.sig||'',color:w.color||'',awg:+w.awg||0})),color:matches[0]?.color||'',awg:+matches[0]?.awg||0},
+   a:{connected,wires:matches.map(w=>({id:w.id,sig:w.sig||'',color:w.color||'',awg:+w.awg||0})),color:matches[0]?.color||'',awg:+matches[0]?.awg||0,aSealPart:String(explicit.aSealPart||''),aSealConfirmed:!!explicit.aSealConfirmed},
    b:{state,destination:String(explicit.destination||''),color,awg,
       contactPart:String(explicit.contactPart||''),sealPart:String(explicit.sealPart||''),
       evidence:String(explicit.evidence||'').slice(0,600),sealed:!!explicit.sealed}
@@ -74,6 +74,7 @@ export function auditPair(pair){
    if(a.count!==pair.count||b.count!==pair.count)add('error','Mating halves do not have the same cavity count as the schematic.');
    if(a.role===b.role)add('error','Both mating housings are the same type (plug/receptacle). One DT04-style receptacle and one DT06-style plug are required.');
    if(a.contact===b.contact)add('error','Contact genders are not complementary; match pin receptacle to socket plug.');
+   if((a.role==='receptacle'&&a.contact!=='P')||(a.role==='plug'&&a.contact!=='S')||(b.role==='receptacle'&&b.contact!=='P')||(b.role==='plug'&&b.contact!=='S'))add('error','Housing contact suffix is inconsistent with plug/receptacle roles: receptacles require pin P, plugs socket S.');
    if(pair.count>=8&&a.key!==b.key)add('error','8/12-way connector polarization keys differ.');
  }
  const seen=new Set();
@@ -83,7 +84,12 @@ export function auditPair(pair){
    if(b.state==='unassigned')add('unknown','Mating-side cavity '+(c.index+1)+' has no termination planned.',c.index);
    if(b.state==='sealed')add('error','Mating-side cavity '+(c.index+1)+' is marked sealed but its other half has a schematic wire.',c.index);
    if(b.state==='planned')add('review','Mating-side cavity '+(c.index+1)+' has only a planning lead—not a confirmed physical termination.',c.index);
-  }else if(b.state==='owner-confirmed')add('review','Mating-side cavity '+(c.index+1)+' is owner-confirmed but opposite schematic side has no wire.',c.index);
+  }else{
+    if(!a.aSealPart)add('unknown','Unused Side A cavity '+(c.index+1)+' lacks documented sealing plug.',c.index);
+    else if(!a.aSealConfirmed)add('review','Side A cavity '+(c.index+1)+' sealing plug is planned but installation is not confirmed.',c.index);
+    if(b.state==='owner-confirmed')add('review','Mating-side cavity '+(c.index+1)+' is owner-confirmed but opposite schematic side has no wire.',c.index);
+    if(b.state==='unassigned')add('unknown','Unused mate-side cavity '+(c.index+1)+' requires a recorded sealing plug or active termination.',c.index);
+   }
   if(a.wires.length>1)add('review','Schematic cavity '+(c.index+1)+' has '+a.wires.length+' direct wires. Check actual splice/contact capacity.',c.index);
   for(const [side,gauge] of [['A',a.awg],['B',b.awg]]){
    if(gauge&&(gauge<spec.min||gauge>spec.max))add('error','Side '+side+' cavity '+(c.index+1)+' uses '+gauge+' AWG outside typical '+pair.family+' range '+spec.min+'–'+spec.max+' AWG.',c.index);
@@ -103,5 +109,5 @@ export function pairSummary(pair){
  const sealedB=pair.cavities.filter(c=>c.b.state==='sealed').length;
  return {partId:pair.partId,count:pair.count,populatedA,plannedB,confirmedB,sealedB,
   missingB:pair.cavities.filter(c=>c.a.connected&&!['planned','owner-confirmed'].includes(c.b.state)).length,
-  issues,hasError:issues.some(x=>x.severity==='error'),completeRecord:!!pair.aHousing&&!!pair.bHousing&&pair.cavities.every(c=>!c.a.connected||c.b.state==='owner-confirmed'&&!!c.b.contactPart&&!!c.b.destination&&!!c.b.evidence)};
+  issues,hasError:issues.some(x=>x.severity==='error'),completeRecord:!!pair.aHousing&&!!pair.bHousing&&pair.cavities.every(c=>c.a.connected?(c.b.state==='owner-confirmed'&&!!c.b.contactPart&&!!c.b.destination&&!!c.b.evidence):(!!c.a.aSealPart&&c.a.aSealConfirmed&&c.b.state==='sealed'&&!!c.b.sealPart))};
 }
