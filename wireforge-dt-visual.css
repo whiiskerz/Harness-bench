@@ -1,0 +1,27 @@
+/* WireForge v0.27 · Assembly visualization and premium CAD refinement. */
+.dt-graphic{margin:20px 0 18px;border:1px solid #446275;border-radius:16px;background:linear-gradient(155deg,#12222e,#0e1c27);overflow:hidden;box-shadow:0 12px 30px #0002}
+.dt-graphic-head{display:flex;gap:16px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:20px 23px 15px;border-bottom:1px solid #2c4655}
+.dt-graphic-head h4{font:900 clamp(20px,2vw,28px)/1.1 var(--display);color:#eef8fb;margin:9px 0}
+.dt-graphic-head p{color:#b7cbd8;max-width:650px;font:500 12px/1.7 var(--body);margin:0}
+.dt-graphic-legend{display:flex;flex-wrap:wrap;gap:8px}
+.dt-graphic-legend span{border:1px solid #405564;padding:7px 11px;border-radius:7px;color:#a9c2d1;font:800 10px var(--body)}
+.dt-graphic-legend span:first-child{color:#8ce6c2}.dt-graphic-legend span:nth-child(2){color:#edcd8f}.dt-graphic-legend span:nth-child(3){color:#e8a09a}
+.dt-graphic-scroll{max-height:560px;overflow:auto;padding:8px 14px 10px;scrollbar-color:#5c92a8 #152936;scrollbar-width:thin}
+.dt-graphic-svg{display:block;width:100%;min-width:600px;height:auto;max-height:none;overflow:visible}
+.dt-graphic-cavity{cursor:pointer;outline:none}
+.dt-graphic-cavity>rect{transition:fill .15s}
+.dt-graphic-cavity:hover>rect,.dt-graphic-cavity:focus-visible>rect{fill:#375365}
+.dt-graphic-cavity:focus-visible{filter:drop-shadow(0 0 4px #b5edfa)}
+.dt-graphic-foot{border-top:1px solid #2c4655;color:#9eafbc;padding:13px 22px;font:600 11px/1.6 var(--body);margin:0}
+.dt-table tbody tr.dt-row-focus{animation:dtRowPulse 1.8s ease-out}
+@keyframes dtRowPulse{0%,40%{box-shadow:inset 4px 0 #9fe9f3;background:color-mix(in srgb,var(--accent) 20%,var(--panel))}100%{box-shadow:none;background:transparent}}
+/* Clarity: project and production tabs remain professional tools rather than oversized cards. */
+.wrap>header{box-shadow:0 5px 30px #00000017}
+#tabs button[aria-selected="true"]{position:relative}
+#tabs button:focus-visible,#wfQuickSave:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.wrap>section h2,.wrap>section h3{font-kerning:normal}
+.wf-draw-intro{box-shadow:0 8px 26px #00000018}
+.wb-zone{box-shadow:inset 0 1px 0 #ffffff07,0 7px 24px #00000011}
+.wb-zone:hover{box-shadow:0 12px 25px #00000029}
+@media(max-width:800px){.dt-graphic-head{padding:18px}.dt-graphic-scroll{padding:7px;max-height:480px}.dt-graphic-svg{min-width:580px}.dt-graphic-legend{gap:5px}}
+@media(prefers-reduced-motion:reduce){.dt-table tbody tr.dt-row-focus{animation:none;box-shadow:inset 4px 0 var(--accent)}.dt-graphic-cavity>rect{transition:none}}
