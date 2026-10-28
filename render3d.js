@@ -207,8 +207,8 @@ function build(sceneData,resetCamera=true){
    }
  }
  window.__WF3D_MATE_EXIT_AUDIT=mateExitAudit;
- window.__WF3D_MATES=[...hardware.mateSummaries.entries()].map(([id,summary])=>{
-   const exits=hardware.matePortDetails.get(id)||[];
+ window.__WF3D_MATES=[...hardware.matePortDetails.entries()].map(([id,exits])=>{
+   const summary=hardware.mateSummaries.get(id)||{};
    return {id,summary,exits:exits.map(q=>({index:q.index,status:q.status,
       p:[q.position.x,q.position.y,q.position.z],
       direction:[q.direction.x,q.direction.y,q.direction.z]}))};
