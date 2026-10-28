@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.26 preview — Two-sided Deutsch termination workstation
+- Raised assembly acceptance bar: a drawn Side A wire remains an unverified physical crimp until the owner records actual contact part, physical destination, and inspection evidence, independently of Side B.
+- Side A and Side B each have their own crimp confirmation controls. Fully documented paired cavities require both sides, matching actual housings, plus verified unused cavity seals. No automatic installed status.
+- Added A-side crimp details to the manufacturable CSV matrix and paired completion summaries throughout the connector studio and 3D inspector.
+- Restyled the connector workstation with a three-step assembly process, more legible two-sided matrix, sticky headings and accessible mobile presentation.
+- Added manufacturer reference documentation, Node regression tests, Chromium persistence/CSV tests and CI.
+- **Caution:** This is a user-supplied termination record, not independent crimp inspection, physical continuity verification, or manufacturer-specific certification.
+
 ## v0.25 preview — Two-sided Deutsch assemblies and professional interface
 - Added a dedicated Deutsch Assembly Studio: independent plug/receptacle housings, physical housing part numbers, keying, molded cavity indices (unverified until checked), paired schematic/mate-side terminal matrix, per-side contacts, wire gauge/color, destinations, seal plugs and supporting owner confirmation evidence.
 - Added family-aware reference compatibility checks for DT, DTM and DTP housing roles, contact genders, cavity counts, keyed variants, wire gauges and unconfirmed terminations. No automatic claims of physical or electrical completion.
