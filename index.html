@@ -1280,6 +1280,7 @@ function renderInspBase(){
      <label><span>Name on drawing</span><input data-pn="name" value="${esc(p.name)}"></label>
      ${t.fz?fuseSection(p,t):''}
      ${t.node?'':`<h3>Pin labels</h3><div class="plist">${t.pins.map((pin,i)=>`<label><span>${esc(pin.p)}</span><input data-pl="${i}" value="${esc((p.pl&&p.pl[i])||'')}" placeholder="${esc(pin.l||'name this pin')}"></label>`).join('')}</div>`}
+     ${window.WFDT?.candidates?.().some(q=>q.partId===p.id)?`<div class="row"><button class="btn primary" type="button" data-dt-open="${p.id}">Edit both DT terminations</button></div>` : ''}
      <div class="row"><button class="btn" data-act="flip">Flip pin side</button><button class="btn" data-act="dupPart">Duplicate</button><button class="btn danger" data-act="delPart">Delete part</button></div>`;
   }else if(selection&&selection.type==='zone'){
     const z=(S.zones||[]).find(q=>q.id===selection.id);if(!z){selection=null;return renderInsp()}
