@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.27 preview — Two-sided DT assembly visualization and premium UI
+- Added a navigable two-housing Deutsch cavity diagram inside Assembly Studio: one A-side drawn termination and a separately tracked B-side planned/confirmed termination per cavity.
+- The cavity diagram is keyboard accessible and clicking a schematic position focuses the corresponding assembly matrix row; unassigned and planned mates remain visibly distinct.
+- Polished the Assembly Studio with branded CAD-style contrast, responsive layout, inspection-focus styling, and retained semantic engineering warnings.
+- Existing 3D mating halves, rear seals, cavity assignments, A/B inspection evidence and safety gates stay intact. Neither diagram completion nor a 3D wire model proves actual physical installation.
+- Added browser regression coverage for interactive cavity map and preserved existing data model / 3D tests.
+
 ## v0.26 preview — Two-sided Deutsch termination workstation
 - Raised assembly acceptance bar: a drawn Side A wire remains an unverified physical crimp until the owner records actual contact part, physical destination, and inspection evidence, independently of Side B.
 - Side A and Side B each have their own crimp confirmation controls. Fully documented paired cavities require both sides, matching actual housings, plus verified unused cavity seals. No automatic installed status.
