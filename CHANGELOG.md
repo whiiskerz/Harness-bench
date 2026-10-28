@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.25 preview — Two-sided Deutsch assemblies and professional interface
+- Added a dedicated Deutsch Assembly Studio: independent plug/receptacle housings, physical housing part numbers, keying, molded cavity indices (unverified until checked), paired schematic/mate-side terminal matrix, per-side contacts, wire gauge/color, destinations, seal plugs and supporting owner confirmation evidence.
+- Added family-aware reference compatibility checks for DT, DTM and DTP housing roles, contact genders, cavity counts, keyed variants, wire gauges and unconfirmed terminations. No automatic claims of physical or electrical completion.
+- Rendered distinct two-housing 3D assemblies, opposite-side keyed inserts, front contacts, rear grommets, locking geometry, and independent mate-side pigtail tubes; controls support exploded spacing, mate visibility, and mate lead toggles.
+- Added editing shortcuts from the 2D connector inspector and 3D selection, export of a combined A/B termination CSV, named browser project persistence, and Validation Lab findings for missing/unsafe mating configurations.
+- Refreshed the desktop/mobile application chrome and CAD workspaces to match a more consistent premium design system.
+- Added pure module rules tests and Playwright browser tests for mating geometry, cavity index integrity, owner sign-off requirements, session persistence, export, compatibility checks, mobile layouts and 3D controls.
+- **Important:** terminal colors and B-side wires mirrored from the 2D diagram default to PLANNED. Actual contact/boot/insert fit, supplied pin numbering, crimp quality, electrical suitability and real harness termination must be verified with manufacturer part drawings and physical evidence.
+
 ## v0.24 preview — E90 Blueprint / vehicle-zone redesign
 - Reworked the starter E90 LS harness into six generously spaced front-to-rear planning zones: engine bay, DME/firewall, cabin, 8HP underbody, left-trunk distribution, and right-trunk nitrous.
 - The layout groups actual model part dimensions in nonoverlapping columns with 88+ layout units of air and quick zone-focus controls. Existing user-saved layouts are never moved automatically.
