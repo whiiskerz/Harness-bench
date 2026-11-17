@@ -6,9 +6,9 @@ const nonnegative=v=>v!==null&&v!==''&&Number.isFinite(Number(v))&&Number(v)>=0;
 const fresh=()=>({version:1,nodes:[],segments:[],allowance:1,slack:0,waste:10,packing:0.65,od:{},next:1});
 function path(g,start,end){
  if(!start||!end)return null;
- if(start===end)return [];
  const valid=new Set(g.nodes.map(n=>n.id)),adj=new Map(); 
  if(!valid.has(start)||!valid.has(end))return null;
+ if(start===end)return [];
  for(const s of g.segments){if(!valid.has(s.a)||!valid.has(s.b)||s.a===s.b)continue;
  for(const [a,b] of [[s.a,s.b],[s.b,s.a]]){if(!adj.has(a))adj.set(a,[]);adj.get(a).push([b,s]);}}
  const seen=new Set([start]),queue=[[start,[]]];
@@ -25,9 +25,9 @@ function seed(parts,wires){
  const ordered=parts.filter(p=>used.has(key(p.id))).slice().sort((a,b)=>(Number(a.x)||0)-(Number(b.x)||0)||(Number(a.y)||0)-(Number(b.y)||0));
  // Draft trunk in schematic x-order; no inferred physical dimensions.
  for(let i=0;i<ordered.length;i+=4){
- const x=100+Math.floor(i/4)*290,j=addNode(g,x,300,'Breakout '+(Math.floor(i/4)+1));
+ const x=100+Math.floor(i/4)*350,j=addNode(g,x,300,'Breakout '+(Math.floor(i/4)+1));
  const prev=g.nodes.filter(n=>n.partId==null).at(-2);if(prev)addSegment(g,prev.id,j.id);
- ordered.slice(i,i+4).forEach((p,k)=>{const px=x+(k%2===0?-65:65),py=k<2?85:520;const n=addNode(g,px,py,p.name||'Connector '+p.id,p.id);addSegment(g,j.id,n.id);});
+ ordered.slice(i,i+4).forEach((p,k)=>{const px=x+(k%2===0?-130:130),py=k<2?85:520;const n=addNode(g,px,py,p.name||'Connector '+p.id,p.id);addSegment(g,j.id,n.id);});
  }return g;
 }
 const typical={8:5.0,10:4.0,12:3.3,14:2.7,16:2.3,18:1.9,20:1.6,22:1.4,24:1.2,26:1.0};
