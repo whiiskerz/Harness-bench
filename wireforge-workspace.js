@@ -78,7 +78,7 @@ function loadNamed(id){
   // Do not overwrite active S before the saved payload passes validation.
   const project=clone(pack.project);
   for(const p of project.parts)if(!T[p.t])makeCustom(p.t);
-  S=Object.assign(S,project,{wfVaultId:id,wfProjectName:pack.name,tab:'project'});
+  S=Object.assign(S,{wfFormboard:null},project,{wfVaultId:id,wfProjectName:pack.name,tab:'project'});
   S.nid=Math.max(Number(S.nid)||0,...S.parts.map(p=>+p.id||0),...S.wires.map(w=>+w.id||0))+1;
   selection=null;pending=null;
   save();showTab('project');saveStatus();
@@ -129,7 +129,7 @@ async function importFile(file){
   if(!confirm('Open this project file and replace the current drawing? Save your work first.'))return;
   const object=clone(payload);
   object.wfVaultId=null;object.wfProjectName=nameClean(raw.name||object.wfProjectName||'Imported Harness');
-  S=Object.assign(S,object,{tab:'project'});
+  S=Object.assign(S,{wfFormboard:null},object,{tab:'project'});
   S.nid=Math.max(Number(S.nid)||0,...S.parts.map(p=>+p.id||0),...S.wires.map(w=>+w.id||0))+1;
   selection=null;pending=null;
   save();showTab('project');saveStatus();showMessage('Imported project. Choose Save to Browser to keep a named copy.');
