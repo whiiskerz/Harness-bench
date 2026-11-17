@@ -205,9 +205,9 @@ a{color:var(--accent)}
 <section id="t-project" hidden></section><section id="t-blueprint" hidden></section><section id="t-dt" hidden></section><section id="t-vault" hidden></section><section id="t-lab" hidden></section>
 <section id="t-studio" hidden></section>
 <section id="t-sim" hidden></section>
-<section id="t-pro" hidden><div class="wf-pro-head"><div><span class="pill">PRO WORKSPACE · PREVIEW</span><h2>Harness Production Studio</h2><p class="muted">Reusable cavity maps, drawing layers, branch schedules, build reports and restore points. Manufacturer geometry and electrical suitability require independent verification.</p></div><div class="row"><button class="btn primary" type="button" id="wf3dProLaunch">◈ Render 3D</button><button class="btn primary" id="proPrint">Print build pack</button></div></div><div id="proRoot"></div></section>
+<section id="t-pro" hidden><div class="wf-pro-head"><div><span class="pill">PRO WORKSPACE · PREVIEW</span><h2>Harness Production Studio</h2><p class="muted">Reusable cavity maps, drawing layers, branch schedules, build reports and restore points. Manufacturer geometry and electrical suitability require independent verification.</p></div><div class="row"><button class="btn primary" type="button" id="wf3dProLaunch">◈ Render 3D</button><button class="btn primary" id="proPrint">Print build pack</button></div></div><div class="row"><button class="btn" data-tab="formboard">Physical formboard & measured cut list</button></div><div id="proRoot"></div></section>
 <section id="t-draw">
-<div class="wf-draw-intro"><div><div class="wb-eyebrow">WIRE FORGE / SCHEMATIC EDITOR</div><h2>Harness Designer <span>·</span> Design → Route → Verify</h2><p>Draw cavity-to-cavity connections, arrange hardware, then review the wiring in Blueprint, Loom Studio or 3D. Drag parts to adjust the layout.</p></div><div class="wf-draw-intro-actions"><button class="btn primary" data-tab="blueprint">E90 Blueprint</button><button class="btn" data-tab="lab">Validation Lab</button></div></div>
+<div class="wf-draw-intro"><div><div class="wb-eyebrow">WIRE FORGE / SCHEMATIC EDITOR</div><h2>Harness Designer <span>·</span> Design → Route → Verify</h2><p>Draw cavity-to-cavity connections, arrange hardware, then review the wiring in Blueprint, Loom Studio or 3D. Drag parts to adjust the layout.</p></div><div class="wf-draw-intro-actions"><button class="btn primary" data-tab="blueprint">E90 Blueprint</button><button class="btn" data-tab="formboard">Physical Formboard</button><button class="btn" data-tab="lab">Validation Lab</button></div></div>
 <details class="wf-advanced" id="wfAdvanced"><summary>Advanced engineering tools <small>Routing audit · branches · cut lists · snap · locking</small></summary>
 <section class="wf-phase card" id="wfPhasePanel" aria-label="Harness engineering tools">
 <h3>Engineering workbench <span class="pill">ADVANCED</span></h3>
@@ -257,7 +257,7 @@ a{color:var(--accent)}
     <div class="insp" id="insp"></div>
   </div>
 </section>
-<section id="t-mock" hidden></section>
+<section id="t-formboard" hidden></section><section id="t-mock" hidden></section>
 <section id="t-wires" hidden></section>
 <section id="t-cut" hidden></section>
 <section id="t-pins" hidden></section>
@@ -1967,11 +1967,13 @@ function proFindings(){
  return rows;
 }
 function proBuildRows(){
+ const physical=new Map((S.wfFormboard?.nodes?.length?window.WFFormboard?.report?.().rows||[]:[]).map(r=>[String(r.w.id),r]));
  const rows=[['Wire ID','Circuit','From','To','AWG','Color','Layer','Branch','Measured length (in)','Allowance (in)','Cut length (in)','Length status']];
  for(const w of S.wires){
   const measured=+w.len>0,allow=w.proAllowance===''||w.proAllowance==null?null:+w.proAllowance;
   const valid=allow!==null&&Number.isFinite(allow)&&allow>=0;
-  rows.push([w.id,w.sig||'',endName(w.a),endName(w.b),w.awg||'',w.color||'',w.wfLayer||'Other',w.proBranch||'',measured?w.len:'',valid?allow:'',measured&&valid?(+w.len+allow).toFixed(2):'',measured?'Measured':'Unverified / drawing estimate']);
+  const p=physical.get(String(w.id));
+  rows.push(p?.cut!=null&&!measured?[w.id,w.sig||'',endName(w.a),endName(w.b),w.awg||'',w.color||'',w.wfLayer||'Other',p.route.map(s=>s.id).join(' / '),p.run,p.cut-p.run,p.cut.toFixed(2),'Measured formboard route']:[w.id,w.sig||'',endName(w.a),endName(w.b),w.awg||'',w.color||'',w.wfLayer||'Other',w.proBranch||'',measured?w.len:'',valid?allow:'',measured&&valid?(+w.len+allow).toFixed(2):'',measured?'Measured':'Unverified / drawing estimate']);
  }
  return rows;
 }
@@ -2044,11 +2046,11 @@ function proAttach(){
  document.getElementById('proPrint')?.addEventListener('click',()=>{showTab('pro');document.body.classList.add('wf-pro-print');window.print();setTimeout(()=>document.body.classList.remove('wf-pro-print'),1000)});
 }
 
-const TABS=[['project','Overview'],['blueprint','E90 Blueprint'],['dt','Deutsch Assemblies'],['draw','Harness Designer'],['lab','Validation Lab'],['vault','Project Vault'],['pro','Production Studio'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
-const RENDER={dt:()=>window.WFDT?.render?.(),blueprint:()=>window.WFBlueprint?.render?.(),lab:()=>window.WFPro?.renderLab?.(),vault:()=>window.WFPro?.renderVault?.(),pro:rPro,project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
+const TABS=[['project','Overview'],['blueprint','E90 Blueprint'],['dt','Deutsch Assemblies'],['draw','Harness Designer'],['formboard','Physical Formboard'],['lab','Validation Lab'],['vault','Project Vault'],['pro','Production Studio'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
+const RENDER={formboard:()=>window.WFFormboard?.render?.(),dt:()=>window.WFDT?.render?.(),blueprint:()=>window.WFBlueprint?.render?.(),lab:()=>window.WFPro?.renderLab?.(),vault:()=>window.WFPro?.renderVault?.(),pro:rPro,project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
-const TAB_GROUP={dt:'Connectors',blueprint:'Workspace',lab:'Validation',vault:'Project',pro:'Build',project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
-const NAV_CORE=new Set(['project','blueprint','draw','dt','lab','vault','pro']);
+const TAB_GROUP={formboard:'Design',dt:'Connectors',blueprint:'Workspace',lab:'Validation',vault:'Project',pro:'Build',project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
+const NAV_CORE=new Set(['project','blueprint','draw','formboard','dt','lab','vault','pro']);
 const navBtn=([k,l])=>'<button type="button" role="tab" data-tab="'+k+'">'+l+'</button>';
 const navCore=TABS.filter(([k])=>NAV_CORE.has(k)).map(navBtn).join('');
 let lastAdvancedGroup='';
@@ -2271,7 +2273,7 @@ document.addEventListener('click',e=>{
     const ids=new Set(grp.map(w=>w.id));S.wires=S.wires.filter(w=>!ids.has(w.id));
     S.wires.slice(-grp.length*2).forEach(nameEnds);S.examples=false;MSEL.clear();selection={type:'part',id:pl.id};save();renderInsp();draw();hint();toast('Sub-harness made: '+grp.length+' wire'+(grp.length>1?'s':'')+' through a DT'+size+' pair');break}
    case'designSave':{const n=(document.getElementById('dsn').value||'').trim()||('Design '+(designList().length+1)),a=designList().filter(x=>x.name!==n);a.push({name:n,parts:S.parts.length,wires:S.wires.length,data:JSON.stringify(S)});designPut(a);rSave();toast('Saved "'+n+'"');break}
-   case'designLoad':{const x=designList()[+b.dataset.i];if(!x)break;commit();const o=JSON.parse(x.data);o.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});S=Object.assign(S,o,{tab:'save',wfVaultId:null});S.parts=S.parts.filter(p=>T[p.t]);selection=null;pending=null;save();rSave();toast('Loaded "'+x.name+'"');break}
+   case'designLoad':{const x=designList()[+b.dataset.i];if(!x)break;commit();const o=JSON.parse(x.data);o.parts.forEach(p=>{if(!T[p.t])makeCustom(p.t)});S=Object.assign(S,{wfFormboard:null},o,{tab:'save',wfVaultId:null});S.parts=S.parts.filter(p=>T[p.t]);selection=null;pending=null;save();rSave();toast('Loaded "'+x.name+'"');break}
    case'designDel':{const a=designList();a.splice(+b.dataset.i,1);designPut(a);rSave();break}
    case'clearWires':{if(!S.wires.length){toast('There are no wires to delete');break}if(!confirm('Delete all '+S.wires.length+' wires? Parts, connector pinouts, zones, and loom definitions will be kept. This cannot be undone after you leave the current session.'))break;commit();const count=S.wires.length;S.wires=[];selection=null;pending=null;canMode=false;canQ=[];save();draw();renderInsp();syncBar();toast('Deleted '+count+' wires; parts and zones kept');break}
    case'toggleRoute':{S.route=S.route==='curved'?'ortho':'curved';save();draw();toast(S.route==='curved'?'Curved wires':'90° routing');break}
@@ -2284,7 +2286,7 @@ document.addEventListener('click',e=>{
    case'bookReset':if(confirm('Restore the starter harness records? This replaces the current Harness Book records only.')){S.circuitBook=JSON.parse(JSON.stringify(BOOK_SEED));save();showTab('book');}break;
    case'bkCopy':copy(JSON.stringify(S),b);break;
    case'bkLoad':{try{const o=JSON.parse(document.getElementById('bk').value);const check=validateBackupObject(o);if(check.errors.length)throw new Error(check.errors.slice(0,3).join('; '));
-     S=Object.assign(S,o,{examples:false,tab:'save',wfVaultId:null});S.parts=S.parts.filter(p=>T[p.t]);S.nid=Math.max(S.nid||1,...S.parts.map(p=>+p.id||0),...S.wires.map(w=>+w.id||0))+1;selection=null;save();toast('Backup loaded and validated')}catch(x){toast('Backup not loaded: '+(x?.message||'invalid backup'))}break}
+     S=Object.assign(S,{wfFormboard:null},o,{examples:false,tab:'save',wfVaultId:null});S.parts=S.parts.filter(p=>T[p.t]);S.nid=Math.max(S.nid||1,...S.parts.map(p=>+p.id||0),...S.wires.map(w=>+w.id||0))+1;selection=null;save();toast('Backup loaded and validated')}catch(x){toast('Backup not loaded: '+(x?.message||'invalid backup'))}break}
   }
 });
 document.addEventListener('input',e=>{
@@ -2608,6 +2610,6 @@ if(S.tab==='draw'&&!S.view)requestAnimationFrame(fit);
 </script>
 
 <input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import WireForge project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js" defer></script>
-<script src="./wireforge-blueprint.js" defer></script>
+<script src="./wireforge-blueprint.js" defer></script><script src="./wireforge-formboard.js" defer></script>
 <script type="module" src="./wireforge-dt-assemblies.js"></script>
 </body></html>

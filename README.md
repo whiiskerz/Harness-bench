@@ -44,3 +44,14 @@ The screening calculations are educational aids only; they do not certify wire a
 - **Editable work zones:** drag Engine bay / DME box / Cabin / Trunk zone outlines, resize from the lower-right handle, and edit their names, colors, and dimensions in the inspector. Add or delete custom zones.
 - **Expanded E90 example:** includes fuel-pressure and A/C-pressure sensor placeholders, oil-pressure / CLT / IAT placeholders, flex-fuel signal routing, valved muffler Motor 2 endpoints, and nitrous SSR planning.
 - Sensor connector pinouts, temperature-input setup, SSR compatibility, auxiliary fuse feed, high-current sizing and protection remain to be verified against the actual installed hardware.
+
+
+## Physical Formboard (branch preview)
+
+Open **Physical Formboard** in the core workspace. Generate a draft from the active schematic, or place connectors and junctions manually. Connect nodes to build a physical tree; drag nodes to arrange it. Select branches to enter measured length in inches, sleeve type and inside diameter. Split a branch to create another breakout (remeasure both replacement branches). Select a wire to highlight its entire physical path.
+
+The formboard is stored in the same project JSON and browser vault. It does not change electrical connectivity or overwrite manually entered wire lengths. Cut lengths are calculated only when all segments on a route are measured, using the sum of branch lengths plus two end allowances and any service-loop allowance. The Production Studio export uses a complete formboard route if a manual wire length is absent. Wire and sleeve material exports include the configured waste factor. Estimated bundle diameters are advisory; verify insulation OD, packing, fit, bend radius, and connector backshells before fabrication.
+
+The generated tree is a starting draft ordered by schematic placement, not a measured E90 routing plan. Same-component leads require separate measurement. Separate physical trunks may be drawn as separate trees. The tool intentionally prohibits cycles to keep routing unambiguous.
+
+Inspired by the schematic/physical-layout workflow of [Twisted Builds Harness Designer](https://github.com/twisted-builds-llc/Twisted_Builds_Harness_Designer) (GPLv3-or-later); this browser-native implementation does not incorporate its source code.
