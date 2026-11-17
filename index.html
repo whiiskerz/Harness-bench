@@ -1967,11 +1967,13 @@ function proFindings(){
  return rows;
 }
 function proBuildRows(){
+ const physical=new Map((S.wfFormboard?.nodes?.length?window.WFFormboard?.report?.().rows||[]:[]).map(r=>[String(r.w.id),r]));
  const rows=[['Wire ID','Circuit','From','To','AWG','Color','Layer','Branch','Measured length (in)','Allowance (in)','Cut length (in)','Length status']];
  for(const w of S.wires){
   const measured=+w.len>0,allow=w.proAllowance===''||w.proAllowance==null?null:+w.proAllowance;
   const valid=allow!==null&&Number.isFinite(allow)&&allow>=0;
-  rows.push([w.id,w.sig||'',endName(w.a),endName(w.b),w.awg||'',w.color||'',w.wfLayer||'Other',w.proBranch||'',measured?w.len:'',valid?allow:'',measured&&valid?(+w.len+allow).toFixed(2):'',measured?'Measured':'Unverified / drawing estimate']);
+  const p=physical.get(String(w.id));
+  rows.push(p?.cut!=null&&!measured?[w.id,w.sig||'',endName(w.a),endName(w.b),w.awg||'',w.color||'',w.wfLayer||'Other',p.route.map(s=>s.id).join(' / '),p.run,p.cut-p.run,p.cut.toFixed(2),'Measured formboard route']:[w.id,w.sig||'',endName(w.a),endName(w.b),w.awg||'',w.color||'',w.wfLayer||'Other',w.proBranch||'',measured?w.len:'',valid?allow:'',measured&&valid?(+w.len+allow).toFixed(2):'',measured?'Measured':'Unverified / drawing estimate']);
  }
  return rows;
 }
