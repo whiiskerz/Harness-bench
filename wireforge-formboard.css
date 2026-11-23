@@ -107,3 +107,73 @@
 .fb-lead-line {display:grid;grid-template-columns:2.4rem minmax(3rem,8rem) minmax(0,1fr);align-items:center;gap:.5rem;width:100%;text-align:left;padding:.25rem;background:transparent;color:inherit;border:0;border-bottom:1px solid #66778044}
 .fb-lead-line svg {width:100%;height:1.5rem}
 .fb-lead-line small {display:block;opacity:.8}
+
+/* Full-screen formboard. Chrome floats independently of the SVG camera. */
+#t-formboard .ds-shell {position:fixed;inset:0;z-index:90;display:grid;grid-template-rows:48px minmax(0,1fr) 32px;border:0;border-radius:0;background:#f6f6f3;color:#e8e9e6;font:13px system-ui,sans-serif;isolation:isolate}
+body:has(.ds-shell):has(#t-formboard:not([hidden])) {overflow:hidden}
+.ds-shell * {box-sizing:border-box}
+#t-formboard .ds-head,#t-formboard .ds-foot {display:flex;align-items:center;gap:18px;padding:0 18px;background:#202222;color:#c5c7c5;min-width:0}
+.ds-head strong {font-size:15px;color:#fff;white-space:nowrap;letter-spacing:-.45px}
+.ds-project {border-left:1px solid #535555;padding-left:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ds-head>div {margin-left:auto;display:flex;gap:4px}
+#t-formboard .ds-shell button {font:inherit;color:inherit;background:none;border:1px solid transparent;border-radius:5px;padding:6px 10px;cursor:pointer}
+#t-formboard .ds-shell button:hover {background:#ffffff16}
+#t-formboard .ds-shell button:focus-visible {outline:2px solid #66a8ff;outline-offset:-2px}
+.ds-desk {position:relative;min-height:0;overflow:hidden;background:#f6f6f3}
+.ds-desk>#wfFormSvg {position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;user-select:none}
+.ds-modes,.ds-rail,.ds-zoom,.ds-panel,.ds-prompt {position:absolute;z-index:3;background:#242626;color:#f0f0ed;box-shadow:0 3px 14px #171b1b25}
+#t-formboard .ds-modes {top:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;border-radius:28px;padding:4px;white-space:nowrap}
+#t-formboard .ds-modes button {border-radius:24px;padding:7px 14px;font-size:12px;font-weight:600}
+#t-formboard .ds-shell button.active,#t-formboard .ds-shell button.fb-primary {background:#2869e9;color:#fff}
+.ds-rail {left:16px;top:50%;transform:translateY(-50%);display:grid;padding:4px;border-radius:9px}
+#t-formboard .ds-rail button {display:grid;justify-items:center;align-content:center;width:45px;height:47px;padding:2px}
+.ds-rail i {font-size:9px;font-style:normal}
+.ds-rail span {font-size:20px;line-height:22px}
+.ds-zoom {right:15px;bottom:14px;border-radius:7px;display:flex;padding:3px}
+.ds-panel {right:12px;top:68px;width:275px;max-height:calc(100% - 130px);overflow:auto;border-radius:9px;padding:14px;color-scheme:dark}
+#t-formboard .ds-panelhead {display:flex;align-items:center;justify-content:space-between;gap:10px}
+#t-formboard .ds-panelhead h3 {margin:0;font-size:15px;color:inherit}
+.ds-panelhead button {font-size:11px!important}
+#t-formboard .ds-palette .ds-part {display:flex;align-items:center;text-align:left;width:100%;gap:13px;border-bottom:1px solid #ffffff15}
+.ds-part svg {width:55px;height:38px}
+.ds-part small {display:block;color:#b2b9b7;font-size:10px}
+.ds-inspector .fb-panel-title {display:none}
+#t-formboard .ds-inspector input,#t-formboard .ds-inspector select {color:#eee;background:#171a1b;border:1px solid #4b5356}
+.ds-prompt {bottom:14px;left:50%;transform:translateX(-50%);padding:5px 12px;border-radius:7px}
+.ds-start {position:absolute;inset:60px 66px 45px;display:flex;align-items:center;justify-content:center;flex-direction:column;pointer-events:none}
+.ds-preview-svg {width:min(100%,960px);height:auto;overflow:visible}
+.ds-preview-svg text {font:600 13px system-ui,sans-serif;fill:#25292a}
+.ds-preview-svg text.ds-id {font:10px monospace;letter-spacing:1px;fill:#6b7071}
+.ds-preview-svg text.ds-tag {font:700 8px system-ui,sans-serif}
+.ds-start-actions {display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;color:#2a3031;padding:7px;background:#f7f7f4ed;border:1px solid #c9ccca;border-radius:8px;pointer-events:auto}
+.ds-start-actions span {padding:0 6px;font-size:12px}
+#t-formboard .ds-start-actions button:hover {background:#d2d6d8}
+.ds-foot {font-size:11px}.ds-foot span:last-child {margin-left:auto}
+.ds-report {position:absolute;inset:0;padding:80px 4vw 24px;overflow:auto;background:#202223;color:#e7e8e7}
+.ds-report .tw {max-height:calc(100% - 38px);overflow:auto}
+.ds-report table {color:inherit}
+@media(max-width:650px){
+ #t-formboard .ds-shell {grid-template-rows:42px minmax(0,1fr) 30px}
+ #t-formboard .ds-head,#t-formboard .ds-foot {gap:8px;padding:0 9px}
+ .ds-project {display:none}
+ #t-formboard .ds-head button {font-size:11px;padding:6px}
+ #t-formboard .ds-modes button {padding:6px 10px;font-size:11px}
+ .ds-rail {top:auto;bottom:10px;left:8px;transform:none;display:flex}
+ #t-formboard .ds-rail button {width:37px;height:39px}
+ .ds-zoom {right:8px;bottom:10px}
+ #t-formboard .ds-zoom button {padding:4px 7px}
+ .ds-start {inset:52px 4px 65px}
+ .ds-start-actions {max-width:280px}
+ .ds-start-actions span {width:100%;text-align:center}
+ .ds-panel {top:auto;bottom:65px;left:8px;right:8px;width:auto;max-height:39%}
+ .ds-palette {top:60px;bottom:auto;max-height:65%}
+ .ds-prompt {bottom:66px;width:max-content;max-width:94%;font-size:12px}
+}
+.ds-schematic {position:absolute;inset:0;overflow:auto;padding-top:45px;background:repeating-linear-gradient(0deg,transparent 0 19px,#dddeda 19px 20px),repeating-linear-gradient(90deg,#f6f6f3 0 19px,#dddeda 19px 20px);color:#34404a}
+.ds-schematic svg {display:block;max-width:none}
+.ds-block {font:10px monospace;fill:#4b5154;cursor:pointer}
+.ds-block rect {fill:#fffffb;stroke:#5c6365;stroke-width:1.5}
+.ds-block .ds-comp-title {font:bold 11px system-ui,sans-serif}
+.ds-schematic p {margin:60px 20px 0}
+.ds-conductors {display:block;width:90px;height:90px;margin:8px auto}
+.ds-portrait {max-height:57vh}
