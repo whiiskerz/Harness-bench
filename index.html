@@ -391,6 +391,16 @@ function makeCustom(tid){
   const n=Math.max(1,Math.min(60,+m[2]));
   T[tid]=m[1]==='bulk'?Object.assign(gen(tid,'Firewall bulkhead '+n+'-pin',n,true,'bulk','Mil-spec bulkhead'),{bulk:true}):gen(tid,n+'-pin connector',n,false,'dt','Custom');
 }
+/* MaxxECU pin reference transcribed from user-provided notes. Verify exact model and official documentation before wiring. */
+const MAXXECU_MAIN=[["A1","GPO 5","-","GPO 4"],["A2","IGN 1","IGN 1","IGN 1"],["A3","IGN 2","IGN 2","IGN 2"],["A4","GPO 8/TACHO","GPO 8/TACHO","GPO 8/TACHO"],["B1","GPO 6","-","GPO 5"],["B2","IGN 3","IGN 3","IGN 3"],["B3","IGN 4","IGN 4","IGN 4"],["B4","GPO 1","GPO 1","GPO 1"],["C1","GPO 7","-","AIN 5 (0–5 V)"],["C2","IGN 5","IGN 5","IGN 5"],["C3","IGN 6","IGN 6","IGN 6"],["C4","GPO 2","GPO 2","GPO 2"],["D1","WBO2 Heater−","WBO2 Heater−","WBO2 Heater−"],["D2","IGN 7","-","AIN 6 (0–5 V)"],["D3","IGN 8","-","AIN 7 (0–5 V)"],["D4","GPO 3","GPO 3","GPO 3"],["E1","CAN H","CAN H","CAN H"],["E2","CAN L","CAN L","CAN L"],["E3","GND Shield","GND Shield","GND Shield"],["E4","GPO 4","-","AIN 8 (0–5 V)"],["F1","CLT","CLT","CLT"],["F2","IAT","IAT","IAT"],["F3","WBO2 VREF","WBO2 VREF","WBO2 VREF"],["F4","WBO2 VS","WBO2 VS","WBO2 VS"],["G1","+5V sensor supply (peak 0.5 A, max 150 mA)","+5V sensor supply (peak 0.5 A, max 150 mA)","+5V sensor supply (peak 0.5 A, max 150 mA)"],["G2","TPS/AIN","TPS/AIN","TPS/AIN"],["G3","WBO2 IP","WBO2 IP","WBO2 IP"],["G4","WBO2 RCAL","WBO2 RCAL","WBO2 RCAL"],["H1","Sensor GND","Sensor GND","Sensor GND"],["H2","Trigger GND","Trigger GND","Trigger GND"],["H3","TRIGGER","TRIGGER","TRIGGER"],["H4","HOME","HOME","HOME"],["J1","AIN 1 (Temperature)","AIN 1 (Temperature)","AIN 1 (Temperature)"],["J2","AIN 2 (Temperature)","AIN 2 (Temperature)","AIN 2 (Temperature)"],["J3","AIN 3 (0–5 V)","AIN 3 (0–5 V)","AIN 3 (0–5 V)"],["J4","AIN 4 (0–5 V)","AIN 4 (0–5 V)","AIN 4 (0–5 V)"],["K1","INJ 1","INJ 1","INJ 1"],["K2","INJ 2","INJ 2","INJ 2"],["K3","DIN/VR 1","DIN 1","DIN 1"],["K4","DIN/VR 2","DIN 2","DIN 2"],["L1","INJ 8","-","GPO 11/Motor 1−"],["L2","INJ 7","-","GPO 12/Motor 1+"],["L3","INJ 6","INJ 6","INJ 6"],["L4","Engine GND","Engine GND","Engine GND"],["M1","INJ 3","INJ 3","INJ 3"],["M2","INJ 4","INJ 4","INJ 4"],["M3","INJ 5","INJ 5","INJ 5"],["M4","+12V ECU power supply","+12V ECU power supply","+12V ECU power supply"]];
+const MAXXECU_AUX=[["A1","EGT 5+"],["A2","EGT 6+"],["A3","EGT 7+"],["A4","EGT 8+"],["B1","EGT 5−"],["B2","EGT 6−"],["B3","EGT 7−"],["B4","EGT 8−"],["C1","EGT 1+"],["C2","EGT 2+"],["C3","EGT 3+"],["C4","EGT 4+"],["D1","EGT 1−"],["D2","EGT 2−"],["D3","EGT 3−"],["D4","EGT 4−"],["E1","Knock GND"],["E2","Knock 1"],["E3","Knock 2"],["E4","AIN 6 (0–5 V)"],["F1","AIN 7 (0–5 V)"],["F2","AIN 8 (0–5 V)"],["F3","DIN/VR 4"],["F4","DIN/VR 5"],["G1","GPO 15 (+12 V)"],["G2","GPO 16 (+12 V)"],["G3","AIN 5 (0–5 V)"],["G4","Engine Ground"],["H1","Motor 2+"],["H2","Motor 1−"],["H3","Motor 2−"],["H4","Motor 1+"]];
+/* Pinout-backed physical connectors for the user's Gen1 RACE ECU.
+   Main connector functions use the V1/RACE/PRO column of the existing reference table. */
+group('DEUTSCH HD30 firewall',[Object.assign(gen('hd30_47','HD30 · 47-position receptacle',47,true,'bulk','24-47 · verify key and contact arrangement','HD34-24-47PE'),{bulk:true})]);
+group('MaxxECU Gen1 RACE connectors',[
+ {id:'mxrace48',name:'MaxxECU Gen1 RACE · 48-pin main Molex',fam:'mxecu',sub:'V1 / RACE / PRO · main connector',pn:'48 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_MAIN.map(r=>({p:r[0],l:r[1]}))},
+ {id:'mxrace32',name:'MaxxECU Gen1 RACE · 32-pin black Connector 2',fam:'mxecu',sub:'Connector 2 · EGT / knock / I/O',pn:'32 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_AUX.map(r=>({p:r[0],l:r[1]}))}
+]);
 const fuseLabels=n=>[['IN','Power in']].concat(Array.from({length:n},(_,i)=>['F'+(i+1),'']));
 
 group('MaxxECU LS harness',[
@@ -941,7 +951,7 @@ function sampleSegs(segs,step){
 }
 function twistD(g,phase){const pts=sampleSegs(g.segs,4);return 'M'+pts.map(p=>{const o=5*Math.sin(2*Math.PI*p.s/26+phase);return (p.x+p.nx*o).toFixed(1)+' '+(p.y+p.ny*o).toFixed(1)}).join(' L')}
 const twPhase=w=>{const f=S.wires.find(x=>x.tw===w.tw);return f===w?0:Math.PI};
-const autoLen=w=>{const g=geo(w);return g?Math.round(g.d/(S.scale||4)*1.15*2)/2:0};
+const autoLen=w=>{if(w.measuredOnly)return 0;const g=geo(w);return g?Math.round(g.d/(S.scale||4)*1.15*2)/2:0};
 const wlen=w=>(+w.len>0?+w.len:autoLen(w));
 const cutLen=w=>wlen(w)+2*(+S.strip||0);
 const pinId=(p,i)=>T[p.t]?.pins?.[i]?.p??'?';
@@ -954,6 +964,19 @@ const usedOn=(pid,i)=>S.wires.filter(w=>(w.a.p===pid&&w.a.i===i)||(w.b.p===pid&&
 const faceOf=(w,pid,i)=>(w.a.p===pid&&w.a.i===i)?w.a.s:w.b.s;
 const faceUsed=(pid,i,s)=>usedOn(pid,i).some(w=>faceOf(w,pid,i)===s);
 
+function connectedWires(id){
+ const seed=S.wires.find(w=>w.id===id),seen=new Set();
+ if(!seed)return seen;
+ const adjacent=new Map(),key=end=>end.p+':'+end.i;
+ for(const w of S.wires)for(const end of [w.a,w.b]){
+  const k=key(end);if(!adjacent.has(k))adjacent.set(k,[]);adjacent.get(k).push(w);
+ }
+ const queue=[seed];seen.add(seed.id);
+ for(const w of queue)for(const end of [w.a,w.b])for(const next of adjacent.get(key(end))||[]){
+  if(!seen.has(next.id)){seen.add(next.id);queue.push(next);}
+ }
+ return seen;
+}
 /* ---------- drawing ---------- */
 const cv=document.getElementById('cv');
 const v=()=>S.view||(S.view={x:20,y:20,k:.8});
@@ -966,7 +989,7 @@ function draw(){
   if(S.fw!=null)out.push(fwSVG(V));
   if(S.tk!=null)out.push(tkSVG(V));
   S.parts.forEach(p=>{if(T[p.t].bulk)out.push(partSVG(p))});
-  const handles=[];
+  const handles=[];const network=selection?.type==='wire'&&!MSEL.size?connectedWires(selection.id):new Set();
   const PAIR={};S.wires.forEach(w=>{if(w.tw)(PAIR[w.tw]=PAIR[w.tw]||[]).push(w)});const LP=loomPlan(),LM=LP.LM;
   S.wires.forEach(w=>{if(proState().hiddenLayers.includes(w.wfLayer||'Other'))return;const g=geo(w);if(!g||LM[w.id])return;const lm=(S.looms||[]).find(l=>l.id===w.loom);
     if(lm)out.push(`<path d="${g.path}" fill="none" stroke="${lm.color}" stroke-width="14" stroke-linecap="round" opacity=".22"/>`)});
@@ -976,14 +999,16 @@ function draw(){
     const sel=(selection&&selection.type==='wire'&&selection.id===w.id)||MSEL.has(w.id);
     const lmi=LM[w.id],PD=!lmi&&!!(w.tw&&PAIR[w.tw]&&PAIR[w.tw].length===2),dd=lmi?lmi.d:g.path;
     const c=cpart(w.color,0)||'var(--mute)',c2=cpart(w.color,1),d=lmi?dd:(w.tw?twistD(g,twPhase(w)):g.path);
-    if(sel)out.push(`<path d="${dd}" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" opacity=".5"/>`);
+    out.push(`<g opacity="${network.size && !network.has(w.id) ? 0.23 : 1}">`);
+    if(sel||network.has(w.id))out.push(`<path d="${dd}" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" opacity=".5"/>`);
     if(ERR.w.has(w.id))out.push(`<path d="${dd}" fill="none" stroke="var(--bad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="3 7" opacity=".85"/>`);
     if(PD&&PAIR[w.tw][0]===w)out.push(pairSVG(PAIR[w.tw]));
     if(!PD)out.push(`<path d="${d}" fill="none" stroke="${w.tw?'#000':'var(--mute)'}" stroke-width="${w.tw?5.6:6}" stroke-linecap="round" stroke-linejoin="round" opacity="${w.tw?.55:.5}"/>`);
     if(!PD)out.push(`<path d="${d}" fill="none" stroke="${c}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>`);
     if(c2&&!PD)out.push(`<path d="${d}" fill="none" stroke="${c2}" stroke-width="3.6" stroke-dasharray="7 9"/>`);
     out.push(`<path data-wire="${w.id}" d="${dd}" fill="none" stroke="transparent" stroke-width="18" style="cursor:pointer"/>`);
-    if(sel){out.push(`<text class="wl" x="${g.mid.x}" y="${g.mid.y-16}" text-anchor="middle">${wlen(w)} in</text>`);handles.push(`<circle data-vh="${w.id}" cx="${g.mid.x}" cy="${g.mid.y}" r="9" fill="var(--accent)" stroke="var(--bg)" stroke-width="2" style="cursor:grab"/>`)}
+    if(sel){out.push(`<text class="wl" x="${g.mid.x}" y="${g.mid.y-16}" text-anchor="middle">${w.measuredOnly&&!w.len?'Length TBD':wlen(w)+' in'}</text>`);handles.push(`<circle data-vh="${w.id}" cx="${g.mid.x}" cy="${g.mid.y}" r="9" fill="var(--accent)" stroke="var(--bg)" stroke-width="2" style="cursor:grab"/>`)}
+    out.push('</g>');
   });
   LP.tubes.forEach(t=>out.push(tubeSVG(t)));
   S.parts.forEach(p=>{if(!T[p.t].bulk)out.push(partSVG(p))});
@@ -1278,7 +1303,7 @@ function renderInspBase(){
   if(selection&&selection.type==='part'){
     const p=part(selection.id);if(!p){selection=null;return renderInsp()}
     const t=T[p.t];
-    el.innerHTML=`<h2>${esc(t.name)}</h2>
+    el.innerHTML=`<h2>${esc(t.name)}</h2><button class="btn" type="button" data-pin-config="${p.id}">Pin configuration</button>
      <label><span>Name on drawing</span><input data-pn="name" value="${esc(p.name)}"></label>
      ${t.fz?fuseSection(p,t):''}
      ${t.node?'':`<h3>Pin labels</h3><div class="plist">${t.pins.map((pin,i)=>`<label><span>${esc(pin.p)}</span><input data-pl="${i}" value="${esc((p.pl&&p.pl[i])||'')}" placeholder="${esc(pin.l||'name this pin')}"></label>`).join('')}</div>`}
@@ -1301,7 +1326,7 @@ function renderInspBase(){
     el.innerHTML=`<h2>Wire</h2>
      <p class="nt">${esc(endName(w.a))}<br>→ ${esc(endName(w.b))}</p>
      <div class="call"><b>Move a wire end</b>${['a','b'].map(k=>{const r=w[k],pp=part(r.p);return `<div class="two"><label><span>End ${k.toUpperCase()} part</span><select data-we="${k}" data-wk="p">${S.parts.map(q=>`<option value="${q.id}" ${q.id===r.p?'selected':''}>${esc(q.name)}</option>`).join('')}</select></label><label><span>Pin</span><select data-we="${k}" data-wk="i">${(T[pp.t].node?[{p:'node'}]:T[pp.t].pins).map((pin,i)=>`<option value="${i}" ${i===r.i?'selected':''}>${esc(String(pin.p)+(plabel(pp,i)?' · '+plabel(pp,i):''))}</option>`).join('')}</select></label></div>`}).join('')}<p class="muted">Pick a different part or pin to move that end of the wire.</p></div>
-     <label><span>Signal / what it does</span><input data-wi="sig" value="${esc(w.sig)}"></label>
+     <label><span>Signal / what it does</span><input data-wi="sig" value="${esc(w.sig)}"></label><button class="btn" data-act="nameNetwork">Apply name to connected circuit (${connectedWires(w.id).size} wires)</button>
      <div class="two">
       <label><span>Gauge</span><select data-wi="awg">${gs}</select></label>
       <label><span>Color</span><div class="cw"><i class="chip" style="background:${colorOf(w.color)}"></i><input data-wi="color" value="${esc(w.color)}" placeholder="GRN/WHT"></div></label>
@@ -1492,15 +1517,6 @@ function rPins(){
       const info=ws.map(w=>{const o=(w.a.p===p.id&&w.a.i===i)?w.b:w.a;return `${t.bulk?`<span class="tag">${faceOf(w,p.id,i)==='L'?'engine':'cabin'}</span> `:''}${dotColor(w.color)} ${esc(w.sig||'(unnamed)')} <span class="nt">${w.awg} AWG → ${esc(endName(o))}</span>`}).join('<br>');
       return `<tr><td class="mono">${esc(t.pins[i].p)}</td><td>${esc(t.node?'':plabel(p,i))}</td><td colspan="2">${info||'<span class="nt">empty</span>'}</td></tr>`}).join('')}</tbody></table></div></div>`}).join('')+`<div class="row"><button class="btn" data-copy="pins">Copy all pinouts as CSV</button></div>`;
 }
-/* MaxxECU pin reference transcribed from user-provided notes. Verify exact model and official documentation before wiring. */
-const MAXXECU_MAIN=[["A1","GPO 5","-","GPO 4"],["A2","IGN 1","IGN 1","IGN 1"],["A3","IGN 2","IGN 2","IGN 2"],["A4","GPO 8/TACHO","GPO 8/TACHO","GPO 8/TACHO"],["B1","GPO 6","-","GPO 5"],["B2","IGN 3","IGN 3","IGN 3"],["B3","IGN 4","IGN 4","IGN 4"],["B4","GPO 1","GPO 1","GPO 1"],["C1","GPO 7","-","AIN 5 (0–5 V)"],["C2","IGN 5","IGN 5","IGN 5"],["C3","IGN 6","IGN 6","IGN 6"],["C4","GPO 2","GPO 2","GPO 2"],["D1","WBO2 Heater−","WBO2 Heater−","WBO2 Heater−"],["D2","IGN 7","-","AIN 6 (0–5 V)"],["D3","IGN 8","-","AIN 7 (0–5 V)"],["D4","GPO 3","GPO 3","GPO 3"],["E1","CAN H","CAN H","CAN H"],["E2","CAN L","CAN L","CAN L"],["E3","GND Shield","GND Shield","GND Shield"],["E4","GPO 4","-","AIN 8 (0–5 V)"],["F1","CLT","CLT","CLT"],["F2","IAT","IAT","IAT"],["F3","WBO2 VREF","WBO2 VREF","WBO2 VREF"],["F4","WBO2 VS","WBO2 VS","WBO2 VS"],["G1","+5V sensor supply (peak 0.5 A, max 150 mA)","+5V sensor supply (peak 0.5 A, max 150 mA)","+5V sensor supply (peak 0.5 A, max 150 mA)"],["G2","TPS/AIN","TPS/AIN","TPS/AIN"],["G3","WBO2 IP","WBO2 IP","WBO2 IP"],["G4","WBO2 RCAL","WBO2 RCAL","WBO2 RCAL"],["H1","Sensor GND","Sensor GND","Sensor GND"],["H2","Trigger GND","Trigger GND","Trigger GND"],["H3","TRIGGER","TRIGGER","TRIGGER"],["H4","HOME","HOME","HOME"],["J1","AIN 1 (Temperature)","AIN 1 (Temperature)","AIN 1 (Temperature)"],["J2","AIN 2 (Temperature)","AIN 2 (Temperature)","AIN 2 (Temperature)"],["J3","AIN 3 (0–5 V)","AIN 3 (0–5 V)","AIN 3 (0–5 V)"],["J4","AIN 4 (0–5 V)","AIN 4 (0–5 V)","AIN 4 (0–5 V)"],["K1","INJ 1","INJ 1","INJ 1"],["K2","INJ 2","INJ 2","INJ 2"],["K3","DIN/VR 1","DIN 1","DIN 1"],["K4","DIN/VR 2","DIN 2","DIN 2"],["L1","INJ 8","-","GPO 11/Motor 1−"],["L2","INJ 7","-","GPO 12/Motor 1+"],["L3","INJ 6","INJ 6","INJ 6"],["L4","Engine GND","Engine GND","Engine GND"],["M1","INJ 3","INJ 3","INJ 3"],["M2","INJ 4","INJ 4","INJ 4"],["M3","INJ 5","INJ 5","INJ 5"],["M4","+12V ECU power supply","+12V ECU power supply","+12V ECU power supply"]];
-const MAXXECU_AUX=[["A1","EGT 5+"],["A2","EGT 6+"],["A3","EGT 7+"],["A4","EGT 8+"],["B1","EGT 5−"],["B2","EGT 6−"],["B3","EGT 7−"],["B4","EGT 8−"],["C1","EGT 1+"],["C2","EGT 2+"],["C3","EGT 3+"],["C4","EGT 4+"],["D1","EGT 1−"],["D2","EGT 2−"],["D3","EGT 3−"],["D4","EGT 4−"],["E1","Knock GND"],["E2","Knock 1"],["E3","Knock 2"],["E4","AIN 6 (0–5 V)"],["F1","AIN 7 (0–5 V)"],["F2","AIN 8 (0–5 V)"],["F3","DIN/VR 4"],["F4","DIN/VR 5"],["G1","GPO 15 (+12 V)"],["G2","GPO 16 (+12 V)"],["G3","AIN 5 (0–5 V)"],["G4","Engine Ground"],["H1","Motor 2+"],["H2","Motor 1−"],["H3","Motor 2−"],["H4","Motor 1+"]];
-/* Pinout-backed physical connectors for the user's Gen1 RACE ECU.
-   Main connector functions use the V1/RACE/PRO column of the existing reference table. */
-group('MaxxECU Gen1 RACE connectors',[
- {id:'mxrace48',name:'MaxxECU Gen1 RACE · 48-pin main Molex',fam:'mxecu',sub:'V1 / RACE / PRO · main connector',pn:'48 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_MAIN.map(r=>({p:r[0],l:r[1]}))},
- {id:'mxrace32',name:'MaxxECU Gen1 RACE · 32-pin black Connector 2',fam:'mxecu',sub:'Connector 2 · EGT / knock / I/O',pn:'32 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_AUX.map(r=>({p:r[0],l:r[1]}))}
-]);
 function ecuVariant(){return S.ecuVariant||'race'}
 function setEcuVariant(v){S.ecuVariant=v;save();rEcu()}
 function setEcuSearch(v){const a=document.activeElement,pos=a&&typeof a.selectionStart==='number'?a.selectionStart:String(v||'').length;S.ecuSearch=v;rEcu();const i=document.querySelector('#t-ecu input[oninput]');if(i){i.focus();try{i.setSelectionRange(pos,pos)}catch(_){}}}
@@ -2253,6 +2269,7 @@ document.addEventListener('click',e=>{
    case'fw':{if(S.fw==null){const r=rectOf();S.fw=snap(toWorld(r.left+r.width/2,r.top).x)}else S.fw=null;save();syncBar();draw();break}
    case'delPart':{if(selection&&selection.type==='part'){commit();delPart(selection.id);selection=null;save();renderInsp();draw();hint()}break}
    case'dupPart':{commit();const p=part(selection.id),c=JSON.parse(JSON.stringify(p));c.id=nid();c.x+=30;c.y+=30;S.parts.push(c);selection={type:'part',id:c.id};save();renderInsp();draw();break}
+   case'nameNetwork':{const wire=S.wires.find(w=>w.id===selection?.id);if(!wire)break;const network=connectedWires(wire.id);commit();for(const w of S.wires)if(network.has(w.id))w.sig=wire.sig;save();renderInsp();draw();break}
    case'delWire':{commit();S.wires=S.wires.filter(w=>w.id!==selection.id);selection=null;save();renderInsp();draw();hint();break}
    case'useAsDefault':{const w=S.wires.find(x=>x.id===selection.id);S.def={awg:w.awg,color:w.color};save();syncBar();toast('New wires will use this');break}
    case'bulkDel':{commit();S.wires=S.wires.filter(w=>!MSEL.has(w.id));MSEL.clear();selection=null;save();renderInsp();draw();hint();break}

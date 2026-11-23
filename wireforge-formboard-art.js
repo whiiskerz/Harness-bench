@@ -25,7 +25,18 @@ function definitions(){
  </defs>`;
 }
 function angle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;}
-function hardware(family){
+function hardware(family,type){
+ if(type==='relay4'||type==='relay'){
+  const blades=Array.from({length:type==='relay4'?4:5},(_,i)=>'<rect x="'+(8+i*9)+'" y="12" width="4" height="11" fill="#d5bb87" stroke="#756448"/>').join('');
+  return blades+'<path d="M2-15L12-22H52L61-15V13L53 18H2Z" fill="url(#fb-module)" stroke="#162125"/><path d="M2-15H52V17M52-15L60-20" fill="none" stroke="#87949a"/><text x="8" y="4" fill="white" font-size="9">RELAY</text>';
+ }
+ if(type==='fuse6'){
+  return '<rect y="-19" width="68" height="38" rx="4" fill="url(#fb-module)"/>'+Array.from({length:6},(_,i)=>'<rect x="'+(5+i*10)+'" y="-12" width="7" height="23" rx="2" fill="#93a6af" stroke="#29373e"/><circle cx="'+(8+i*10)+'" cy="4" r="1.4" fill="#d6cfac"/>').join('');
+ }
+ if(type==='dual'||type==='e90leash1'){
+  return '<rect y="-19" width="72" height="38" rx="4" fill="#305048" stroke="#24382f"/><rect x="8" y="-15" width="24" height="21" rx="2" fill="url(#fb-module)"/>'+(type==='dual'?'<rect x="39" y="-15" width="24" height="21" rx="2" fill="url(#fb-module)"/>':'')+'<path d="M8 12H63" stroke="#c7ae75" stroke-width="5" stroke-dasharray="5 4"/>';
+ }
+ if(family==='mxecu')family='mx';
  if(family==='term')return '<path d="M0-5H16L24-11A14 14 0 1 1 24 11L16 5H0Z" fill="url(#fb-shell)" stroke="#49575e"/><circle cx="33" cy="0" r="6" fill="#e8eef0" stroke="#48575d"/><path d="M3-3H14M3 3H14" stroke="#5f747d"/>';
  if(family==='bulk'||family==='maven')return '<path d="M0-12H13V-19H21L27-23H52L60-17H71V17H60L52 23H27L21 19H13V12H0Z" fill="url(#fb-rubber)" stroke="#101719"/><path d="M21-25V25M49-22V22M54-20V20M60-16V16M65-16V16" stroke="#607078" stroke-width="2"/><path d="M68-17V17" stroke="#b85749" stroke-width="2"/>';
  if(family==='mx')return '<path d="M0-10H15L23-19H37V19H23L15 10H0Z" fill="url(#fb-shell)" stroke="#34414a"/><rect x="37" y="-28" width="73" height="56" rx="5" fill="url(#fb-module)" stroke="#1a252a" stroke-width="2"/><path d="M42-25V25M102-24V24M48-19H96M48-12H96M48-5H96M48 2H96M48 9H96M48 16H96" stroke="#87989c" stroke-opacity=".56" stroke-width="2"/>';

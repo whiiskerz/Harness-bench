@@ -174,6 +174,23 @@ module.exports=async function testFormboard(browser,url='http://127.0.0.1:8765/i
   await page.setViewportSize({width:390,height:844});
   const mobile=await page.locator('.fb-workspace').boundingBox();
   assert.ok(mobile.width<workspace.width&&mobile.width<=390,'Physical workspace fits a narrow screen');
+  const previous=await read();
+  await act('loom').click();
+  await act('pinSchedule').click();
+  const schedule=page.locator('dialog[open]');
+  assert.equal(await schedule.locator('tbody tr').count(),47);
+  assert.match(await schedule.locator('tbody tr').nth(35).textContent(),/J4/);
+  await schedule.locator('#fbSwap1').selectOption({value:'35'});
+  await schedule.locator('#fbSwap2').selectOption({value:'46'});
+  await schedule.locator('[data-swap]').click();
+  assert.match(await schedule.locator('tbody tr').nth(46).textContent(),/J4/);
+  await schedule.getByText('Close',{exact:true}).click();
+  const after=JSON.parse(await read()),before=JSON.parse(previous);
+  assert.deepEqual(after.wires.slice(0,before.wires.length),before.wires);
+  assert.equal(after.wires.length-before.wires.length,77);
+  await page.reload({waitUntil:'domcontentloaded'});
+  assert.deepEqual(JSON.parse(await read()).parts,after.parts);
+  assert.deepEqual(JSON.parse(await read()).wires,after.wires);
   assert.deepEqual(errors,[]);
   console.log('PASS physical formboard routing, measurements, hardware, 3D, fabrication, bulkhead and persistence');
  }finally{await page.close();}
