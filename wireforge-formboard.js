@@ -152,7 +152,7 @@ function nodeMarkup(n,p,neighbors,project,orbit){
  const text=view.details?`<text x="${connector?center.x:target.x}" y="${centerY}" text-anchor="middle" fill="#1b3440" stroke="#edf2f3" stroke-width="4" paint-order="stroke" font-size="11" font-weight="700">${h(label.length>35?label.slice(0,33)+'…':label)}</text>`:'';
  return `<g data-node="${h(n.id)}"><title>${h(label)}</title>
  <g transform="translate(${xy(target)}) rotate(${bodyAngle})">
- ${connector?`<path class="fb-node-mark" d="M-28-28H${shellLength+4}V29H-28Z" fill="transparent" stroke="${chosen?'#008d82':'transparent'}" rx="4" stroke-dasharray="4 3"/>${boot}${art.hardware(family)}`:
+ ${connector?`<path class="fb-node-mark" d="M-28-28H${shellLength+4}V29H-28Z" fill="transparent" stroke="${chosen?'#008d82':'transparent'}" rx="4" stroke-dasharray="4 3"/>${boot}${art.hardware(family,p?.t)}`:
  `<circle class="fb-node-mark" r="12" fill="#273d43" stroke="${chosen?'#008d82':'#738a90'}" stroke-width="2"/>`}${port}</g>${text}</g>`;
 }
 function scene(g,report){
@@ -211,6 +211,10 @@ function materials(g,report){
  for(const n of g.nodes){
   const p=n.partId==null?null:part(n.partId),t=p&&T[p.t];
   if(t&&!t.node)add('Hardware',t.name,t.pn||'',1,'ea',t.pn?'Catalog reference · verify installed part':'Part number TBD');
+  for(const pin of Object.values(p?.wfTerminations||{})){
+   if(pin.contact)add('Contact',pin.contact,'',1,'ea','User specified');
+   if(pin.seal)add('Seal / plug',pin.seal,'',1,'ea','User specified');
+  }
   if(n.boot)add('Boot',n.boot,'',1,'ea','Verify fit');
  }
  for(const {s} of report.bundles){
@@ -270,7 +274,7 @@ function nodeInspector(n){
  input('Canvas label','fbLabel',n.label)+(hardware?input('Cable boot part / label','fbBoot',n.boot,'Unspecified'):'')+
  '<div class="fb-unit"><label>Preview depth<input id="fbElevation" type="number" step="1" value="'+h(n.elevation??'')+'" placeholder="0"></label>'+
  (hardware?'<label>Rotation (°)<input id="fbRotation" type="number" step="1" value="'+h(n.rotation??'')+'" placeholder="Auto"></label>':'')+'</div>'+
- '<div class="fb-actions">'+btn('nodeSave','Save component','fb-primary')+btn('delete','Remove')+'</div>'+(hardware?pins(n):'');
+ '<div class="fb-actions">'+btn('nodeSave','Save component','fb-primary')+btn('delete','Remove')+'</div>'+(hardware?btn('pinSchedule','Pin configuration')+pins(n):'');
 }
 function bulkheadSelection(w){
  const choices=S.parts.filter(p=>T[p.t]?.bulk&&key(w.a.p)!==key(p.id)&&key(w.b.p)!==key(p.id));
@@ -290,10 +294,144 @@ function sidebar(g,report){
  const wires=report.rows.map(r=>option(r.w.id,wireName(r.w)+' · #'+r.w.id,view.trace)).join('');
  if(view.page==='orbit')return '<h3>3D routing preview</h3><p class="muted">Drag to orbit the physical branches. Preview depth is entered per component in Design and is used only for visualization.</p>'+btn('resetOrbit','Reset orientation')+'<details><summary>Pin-level hardware</summary><p class="muted">Open the existing schematic-based 3D Hardware Studio for individual cavity exits and housings.</p>'+btn('hardware3d','Open Hardware Studio')+'</details>';
  return '<h3>Inspector</h3>'+(n?nodeInspector(n):seg?branchInspector(seg):'<p class="muted">Select a connector or cable to inspect it. Drag a port to another port to route a cable.</p>')+
- '<details '+(!n&&!seg?'open':'')+'><summary>Place component</summary>'+select('Unplaced schematic component','fbPart',option('','Choose component')+choices.map(p=>option(p.id,p.name)).join(''))+btn('place','Place at view center')+'</details>'+
+ '<details '+(!n&&!seg?'open':'')+'><summary>Place component</summary>'+select('Unplaced schematic component','fbPart',option('','Choose component')+choices.map(p=>option(p.id,p.name)).join(''))+btn('place','Place at view center')+select('Power hardware','fbHardware',powerHardware.map(t=>option(t,T[t].name)).join(''))+btn('addHardware','Add hardware')+'</details>'+
  '<details '+(traced?'open':'')+'><summary>Trace a circuit</summary>'+select('Schematic wire','fbTrace',option('','No highlight')+wires)+(traced?'<p class="muted">'+h(endName(traced.w.a))+' → '+h(endName(traced.w.b))+'</p><p>'+h(displayCut(traced).status)+'</p>'+field('Measured wire OD (mm)','fbOD',g.od[view.trace],'Approximate from gauge')+'<div class="fb-actions">'+btn('od','Save OD')+btn('schematicWire','Edit wiring')+'</div>'+bulkheadSelection(traced.w):'')+'</details>'+
  '<details><summary>Cut allowances</summary>'+field('Allowance per end (in)','fbAllowance',g.allowance)+field('Service loop per wire (in)','fbSlack',g.slack)+field('Material waste (%)','fbWaste',g.waste)+btn('settings','Save allowances')+'<p class="muted">The bundle model uses 65% packing by default. Verify insulation OD, sleeve fit and boot fit on the bench.</p></details>';
 }
+const powerHardware=['relay4','relay','dual','e90leash1','fuse6'];
+function placeHardware(g,t,name,x,y,sx,sy){
+ const p={id:nid(),t,name,pl:{},x:sx,y:sy};
+ S.parts.push(p);S.examples=false;
+ return addNode(g,x,y,name,p.id);
+}
+function insertLoom(){
+ const g=graph();
+ if(S.parts.some(p=>p.wfHd30Loom))return toast('The HD30 loom is already in this project. Select either bulkhead to inspect its cavities.');
+ mutate(()=>{
+  const x=g.nodes.length?Math.max(...g.nodes.map(n=>n.x))+450:120;
+  const sx=S.parts.length?Math.max(...S.parts.map(p=>p.x))+650:0;
+  function component(t,name,dx,dy,row){
+   const n=placeHardware(g,t,name,x+dx,dy,sx+dx*2,row);
+   part(n.partId).wfHd30Loom=true;
+   return n;
+  }
+  const c1=component('mxrace48','C1 · RACE main',0,95,0);
+  const c2=component('mxrace32','C2 · RACE auxiliary',0,385,1650);
+  const a=component('hd30_47','BH-A · HD30 main',300,115,0);
+  const b=component('hd30_47','BH-B · HD30 auxiliary',300,365,1650);
+  const j=addNode(g,x+510,245,'Engine loom breakout');
+  const power=component('e90dt12','Power · DT12 interface',770,60,0);
+  const analog=component('e90analog8','Analog · DT8 interface',770,245,620);
+  const ctrl=component('e90can8','Control · DT8 interface',770,430,1200);
+  const endpoints={
+   'C1:C4':[power,3],'C1:B1':[power,4],'C1:D4':[power,5],
+   'C1:G1':[analog,1],'C1:H1':[analog,2],'C1:J1':[analog,3],
+   'C2:E4':[analog,5],'C2:F1':[analog,6],'C1:A1':[analog,8],
+   'C1:E2':[ctrl,1],'C1:E1':[ctrl,2],'C1:K3':[ctrl,3],
+   'C1:K4':[ctrl,4],'C2:F3':[ctrl,5],'C2:F4':[ctrl,6],'C1:E4':[ctrl,7]
+  };
+  function cable(from,to,label){
+   addSegment(g,from.id,to.id);
+   Object.assign(g.segments.at(-1),{label,sleeve:'DR-25'});
+  }
+  cable(c1,a,'C1 / MAIN');cable(c2,b,'C2 / AUX');
+  cable(a,j,'MAIN');cable(b,j,'AUX');
+  cable(j,power,'POWER');cable(j,analog,'ANALOG');cable(j,ctrl,'CONTROL');
+  function wire(from,to,sig){
+   S.wires.push(mkW(from,to,{id:nid(),sig,awg:0,color:'',measuredOnly:true,autoRoute:true}));
+  }
+  function bank(prefix,ecu,bulk,hold){
+   const housing=part(bulk.partId);
+   let cavity=0;
+   T[part(ecu.partId).t].pins.forEach(({p,l},i)=>{
+    if(hold.includes(p))return;
+    const slot=cavity++;
+    if(l.startsWith('EGT')){
+     housing.pl[slot]=p+' · '+l+' reserved / thermocouple pass-through TBD';
+     return;
+    }
+    housing.pl[slot]=l;
+    wire({p:ecu.partId,i},{p:housing.id,i:slot,s:'R'},l);
+    const end=endpoints[prefix+':'+p];
+    if(end)wire({p:housing.id,i:slot,s:'L'},{p:end[0].partId,i:end[1]-1},l);
+   });
+  }
+  bank('C1',c1,a,['L4','M4']);bank('C2',c2,b,['G4']);
+  view.page='design';view.cam=null;view.chosen={id:a.id};
+ });
+}
+function pinSchedule(p){
+ const dialog=document.createElement('dialog');
+ dialog.className='fb-mockup';
+ function update(){
+  const bulk=T[p.t].bulk;
+  const rows=T[p.t].pins.map((pin,i)=>{
+   const links=usedOn(p.id,i);
+   const term=p.wfTerminations?.[i]||{};
+   const cells=links.map(w=>{
+    const other=w.a.p===p.id?w.b:w.a;
+    return (bulk?(faceOf(w,p.id,i)==='R'?'Cabin · ':'Engine · '):'')+endName(other);
+   });
+   return '<tr><th>'+h(pin.p)+'</th><td>'+h(plabel(p,i)||'—')+'</td><td>'+h(term.contact||'—')+'</td><td>'+h(term.seal||'—')+'</td><td>'+cells.map(h).join('<br>')+(cells.length?'':'Open')+'</td></tr>';
+  });
+  dialog.innerHTML='<form method="dialog"><button class="btn" autofocus>Close</button></form><h3>'+h(p.name)+' · Pin configuration</h3>'+
+   (p.wfHd30Loom?'<p>Proposed cavity allocation. Verify insert orientation, contact size, current and keying before termination. ECU supply and engine grounds require separate design. EGT positions are reserved pending thermocouple hardware.</p>':'')+
+   (bulk?select('First cavity','fbSwap1',T[p.t].pins.map((v,i)=>option(i,v.p)).join(''))+select('Second cavity','fbSwap2',T[p.t].pins.map((v,i)=>option(i,v.p)).join(''))+'<button type="button" class="btn" data-swap>Swap both faces</button>':'')+
+   '<details><summary>Edit cavity details</summary>'+select('Cavity','fbEditPin',T[p.t].pins.map((v,i)=>option(i,v.p)).join(''))+input('Description','fbPinLabel')+input('Contact part number','fbContact')+input('Seal or cavity plug','fbSeal')+'<button type="button" class="btn" data-save-pin>Save cavity</button></details>'+
+   table(['Cavity','Function','Contact','Seal / plug','Connected endpoint'],rows)+
+   '<details><summary>Connect a cavity</summary>'+select('Source cavity','fbSource',T[p.t].pins.map((v,i)=>option(i,v.p)).join(''))+
+   (bulk?select('Source face','fbSourceFace',option('L','Engine')+option('R','Cabin')):'')+
+   select('Destination component','fbDest',option('','Select component')+S.parts.filter(q=>q.id!==p.id).map(q=>option(q.id,q.name)).join(''))+
+   select('Destination cavity','fbDestPin','')+'<div data-face></div>'+input('Circuit name','fbNet')+
+   '<button type="button" class="btn" data-connect>Connect cavities</button><p role="status"></p></details>';
+  const editPin=dialog.querySelector('#fbEditPin');
+  function showPin(){
+   const i=Number(editPin.value),term=p.wfTerminations?.[i]||{};
+   for(const [id,value] of [['fbPinLabel',plabel(p,i)],['fbContact',term.contact],['fbSeal',term.seal]])dialog.querySelector('#'+id).value=value||'';
+  }
+  editPin.onchange=showPin;showPin();
+  dialog.querySelector('[data-save-pin]').onclick=()=>{
+   const i=Number(editPin.value);
+   mutate(()=>{
+    p.pl??={};p.pl[i]=val('fbPinLabel').trim();
+    p.wfTerminations??={};p.wfTerminations[i]={contact:val('fbContact').trim(),seal:val('fbSeal').trim()};
+   });update();
+  };
+  const dest=dialog.querySelector('#fbDest');
+  dest.onchange=()=>{
+   const target=part(dest.value);
+   dialog.querySelector('#fbDestPin').innerHTML=(T[target?.t]?.pins||[]).map((v,i)=>option(i,v.p+' '+(plabel(target,i)||''))).join('');
+   dialog.querySelector('[data-face]').innerHTML=T[target?.t]?.bulk?select('Destination face','fbDestFace',option('L','Engine')+option('R','Cabin')):'';
+  };
+  dialog.querySelector('[data-connect]').onclick=()=>{
+   const target=part(dest.value),status=dialog.querySelector('[role=status]');
+   if(!target){status.textContent='Choose a destination component.';return;}
+   const from={p:p.id,i:Number(val('fbSource'))},to={p:target.id,i:Number(val('fbDestPin'))};
+   if(bulk)from.s=val('fbSourceFace');
+   if(T[target.t].bulk)to.s=val('fbDestFace');
+   if([from,to].some(end=>end.s?faceUsed(end.p,end.i,end.s):!T[part(end.p).t].node&&usedOn(end.p,end.i).length)){
+    status.textContent='An endpoint is occupied. Select an open cavity or face.';return;
+   }
+   mutate(()=>{S.wires.push(mkW(from,to,{id:nid(),awg:0,measuredOnly:true,sig:val('fbNet').trim(),autoRoute:true}));});
+   update();
+  };
+  dialog.querySelector('[data-swap]')?.addEventListener('click',()=>{
+   const a=Number(val('fbSwap1')),b=Number(val('fbSwap2'));
+   if(a===b)return;
+   mutate(()=>{
+    for(const w of S.wires)for(const end of [w.a,w.b])if(end.p===p.id){if(end.i===a)end.i=b;else if(end.i===b)end.i=a;}
+    for(const props of [p.pl,p.wfTerminations].filter(Boolean)){
+     const first=props[a],second=props[b];
+     if(first==null)delete props[b];else props[b]=first;
+     if(second==null)delete props[a];else props[a]=second;
+    }
+   });
+   update();
+  });
+ }
+ update();document.body.append(dialog);dialog.addEventListener('close',()=>{dialog.remove();if(S.tab==='draw'){draw();renderInsp();}},{once:true});dialog.showModal();
+}
+
 function bulkheadWorksheet(){
  const groups=[
   ['A','Connector 1 · Main engine harness',MAXXECU_MAIN,new Set(['L4','M4'])],
@@ -344,7 +482,7 @@ function openBulkheadMockup(el){
   status.textContent=unplugged?'Engine loom detached. ECU and cabin loom stay in place.':'Engine loom connected through the firewall.';
  }
  toggle.addEventListener('click',()=>show(toggle.getAttribute('aria-pressed')==='false'));
- dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+ dialog.addEventListener('close',()=>{dialog.remove();if(S.tab==='draw'){draw();renderInsp();}},{once:true});
  show(false);
  el.append(dialog);
  dialog.showModal();
@@ -360,7 +498,7 @@ function render(){
  const actions=stage?'<div class="fb-actions">'+(view.page==='design'?btn('select','Select',view.mode==='select'?'active':'')+btn('connect','Route',view.mode==='connect'?'active':'')+btn('junction','+ Breakout',view.mode==='junction'?'active':'')+btn('pan','Pan',view.mode==='pan'?'active':''):'')+btn('zoomOut','−')+btn('zoomIn','+')+btn('fit','Fit')+btn('labels',view.details?'Hide labels':'Show labels')+'</div>':
  '<div class="fb-actions">'+btn('svg','Formboard SVG')+btn('cut','Cut list CSV')+btn('bom','Materials CSV')+btn('print','Print build pack','fb-primary')+'</div>';
  el.innerHTML='<header class="fb-header"><div><h2>Physical Formboard</h2><p class="muted">Harness layout and fabrication for '+h(S.wfProjectName||S.projectName||'the active project')+'.</p></div><div class="fb-counts"><span><b>'+g.nodes.length+'</b> nodes</span><span><b>'+g.segments.length+'</b> branches</span><span><b>'+report.rows.filter(r=>r.route?.length).length+' / '+report.rows.length+'</b> wires routed</span><span><b>'+count+'</b> cut lengths</span></div></header>'+
- '<div class="fb-workspace"><div class="fb-bar"><div class="fb-actions">'+btn('design','Design',view.page==='design'?'active':'')+'<button class="btn" data-tab="draw">Wiring</button>'+btn('orbit','3D Routing',view.page==='orbit'?'active':'')+btn('build','Fabrication',view.page==='build'?'active':'')+btn('bulkheadMockup','Bulkhead Mockup')+'</div>'+actions+'</div>'+
+ '<div class="fb-workspace"><div class="fb-bar"><div class="fb-actions">'+btn('design','Design',view.page==='design'?'active':'')+'<button class="btn" data-tab="draw">Wiring</button>'+btn('orbit','3D Routing',view.page==='orbit'?'active':'')+btn('build','Fabrication',view.page==='build'?'active':'')+btn('loom','Add pinned HD30 loom','fb-primary')+btn('bulkheadMockup','Bulkhead Mockup')+'</div>'+actions+'</div>'+
  (stage?'<div class="fb-wrap"><div class="fb-stage">'+canvas()+
  (g.nodes.length?'':'<div class="fb-empty"><article><h3>Lay out the harness</h3><p>Generate a draft from the current schematic or start by placing a component.</p>'+btn('seed','Generate starter layout','fb-primary')+'</article></div>')+
  '<div class="fb-overlay"><span class="fb-canvas-help" id="fbHint">'+hint+'</span><span>Layout units · '+(view.page==='orbit'?'3D preview':'inches for entered lengths')+'</span></div></div><aside class="fb-sidebar">'+sidebar(g,report)+
@@ -565,6 +703,8 @@ function printPack(g,report){
 }
 
 document.addEventListener('click',e=>{
+ const config=e.target.closest('[data-pin-config]');
+ if(config)return pinSchedule(part(config.dataset.pinConfig));
  const button=e.target.closest('#t-formboard [data-fb]');
  if(!button)return;
  const action=button.dataset.fb;
@@ -590,6 +730,13 @@ document.addEventListener('click',e=>{
    S.wfFormboard=seed(S.parts,S.wires);view.chosen=null;view.trace=null;view.origin=null;view.cam=null;view.mode='select';
   });
   return;
+ }
+ if(action==='loom')return insertLoom();
+ if(action==='pinSchedule'&&n?.partId!=null)return pinSchedule(part(n.partId));
+ if(action==='addHardware'){
+  const t=val('fbHardware');if(!powerHardware.includes(t))return;
+  const c=view.cam,x=Math.round(c.x+c.w/2),y=Math.round(c.y+c.h/2);
+  mutate(()=>{const n=placeHardware(g,t,T[t].name,x,y,x,y);view.chosen={id:n.id};});return;
  }
  if(action==='place'){
   const p=part(val('fbPart'));
