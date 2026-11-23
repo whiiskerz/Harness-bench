@@ -83,3 +83,14 @@
 #t-formboard .fb-mockup-bank { border-top:1px solid var(--line); padding:8px 0; }
 #t-formboard .fb-mockup-bank summary { cursor:pointer; font-weight:650; }
 #t-formboard .fb-mockup-bank .tw { max-height:270px; overflow:auto; margin-top:8px; }
+
+.fb-cavity-sheet {width:min(1080px,95vw);max-height:88vh;overflow:auto}
+.fb-cavity-sheet form[method=dialog] {float:right;position:sticky;top:0;z-index:2}
+.fb-cavity-sheet h3 {padding-right:5rem;margin:.25rem 0}
+.fb-cavity-sheet details {margin:.6rem 0;padding:.65rem;border:1px solid var(--line,#516068);border-radius:6px}
+.fb-cavity-sheet summary {cursor:pointer;font-weight:650}
+.fb-cavity-sheet label {display:inline-flex;align-items:center;gap:.35rem;margin:.25rem .6rem .25rem 0}
+.fb-cavity-sheet th,.fb-cavity-sheet td {vertical-align:top}
+.fb-cavity-sheet tbody th {position:sticky;left:0;background:var(--panel,#20272b)}
+.fb-cavity-sheet td small {display:block;color:var(--mute,#a8b5bf)}
+.fb-cavity-sheet input[type=checkbox] {width:1rem;height:1rem;flex:none}

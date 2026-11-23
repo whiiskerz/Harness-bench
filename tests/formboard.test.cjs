@@ -14,10 +14,10 @@ test('shared trunk counts and explicit measured cut length',()=>{
  assert.equal(r.bundles[0].estimated,false);assert.ok(Math.abs(r.bundles[0].d-Math.sqrt(13/.65))<1e-9);
  assert.equal(path(g,'missing','missing'),null);
 });
-test('seed produces connected draft with no invented cut lengths',()=>{
+test('starter stages connectors without inferring physical splits or cable routes',()=>{
  const g=seed(parts,wires),r=analyze(g,wires,parts);
- assert.equal(g.nodes.length,4);assert.equal(g.segments.length,3);
- assert.ok(r.rows.every(r=>r.route.length===2&&r.cut===null));
+ assert.equal(g.nodes.length,3);assert.equal(g.segments.length,0);
+ assert.ok(r.rows.every(r=>r.route===null&&r.cut===null));
  g.nodes=g.nodes.filter(n=>n.partId!==2);assert.equal(analyze(g,wires,parts).rows[0].status,'Unrouted');
 });
 test('local leads and duplicate placement are not assigned bogus cut lengths',()=>{
@@ -27,7 +27,23 @@ test('local leads and duplicate placement are not assigned bogus cut lengths',()
  addNode(g,10,0,'ECU duplicate',1);assert.equal(analyze(g,local,parts).rows[0].status,'Unrouted');
 });
 test('zero allowance is valid, zero branch length is not',()=>{
- const g=seed(parts,wires);g.segments.forEach(s=>s.length=1);g.allowance=0;g.slack=0;
- assert.equal(analyze(g,wires,parts).rows[0].cut,2);g.segments[0].length=0;
+ const g=seed(parts,wires);addSegment(g,g.nodes[0].id,g.nodes[1].id);g.segments.forEach(s=>s.length=1);g.allowance=0;g.slack=0;
+ assert.equal(analyze(g,wires,parts).rows[0].cut,1);g.segments[0].length=0;
  assert.equal(analyze(g,wires,parts).rows[0].cut,null);
+});
+test('only an untouched legacy four-at-a-time layout is restaged',()=>{
+ const build=()=>{
+  const g=fresh(),j=addNode(g,100,300,'Breakout 1');
+  for(const [index,p] of parts.entries()){
+   const n=addNode(g,100+(index%2===0?-130:130),index<2?85:520,p.name,p.id);
+   addSegment(g,j.id,n.id);
+  }
+  g.allowance=3;return g;
+ };
+ const {upgradeStarter}=require('../wireforge-formboard.js');
+ const edited=build();edited.segments[0].length=15;
+ assert.equal(upgradeStarter(edited,parts,wires),false);
+ assert.equal(edited.segments[0].length,15);
+ const old=build();assert.equal(upgradeStarter(old,parts,wires),true);
+ assert.equal(old.nodes.length,3);assert.equal(old.segments.length,0);assert.equal(old.allowance,3);
 });
