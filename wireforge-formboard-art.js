@@ -17,8 +17,8 @@ function curve(start,end,segment){
 }
 function definitions(){
  return `<defs>
- <pattern id="fb-grid-small" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#dce4e7" stroke-width=".8"/></pattern>
- <pattern id="fb-grid" width="100" height="100" patternUnits="userSpaceOnUse"><rect width="100" height="100" fill="url(#fb-grid-small)"/><path d="M100 0H0V100" fill="none" stroke="#c7d3d8" stroke-width="1"/></pattern>
+ <pattern id="fb-grid-small" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#dfdfdc" stroke-width=".8"/></pattern>
+ <pattern id="fb-grid" width="100" height="100" patternUnits="userSpaceOnUse"><rect width="100" height="100" fill="url(#fb-grid-small)"/><path d="M100 0H0V100" fill="none" stroke="#c9cac7" stroke-width="1"/></pattern>
  <linearGradient id="fb-shell" x2="0" y2="1"><stop stop-color="#e2e7e7"/><stop offset=".21" stop-color="#a9b3b7"/><stop offset=".64" stop-color="#77868e"/><stop offset="1" stop-color="#48575f"/></linearGradient>
  <linearGradient id="fb-rubber" x2="0" y2="1"><stop stop-color="#596870"/><stop offset=".32" stop-color="#303f46"/><stop offset=".64" stop-color="#242c30"/><stop offset="1" stop-color="#111719"/></linearGradient>
  <linearGradient id="fb-module" x2="0" y2="1"><stop stop-color="#667880"/><stop offset=".36" stop-color="#424f56"/><stop offset="1" stop-color="#20292d"/></linearGradient>
@@ -26,6 +26,15 @@ function definitions(){
 }
 function angle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;}
 function hardware(family,type){
+ if(type==='mxrace32'||type==='mxrace48'){
+  const w=type==='mxrace48'?94:76;
+  const ribs=Array.from({length:7},(_,i)=>'<path d="M'+(23+i*6)+' -15v22" stroke="#141719" stroke-width="3"/><path d="M'+(24+i*6)+' -15v22" stroke="#4b5154"/>').join('');
+  return '<path d="M0-7H10L18-17H'+w+'V17H18L10 7H0Z" fill="url(#fb-module)" stroke="#131719" stroke-width="2"/>'+ribs+'<rect x="'+(w-12)+'" y="-19" width="12" height="38" rx="2" fill="#25292c" stroke="#121517"/><path d="M18-15l5-15h'+(w-38)+'l9 11v6h-5l-8-10H27l-4 10Z" fill="#626a70" stroke="#272d30"/><rect x="30" y="-28" width="14" height="6" rx="1" fill="#a64a34"/><path d="M21 13H'+(w-15)+'" stroke="#697177"/>';
+ }
+ if(type==='hd30_47'){
+  const grip=Array.from({length:8},(_,i)=>'<path d="M'+(30+i*3)+' -17l-2 34" stroke="#697177" stroke-width="1.2"/>').join('');
+  return '<path d="M0-9H12L16-16H30V16H16L12 9H0Z" fill="url(#fb-rubber)" stroke="#161b1d"/><rect x="24" y="-20" width="38" height="40" rx="5" fill="url(#fb-shell)" stroke="#41464a"/>'+grip+'<path d="M52-23H60L65-16V16L60 23H52Z" fill="url(#fb-shell)" stroke="#3b4348"/><rect x="63" y="-17" width="12" height="34" rx="2" fill="#737d85" stroke="#394247"/><path d="M65-14v28m3-29v30m3-30v30" stroke="#bdc2c3"/><path d="M20-16v32" stroke="#a48860" stroke-width="3"/>';
+ }
  if(type==='relay4'||type==='relay'){
   const blades=Array.from({length:type==='relay4'?4:5},(_,i)=>'<rect x="'+(8+i*9)+'" y="12" width="4" height="11" fill="#d5bb87" stroke="#756448"/>').join('');
   return blades+'<path d="M2-15L12-22H52L61-15V13L53 18H2Z" fill="url(#fb-module)" stroke="#162125"/><path d="M2-15H52V17M52-15L60-20" fill="none" stroke="#87949a"/><text x="8" y="4" fill="white" font-size="9">RELAY</text>';
