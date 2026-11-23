@@ -84,5 +84,6 @@ const testFormboard=require('./formboard-browser.cjs');
   assert.deepEqual(errors,[],'No uncaught JavaScript errors');
   console.log('PASS',JSON.stringify({original,namedProjects:saved.saves.length,restored:true,imported:true,continuity:true,validation:true,mobile:layout}));
   await testFormboard(browser);
+  await require("./flying-leads-browser.cjs")(browser,"http://127.0.0.1:8765/index.html");
  }finally{await browser.close()}
 })().catch(err=>{console.error(err);process.exit(1)});
