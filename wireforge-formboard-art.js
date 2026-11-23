@@ -42,31 +42,33 @@ function projectFor(yaw,pitch,center){
 }
 function bulkheadMockup(unplugged){
  const start=unplugged?366:328;
- const breakout=start+64;
- return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 584 252" role="img" aria-label="${unplugged?'Engine-side plug detached from the firewall':'Cabin loom connected to engine loom through the firewall'}">
+ const breakout=start+65;
+ const fitting=family=>hardware(family).replaceAll('fb-','fb-demo-');
+ function route(y,bank,label,color){
+  return `<g transform="translate(0 ${y})">
+   <text x="36" y="-37">MaxxECU ${bank==='A'?'C1 · 48-pin':'C2 · 32-pin'}</text>
+   <text x="272" y="42" text-anchor="middle">BH-${bank} · HD30</text>
+   <text x="583" y="-34" text-anchor="end">${label}</text>
+   <path d="M147 0H238M${start} 0H${breakout}C${breakout+35} 0 477 -18 532 -18" fill="none" stroke="#1b2b33" stroke-width="13" stroke-linecap="round"/>
+   <path d="M147 0H238M${start} 0H${breakout}C${breakout+35} 0 477 -18 532 -18" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+   <g transform="translate(148) scale(-1 .72)">${fitting('mx')}</g>
+   <path d="M236-12H251V-18H276V18H251V12H236Z" fill="url(#fb-demo-shell)" stroke="#31464f" stroke-width="2"/>
+   <path d="M268-20V20M280-17V17" stroke="#253a42" stroke-width="5"/>
+   <g transform="translate(${start}) scale(-.66 .8)">${fitting('bulk')}</g>
+   <g transform="translate(532 -18) scale(.72)">${fitting('dt')}</g>
+  </g>`;
+ }
+ return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 604 277" role="img" aria-label="${unplugged?'Engine-side plug detached from the firewall':'Cabin loom connected to engine loom through the firewall'}">
  ${definitions().replaceAll('fb-','fb-demo-')}
- <rect width="584" height="252" fill="#edf2f3"/>
- <rect width="584" height="252" fill="url(#fb-demo-grid)"/>
- <path d="M272 0V252" stroke="#688088" stroke-width="8"/>
- <path d="M272 0V252" stroke="#9aafb4" stroke-width="2" stroke-dasharray="4 7"/>
- <g font-family="system-ui,sans-serif" font-weight="700" fill="#20343d" font-size="14">
+ <rect width="604" height="277" fill="#edf2f3"/>
+ <rect width="604" height="277" fill="url(#fb-demo-grid)"/>
+ <path d="M272 0V277" stroke="#688088" stroke-width="8"/>
+ <path d="M272 0V277" stroke="#9aafb4" stroke-width="2" stroke-dasharray="4 7"/>
+ <g font-family="system-ui,sans-serif" font-weight="700" fill="#20343d" font-size="15">
   <text x="20" y="29">CABIN</text><text x="292" y="29">ENGINE BAY</text>
-  <text x="40" y="90">MaxxECU Race</text><text x="272" y="204" text-anchor="middle">Firewall bulkhead</text>
-  <text x="562" y="71" text-anchor="end">Oil-pressure sensor</text><text x="562" y="227" text-anchor="end">Coil branch</text>
+  ${route(103,'A','Main engine loom','#2dc4b0')}
+  ${route(222,'B','Auxiliary loom','#d19b54')}
  </g>
- <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M147 135C190 135 200 135 238 135" stroke="#1b2b33" stroke-width="13"/>
-  <path d="M${start} 135H${breakout}C${breakout+40} 135 470 97 516 97M${breakout} 135C${breakout+40} 135 470 196 516 196" stroke="#1b2b33" stroke-width="13"/>
-  <path d="M147 135H238M${start} 135H${breakout}C${breakout+40} 135 470 97 516 97" stroke="#2dc4b0" stroke-width="4"/>
-  ${unplugged?'<path d="M289 135H309" stroke="#718b93" stroke-width="2" stroke-dasharray="3 4"/>':''}
- </g>
- <g transform="translate(148 135) scale(-1 1)">${hardware('mx').replaceAll('fb-','fb-demo-')}</g>
- <path d="M236 123H251V117H276V153H251V147H236Z" fill="url(#fb-demo-shell)" stroke="#31464f" stroke-width="2"/>
- <path d="M268 115V155M280 118V152" stroke="#253a42" stroke-width="5"/>
- <g transform="translate(${start} 135) scale(-.66 .8)">${hardware('bulk').replaceAll('fb-','fb-demo-')}</g>
- <circle cx="${breakout}" cy="135" r="8" fill="#2d464f" stroke="#94b4bb" stroke-width="2"/>
- <g transform="translate(514 97) scale(.72)">${hardware('sens').replaceAll('fb-','fb-demo-')}</g>
- <g transform="translate(514 196) scale(.72)">${hardware('dt').replaceAll('fb-','fb-demo-')}</g>
  </svg>`;
 }
 root.WFFormArt={point,xy,curve,definitions,angle,hardware,projectFor,bulkheadMockup};

@@ -80,3 +80,6 @@
 #t-formboard .fb-mockup-diagram { margin:14px 0 10px; overflow:hidden; border-radius:8px; }
 #t-formboard .fb-mockup-diagram svg { width:100%; display:block; }
 #t-formboard .fb-mockup-actions p { margin:0; color:var(--mute); }
+#t-formboard .fb-mockup-bank { border-top:1px solid var(--line); padding:8px 0; }
+#t-formboard .fb-mockup-bank summary { cursor:pointer; font-weight:650; }
+#t-formboard .fb-mockup-bank .tw { max-height:270px; overflow:auto; margin-top:8px; }
