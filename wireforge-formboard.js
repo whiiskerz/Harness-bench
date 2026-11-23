@@ -294,6 +294,31 @@ function sidebar(g,report){
  '<details '+(traced?'open':'')+'><summary>Trace a circuit</summary>'+select('Schematic wire','fbTrace',option('','No highlight')+wires)+(traced?'<p class="muted">'+h(endName(traced.w.a))+' → '+h(endName(traced.w.b))+'</p><p>'+h(displayCut(traced).status)+'</p>'+field('Measured wire OD (mm)','fbOD',g.od[view.trace],'Approximate from gauge')+'<div class="fb-actions">'+btn('od','Save OD')+btn('schematicWire','Edit wiring')+'</div>'+bulkheadSelection(traced.w):'')+'</details>'+
  '<details><summary>Cut allowances</summary>'+field('Allowance per end (in)','fbAllowance',g.allowance)+field('Service loop per wire (in)','fbSlack',g.slack)+field('Material waste (%)','fbWaste',g.waste)+btn('settings','Save allowances')+'<p class="muted">The bundle model uses 65% packing by default. Verify insulation OD, sleeve fit and boot fit on the bench.</p></details>';
 }
+function bulkheadWorksheet(){
+ const groups=[
+  ['A','Connector 1 · Main engine harness',MAXXECU_MAIN,new Set(['L4','M4'])],
+  ['B','Connector 2 · Auxiliary harness',MAXXECU_AUX,new Set(['G4'])]
+ ];
+ const pending=[];
+ const sections=groups.map(([bank,name,pins,hold])=>{
+  let count=0;
+  const rows=pins.flatMap(([pin,signal])=>{
+   if(hold.has(pin)){
+    pending.push([bank==='A'?'C1':'C2',pin,signal]);
+    return [];
+   }
+   const slot=bank+String(++count).padStart(2,'0');
+   const note=signal.startsWith('EGT')?'EGT pass-through TBD':'Cavity TBD';
+   return ['<tr><td>'+slot+'</td><td>'+h(pin)+'</td><td>'+h(signal)+'</td><td>'+note+'</td></tr>'];
+  });
+  return '<details class="fb-mockup-bank"><summary>BH-'+bank+' · '+name+' · '+count+' worksheet slots</summary>'+
+   table(['Slot','ECU pin','Function','HD30 cavity'],rows)+'</details>';
+ });
+ return sections.join('')+
+  '<details class="fb-mockup-bank"><summary>Power and grounds · '+pending.length+' routes pending</summary>'+
+  table(['ECU plug','ECU pin','Function','Route'],pending.map(row=>'<tr>'+row.map(v=>'<td>'+h(v)+'</td>').join('')+'<td>TBD</td></tr>'))+'</details>';
+}
+
 function openBulkheadMockup(el){
  const existing=el.querySelector('.fb-mockup');
  if(existing?.open)return;
@@ -306,12 +331,9 @@ function openBulkheadMockup(el){
  </div>
  <div class="fb-mockup-diagram"></div>
  <div class="fb-mockup-actions"><button type="button" class="btn primary" aria-pressed="false">Unplug engine loom</button><p aria-live="polite"></p></div>
- <p>Example circuit from the MaxxECU’s AIN4 to the oil-pressure sensor.</p>
- ${table(['Side','Wire leg','Length'],[
-  '<tr><td>Cabin</td><td>AIN4 → bulkhead cavity TBD</td><td>TBD</td></tr>',
-  '<tr><td>Engine bay</td><td>Same cavity → oil-pressure signal</td><td>TBD</td></tr>'
- ])}
- <p class="muted">If sensor 5 V and sensor ground cross the firewall, each uses its own cavity. Housing, contacts, cavity map and lengths are TBD. The 8HP70 and trunk DT6 are outside this mockup.</p>`;
+ <p><strong>Oil-pressure example</strong> · C1/J4 (AIN4) → BH-A worksheet slot A36 → sensor signal. Both wire lengths are TBD.</p>
+ <p class="muted">Two nominal 47-cavity HD30s. Worksheet slots are planning labels. The physical insert, contact sizes, cavity assignments and EGT pass-through remain TBD.</p>
+ ${bulkheadWorksheet()}`;
  const visual=dialog.querySelector('.fb-mockup-diagram');
  const toggle=dialog.querySelector('.fb-mockup-actions button');
  const status=dialog.querySelector('.fb-mockup-actions p');

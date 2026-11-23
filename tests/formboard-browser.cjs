@@ -35,6 +35,11 @@ module.exports=async function testFormboard(browser,url='http://127.0.0.1:8765/i
   await act('bulkheadMockup').click();
   const mockup=page.getByRole('dialog',{name:'E90 firewall bulkhead mockup'});
   assert.equal(await mockup.isVisible(),true);
+  const banks=mockup.locator('.fb-mockup-bank');
+  assert.deepEqual(await banks.evaluateAll(items=>items.map(item=>item.querySelectorAll('tbody tr').length)),[46,31,3]);
+  assert.match(await banks.first().locator('tbody tr').filter({hasText:'A36'}).textContent(),/A36J4AIN 4/);
+  await banks.first().locator('summary').click();
+  assert.equal(await banks.first().locator('table').isVisible(),true);
   await mockup.getByRole('button',{name:'Unplug engine loom'}).click();
   assert.equal(await mockup.getByRole('img',{name:'Engine-side plug detached from the firewall'}).isVisible(),true);
   await mockup.getByRole('button',{name:'Reconnect engine loom'}).click();
