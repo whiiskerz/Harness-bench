@@ -34,7 +34,12 @@ module.exports=async function testFormboard(browser,url='http://127.0.0.1:8765/i
   assert.equal(await read(),original,'Starter layout must preserve electrical records byte for byte');
   assert.equal(await page.evaluate(()=>WFFormboard.report().rows.filter(r=>r.cut!==null).length),0);
   assert.ok(await page.locator('#wfFormSvg [data-seg]').count()>15);
-  assert.equal(await page.locator('#wfFormSvg path[d*=" C"]').count()>15,true);
+  assert.ok(await page.locator('#wfFormSvg path[d*=" C"]').count()>15);
+  const starterCanvas=page.locator('#wfFormSvg');
+  const openingWidth=await starterCanvas.evaluate(svg=>svg.viewBox.baseVal.width/svg.clientWidth);
+  assert.ok(openingWidth<1.5,'Large starter opens at a readable zoom');
+  await act('fit').click();
+  assert.ok(await starterCanvas.evaluate(svg=>svg.viewBox.baseVal.width/svg.clientWidth)>openingWidth);
 
   // Use a deterministic three-component project to exercise physical and electrical editing.
   const fixture=await page.evaluate(()=>{
