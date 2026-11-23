@@ -50,7 +50,10 @@ module.exports=async function testFormboard(browser,url='http://127.0.0.1:8765/i
   await act('seed').click();
   assert.equal(await read(),original,'Starter layout must preserve electrical records byte for byte');
   assert.equal(await page.evaluate(()=>WFFormboard.report().rows.filter(r=>r.cut!==null).length),0);
-  assert.ok(await page.locator('#wfFormSvg [data-seg]').count()>15);
+  assert.equal(await page.locator('#wfFormSvg [data-seg]').count(),0);
+  assert.ok(await page.locator('#wfFormSvg [data-wiring-guide]').count()>15);
+  await act('guides').click();assert.equal(await page.locator('#wfFormSvg [data-wiring-guide]').count(),0);
+  await act('guides').click();
   assert.ok(await page.locator('#wfFormSvg path[d*=" C"]').count()>15);
   const starterCanvas=page.locator('#wfFormSvg');
   const openingWidth=await starterCanvas.evaluate(svg=>svg.viewBox.baseVal.width/svg.clientWidth);

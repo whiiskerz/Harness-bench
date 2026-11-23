@@ -22,7 +22,7 @@ function addSegment(g,a,b){
  g.segments.push({id:'s'+g.next++,a,b,length:null,sleeve:'',size:null});return true;
 }
 function addNode(g,x,y,label,partId=null){const n={id:'n'+g.next++,x,y,label,partId};g.nodes.push(n);return n;}
-function seed(parts,wires){
+function legacySeed(parts,wires){
  const g=fresh(),used=new Set(wires.flatMap(w=>[key(w.a?.p),key(w.b?.p)]));
  const ordered=parts.filter(p=>used.has(key(p.id))).slice().sort((a,b)=>(Number(a.x)||0)-(Number(b.x)||0)||(Number(a.y)||0)-(Number(b.y)||0));
  // Draft trunk in schematic x-order; no inferred physical dimensions.
@@ -31,6 +31,25 @@ function seed(parts,wires){
  const prev=g.nodes.filter(n=>n.partId==null).at(-2);if(prev)addSegment(g,prev.id,j.id);
  ordered.slice(i,i+4).forEach((p,k)=>{const px=x+(k%2===0?-130:130),py=k<2?85:520;const n=addNode(g,px,py,p.name||'Connector '+p.id,p.id);addSegment(g,j.id,n.id);});
  }return g;
+}
+function seed(parts,wires){
+ const g=fresh(),used=new Set(wires.flatMap(w=>[key(w.a?.p),key(w.b?.p)]));
+ const connected=parts.filter(p=>used.has(key(p.id))).sort((a,b)=>(a.x||0)-(b.x||0)||(a.y||0)-(b.y||0));
+ // Start with a staging area. Electrical continuity alone cannot locate a loom split.
+ const columns=Math.max(1,Math.ceil(Math.sqrt(connected.length*1.6)));
+ connected.forEach((p,i)=>addNode(g,130+(i%columns)*230,85+Math.floor(i/columns)*125,p.name||'Connector '+p.id,p.id));
+ return g;
+}
+const inspectedLayouts=new WeakSet();
+function upgradeStarter(g,parts,wires){
+ if(inspectedLayouts.has(g))return false;
+ inspectedLayouts.add(g);
+ if(!g.nodes.some(n=>n.partId==null&&n.label==='Breakout 1'))return false;
+ const old=legacySeed(parts,wires);
+ if(JSON.stringify(old.nodes)!==JSON.stringify(g.nodes)||JSON.stringify(old.segments)!==JSON.stringify(g.segments))return false;
+ const next=seed(parts,wires);
+ Object.assign(g,{nodes:next.nodes,segments:next.segments,next:next.next});
+ return true;
 }
 const typical={8:5.0,10:4.0,12:3.3,14:2.7,16:2.3,18:1.9,20:1.6,22:1.4,24:1.2,26:1.0};
 function analyze(g,wires,parts){
@@ -54,7 +73,7 @@ function analyze(g,wires,parts){
  });
  return {rows,bundles};
 }
-const api={fresh,path,addSegment,addNode,seed,analyze};
+const api={fresh,path,addSegment,addNode,seed,analyze,upgradeStarter};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 if(!root?.document)return;
 const $=id=>document.getElementById(id);
@@ -75,6 +94,7 @@ function graph(){
  const g=S.wfFormboard;
  if(!g||g.version!==1||!Array.isArray(g.nodes)||!Array.isArray(g.segments))S.wfFormboard=fresh();
  S.wfFormboard.od??={};
+ if(upgradeStarter(S.wfFormboard,S.parts,S.wires))save();
  return S.wfFormboard;
 }
 function mutate(fn){
@@ -177,10 +197,20 @@ function scene(g,report){
   const points=[project(a),projection(c.c,(2*za+zb)/3),projection(c.d,(za+2*zb)/3),project(b)];
   return branchMarkup(bundle,{path:'M'+xy(points[0])+' C'+points.slice(1).map(xy).join(' ')},active,true);
  }).join('');
+ const byPart=new Map(nodes.filter(n=>n.partId!=null).map(n=>[key(n.partId),n]));
+ const guides=new Map();
+ if(!orbit&&view.guides!==false)for(const {w,route} of report.rows){
+  if(route!==null)continue;
+  const a=byPart.get(key(w.a.p)),b=byPart.get(key(w.b.p));
+  if(!a||!b||a===b)continue;
+  const id=[a.id,b.id].sort().join('/');
+  if(!guides.has(id))guides.set(id,{a,b,count:0});guides.get(id).count++;
+ }
+ const guideMarkup=[...guides.values()].map(({a,b,count})=>`<path data-wiring-guide="" d="${curve(a,b,{}).path}" fill="none" stroke="#718d99" stroke-opacity=".52" stroke-width="1.5" stroke-dasharray="5 6" pointer-events="none"><title>${count} electrical connections · physical route pending</title></path>`).join('');
  const components=nodes.map(n=>nodeMarkup(n,parts.get(key(n.partId)),neighbors.get(n.id)||[],project,orbit)).join('');
  const from=view.drag?.type==='connect'?ns.get(view.drag.id):null,to=view.drag?.to;
  const preview=from&&to?`<path d="${curve(from,to,{}).path}" fill="none" stroke="#008578" stroke-width="3" stroke-dasharray="6 4" pointer-events="none"/>`:'';
- return branches+components+preview;
+ return guideMarkup+branches+components+preview;
 }
 function renderScene(g,report){
  const svg=$('wfFormSvg');if(!svg)return;
@@ -203,6 +233,7 @@ function displayCut(r){
 }
 function materials(g,report){
  const groups=new Map();
+ const shields=new Map();
  function add(kind,name,variant,amount,unit,status){
   const id=JSON.stringify([kind,name,variant,unit,status]);
   if(!groups.has(id))groups.set(id,{kind,name,variant,unit,status,qty:0});
@@ -224,9 +255,13 @@ function materials(g,report){
   else add('Covering',s.sleeve,variant,1,'branch','Length TBD');
  }
  for(const r of report.rows.map(displayCut)){
-  if(r.cut!==null)add('Wire',r.w.awg?r.w.awg+' AWG':'AWG TBD',r.w.color||'Color TBD',r.cut,'in',r.status);
-  else add('Wire',r.w.awg?r.w.awg+' AWG':'AWG TBD',r.w.color||'Color TBD',1,'wire',r.status);
+  const sh=r.w.wfShield;if(sh)shields.set(sh.id,sh);
+  for(const marker of r.w.wfMarkers||[])add('Marker',marker,'',1,'ea','User specified');
+  const spec=[r.w.wfWirePart,r.w.color||'Color TBD'].filter(Boolean).join(' · ');
+  if(r.cut!==null)add('Wire',r.w.awg?r.w.awg+' AWG':'AWG TBD',spec,r.cut,'in',r.status);
+  else add('Wire',r.w.awg?r.w.awg+' AWG':'AWG TBD',spec,1,'wire',r.status);
  }
+ for(const sh of shields.values())add('Shield',sh.part,(sh.from||'Source TBD')+' → '+(sh.to||'Target TBD'),1,'assembly','Measure shield length');
  return [...groups.values()].map(row=>({...row,total:row.unit==='in'?row.qty*(1+Number(g.waste)/100):row.qty}));
 }
 function cutRows(report){
@@ -280,7 +315,7 @@ function bulkheadSelection(w){
  const choices=S.parts.filter(p=>T[p.t]?.bulk&&key(w.a.p)!==key(p.id)&&key(w.b.p)!==key(p.id));
  if(!choices.length)return '<p class="muted">Place a bulkhead in the wiring diagram to record a pass-through.</p>';
  return '<details class="fb-bulk" '+(view.bulk?'open':'')+'><summary>Route through bulkhead</summary>'+
- (w.tw?'<p class="muted">Use the wiring diagram to edit twisted pairs as a group.</p>':
+ (w.tw||w.wfShield?'<p class="muted">Edit the grouped wires together in Pin configuration.</p>':
  select('Existing bulkhead','fbBulk',option('','Choose housing',view.bulk)+choices.map(p=>option(p.id,p.name,view.bulk)).join(''))+
  select('Verified cavity','fbCavity',option('','Choose cavity')+(T[part(view.bulk)?.t]?.pins||[]).map((p,i)=>option(i,pinId(part(view.bulk),i))).join(''))+
  select('Original From endpoint enters','fbFace',option('','Choose face')+option('L','Engine face')+option('R','Cabin face'))+
@@ -304,9 +339,16 @@ function placeHardware(g,t,name,x,y,sx,sy){
  S.parts.push(p);S.examples=false;
  return addNode(g,x,y,name,p.id);
 }
+function focusLoom(g){
+ const n=g.nodes.find(n=>part(n.partId)?.t==='hd30_47'&&part(n.partId)?.wfHd30Loom);
+ if(!n)return false;
+ const svg=$('wfFormSvg'),ratio=(svg?.clientWidth||800)/(svg?.clientHeight||560);
+ const w=Math.max(1170,640*ratio),height=w/ratio;
+ view.cam={x:n.x+100-w/2,y:n.y+140-height/2,w,h:height};view.chosen={id:n.id};view.page='design';return true;
+}
 function insertLoom(){
  const g=graph();
- if(S.parts.some(p=>p.wfHd30Loom))return toast('The HD30 loom is already in this project. Select either bulkhead to inspect its cavities.');
+ if(S.parts.some(p=>p.wfHd30Loom)){if(focusLoom(g))render();else toast('Your project already contains the loom. Place its bulkhead from the schematic.');return;}
  mutate(()=>{
   const x=g.nodes.length?Math.max(...g.nodes.map(n=>n.x))+450:120;
   const sx=S.parts.length?Math.max(...S.parts.map(p=>p.x))+650:0;
@@ -319,7 +361,7 @@ function insertLoom(){
   const c2=component('mxrace32','C2 · RACE auxiliary',0,385,1650);
   const a=component('hd30_47','BH-A · HD30 main',300,115,0);
   const b=component('hd30_47','BH-B · HD30 auxiliary',300,365,1650);
-  const j=addNode(g,x+510,245,'Engine loom breakout');
+
   const power=component('e90dt12','Power · DT12 interface',770,60,0);
   const analog=component('e90analog8','Analog · DT8 interface',770,245,620);
   const ctrl=component('e90can8','Control · DT8 interface',770,430,1200);
@@ -335,8 +377,7 @@ function insertLoom(){
    Object.assign(g.segments.at(-1),{label,sleeve:'DR-25'});
   }
   cable(c1,a,'C1 / MAIN');cable(c2,b,'C2 / AUX');
-  cable(a,j,'MAIN');cable(b,j,'AUX');
-  cable(j,power,'POWER');cable(j,analog,'ANALOG');cable(j,ctrl,'CONTROL');
+
   function wire(from,to,sig){
    S.wires.push(mkW(from,to,{id:nid(),sig,awg:0,color:'',measuredOnly:true,autoRoute:true}));
   }
@@ -357,12 +398,47 @@ function insertLoom(){
    });
   }
   bank('C1',c1,a,['L4','M4']);bank('C2',c2,b,['G4']);
-  view.page='design';view.cam=null;view.chosen={id:a.id};
+  focusLoom(g);
  });
 }
+function wireTools(dialog,update){
+ const boxes=()=>Array.from(dialog.querySelectorAll('[data-schedule-wire]:checked'));
+ const status=dialog.querySelector('[data-wire-status]');
+ dialog.querySelector('[data-wire-apply]').onclick=()=>{
+  const ws=boxes().map(el=>wireById(el.dataset.scheduleWire)).filter(Boolean);
+  if(!ws.length){status.textContent='Select at least one wire in the table.';return;}
+  const mode=val('fbWireAction'),value=val('fbWireValue').trim();
+  if(['shield','wirePart','marker'].includes(mode)&&!value){status.textContent='Enter the part number or marking.';return;}
+  if(mode==='twist'&&(ws.length!==2||ws[0].a.p!==ws[1].a.p||ws[0].b.p!==ws[1].b.p)){
+   status.textContent='Select two parallel wires running in the same direction between the same components.';return;
+  }
+  if(mode==='shield'&&ws.some(w=>w.a.p!==ws[0].a.p||w.b.p!==ws[0].b.p)){
+   status.textContent='Group cores running between the same two components in the same direction.';return;
+  }
+  if(mode==='shield'&&ws.some(w=>w.tw&&S.wires.some(q=>q.tw===w.tw&&!ws.includes(q)))){
+   status.textContent='Include both members of the twisted pair.';return;
+  }
+  mutate(()=>{
+   const groupId=['twist','shield'].includes(mode)?nid():null;
+   for(const w of ws){
+    if(mode==='twist')w.tw=groupId;
+    if(mode==='untwist')delete w.tw;
+    if(mode==='wirePart')w.wfWirePart=value;
+    if(mode==='marker')w.wfMarkers=[...new Set([...(w.wfMarkers||[]),value])];
+    if(mode==='shield')w.wfShield={id:groupId,part:value,from:val('fbShieldFrom').trim(),to:val('fbShieldTo').trim()};
+    if(mode==='unshield')delete w.wfShield;
+   }
+   if(mode==='twist'||mode==='untwist'){
+    const counts=new Map();for(const w of S.wires)if(w.tw)counts.set(w.tw,(counts.get(w.tw)||0)+1);
+    for(const w of S.wires)if(w.tw&&counts.get(w.tw)===1)delete w.tw;
+   }
+  });update();
+ };
+}
+
 function pinSchedule(p){
  const dialog=document.createElement('dialog');
- dialog.className='fb-mockup';
+ dialog.className='fb-mockup fb-cavity-sheet';
  function update(){
   const bulk=T[p.t].bulk;
   const rows=T[p.t].pins.map((pin,i)=>{
@@ -370,20 +446,25 @@ function pinSchedule(p){
    const term=p.wfTerminations?.[i]||{};
    const cells=links.map(w=>{
     const other=w.a.p===p.id?w.b:w.a;
-    return (bulk?(faceOf(w,p.id,i)==='R'?'Cabin · ':'Engine · '):'')+endName(other);
+    const dest=(bulk?(faceOf(w,p.id,i)==='R'?'Cabin · ':'Engine · '):'')+endName(other);
+    const info=[w.sig,w.awg?w.awg+' AWG':'Gauge TBD',w.color,w.wfWirePart,...(w.wfMarkers||[]),w.tw?'Twist '+w.tw:'',w.wfShield?'Shield '+w.wfShield.id+' · '+w.wfShield.part+' ('+(w.wfShield.from||'End TBD')+' → '+(w.wfShield.to||'End TBD')+')':''].filter(Boolean);
+    return '<label><input type="checkbox" data-schedule-wire="'+h(w.id)+'"> '+h(dest)+'</label><small>'+h(info.join(' · '))+'</small>';
    });
-   return '<tr><th>'+h(pin.p)+'</th><td>'+h(plabel(p,i)||'—')+'</td><td>'+h(term.contact||'—')+'</td><td>'+h(term.seal||'—')+'</td><td>'+cells.map(h).join('<br>')+(cells.length?'':'Open')+'</td></tr>';
+   return '<tr><th>'+h(pin.p)+'</th><td>'+h(plabel(p,i)||'—')+'</td><td>'+h(term.contact||'—')+'</td><td>'+h(term.seal||'—')+'</td><td>'+cells.join('<br>')+(cells.length?'':'Open')+'</td></tr>';
   });
   dialog.innerHTML='<form method="dialog"><button class="btn" autofocus>Close</button></form><h3>'+h(p.name)+' · Pin configuration</h3>'+
    (p.wfHd30Loom?'<p>Proposed cavity allocation. Verify insert orientation, contact size, current and keying before termination. ECU supply and engine grounds require separate design. EGT positions are reserved pending thermocouple hardware.</p>':'')+
    (bulk?select('First cavity','fbSwap1',T[p.t].pins.map((v,i)=>option(i,v.p)).join(''))+select('Second cavity','fbSwap2',T[p.t].pins.map((v,i)=>option(i,v.p)).join(''))+'<button type="button" class="btn" data-swap>Swap both faces</button>':'')+
    '<details><summary>Edit cavity details</summary>'+select('Cavity','fbEditPin',T[p.t].pins.map((v,i)=>option(i,v.p)).join(''))+input('Description','fbPinLabel')+input('Contact part number','fbContact')+input('Seal or cavity plug','fbSeal')+'<button type="button" class="btn" data-save-pin>Save cavity</button></details>'+
+   '<details><summary>Selected wires</summary>'+select('Operation','fbWireAction',[['twist','Twist pair'],['untwist','Remove twist'],['shield','Group under shield'],['unshield','Remove shield'],['wirePart','Assign wire part'],['marker','Add heat-shrink marker']].map(([id,text])=>option(id,text)).join(''))+
+   input('Part number or marker','fbWireValue')+input('Shield source termination','fbShieldFrom','','Floating, housing or component and pin')+input('Shield target termination','fbShieldTo','','Floating, housing or component and pin')+'<button type="button" class="btn" data-wire-apply>Apply to selected wires</button><p aria-live="polite" data-wire-status></p></details>'+
    table(['Cavity','Function','Contact','Seal / plug','Connected endpoint'],rows)+
    '<details><summary>Connect a cavity</summary>'+select('Source cavity','fbSource',T[p.t].pins.map((v,i)=>option(i,v.p)).join(''))+
    (bulk?select('Source face','fbSourceFace',option('L','Engine')+option('R','Cabin')):'')+
    select('Destination component','fbDest',option('','Select component')+S.parts.filter(q=>q.id!==p.id).map(q=>option(q.id,q.name)).join(''))+
-   select('Destination cavity','fbDestPin','')+'<div data-face></div>'+input('Circuit name','fbNet')+
+   select('Destination cavity','fbDestPin','')+'<div data-face></div>'+input('Circuit name','fbNet')+(!bulk?'<label><input id="fbDouble" type="checkbox"> Double crimp at source</label>':'')+
    '<button type="button" class="btn" data-connect>Connect cavities</button><p role="status"></p></details>';
+  wireTools(dialog,update);
   const editPin=dialog.querySelector('#fbEditPin');
   function showPin(){
    const i=Number(editPin.value),term=p.wfTerminations?.[i]||{};
@@ -409,7 +490,7 @@ function pinSchedule(p){
    const from={p:p.id,i:Number(val('fbSource'))},to={p:target.id,i:Number(val('fbDestPin'))};
    if(bulk)from.s=val('fbSourceFace');
    if(T[target.t].bulk)to.s=val('fbDestFace');
-   if([from,to].some(end=>end.s?faceUsed(end.p,end.i,end.s):!T[part(end.p).t].node&&usedOn(end.p,end.i).length)){
+   if([from,to].some(end=>end.s?faceUsed(end.p,end.i,end.s):!T[part(end.p).t].node&&usedOn(end.p,end.i).length>(end===from&&$('fbDouble')?.checked?1:0))){
     status.textContent='An endpoint is occupied. Select an open cavity or face.';return;
    }
    mutate(()=>{S.wires.push(mkW(from,to,{id:nid(),awg:0,measuredOnly:true,sig:val('fbNet').trim(),autoRoute:true}));});
@@ -494,15 +575,15 @@ function render(){
  if(view.graph!==g){view.cam=null;view.graph=g;view.chosen=null;view.origin=null;}
  const count=report.rows.map(displayCut).filter(r=>r.cut!==null).length;
  const stage=view.page!=='build';
- const hint=view.page==='orbit'?'Drag to orbit · scroll to zoom':view.mode==='junction'?'Click open space to place a breakout':view.origin?'Select a destination port':view.mode==='connect'?'Drag between ports or click two endpoints':'Drag parts to move · drag ports to connect · scroll to zoom';
- const actions=stage?'<div class="fb-actions">'+(view.page==='design'?btn('select','Select',view.mode==='select'?'active':'')+btn('connect','Route',view.mode==='connect'?'active':'')+btn('junction','+ Breakout',view.mode==='junction'?'active':'')+btn('pan','Pan',view.mode==='pan'?'active':''):'')+btn('zoomOut','−')+btn('zoomIn','+')+btn('fit','Fit')+btn('labels',view.details?'Hide labels':'Show labels')+'</div>':
+ const hint=view.page==='orbit'?'Drag to orbit · scroll to zoom':view.mode==='junction'?'Click open space to place a breakout':view.origin?'Select a destination port':view.mode==='connect'?'Drag between ports or click two endpoints':'Dashed lines show electrical connections awaiting a physical route. Drag ports to route a cable.';
+ const actions=stage?'<div class="fb-actions">'+(view.page==='design'?btn('select','Select',view.mode==='select'?'active':'')+btn('connect','Route',view.mode==='connect'?'active':'')+btn('guides',view.guides===false?'Show wiring guides':'Hide wiring guides')+btn('junction','+ Breakout',view.mode==='junction'?'active':'')+btn('pan','Pan',view.mode==='pan'?'active':''):'')+btn('zoomOut','−')+btn('zoomIn','+')+btn('fit','Fit')+btn('labels',view.details?'Hide labels':'Show labels')+'</div>':
  '<div class="fb-actions">'+btn('svg','Formboard SVG')+btn('cut','Cut list CSV')+btn('bom','Materials CSV')+btn('print','Print build pack','fb-primary')+'</div>';
- el.innerHTML='<header class="fb-header"><div><h2>Physical Formboard</h2><p class="muted">Harness layout and fabrication for '+h(S.wfProjectName||S.projectName||'the active project')+'.</p></div><div class="fb-counts"><span><b>'+g.nodes.length+'</b> nodes</span><span><b>'+g.segments.length+'</b> branches</span><span><b>'+report.rows.filter(r=>r.route?.length).length+' / '+report.rows.length+'</b> wires routed</span><span><b>'+count+'</b> cut lengths</span></div></header>'+
- '<div class="fb-workspace"><div class="fb-bar"><div class="fb-actions">'+btn('design','Design',view.page==='design'?'active':'')+'<button class="btn" data-tab="draw">Wiring</button>'+btn('orbit','3D Routing',view.page==='orbit'?'active':'')+btn('build','Fabrication',view.page==='build'?'active':'')+btn('loom','Add pinned HD30 loom','fb-primary')+btn('bulkheadMockup','Bulkhead Mockup')+'</div>'+actions+'</div>'+
+ el.innerHTML='<header class="fb-header"><div><h2>Physical Formboard</h2><p class="muted">Harness layout and fabrication for '+h(S.wfProjectName||S.projectName||'the active project')+'.</p></div><div class="fb-counts"><span><b>'+g.nodes.filter(n=>n.partId!=null).length+'</b> components</span><span><b>'+g.nodes.filter(n=>n.partId==null).length+'</b> breakouts</span><span><b>'+g.segments.length+'</b> cable runs</span><span><b>'+report.rows.filter(r=>r.route?.length).length+' / '+report.rows.length+'</b> wires routed</span><span><b>'+count+'</b> cut lengths</span></div></header>'+
+ '<div class="fb-workspace"><div class="fb-bar"><div class="fb-actions">'+btn('design','Design',view.page==='design'?'active':'')+'<button class="btn" data-tab="draw">Wiring</button>'+btn('orbit','3D Routing',view.page==='orbit'?'active':'')+btn('build','Fabrication',view.page==='build'?'active':'')+btn('loom',S.parts.some(p=>p.wfHd30Loom)?'Find pinned HD30 loom':'Add pinned HD30 loom','fb-primary')+btn('bulkheadMockup','Bulkhead Mockup')+'</div>'+actions+'</div>'+
  (stage?'<div class="fb-wrap"><div class="fb-stage">'+canvas()+
- (g.nodes.length?'':'<div class="fb-empty"><article><h3>Lay out the harness</h3><p>Generate a draft from the current schematic or start by placing a component.</p>'+btn('seed','Generate starter layout','fb-primary')+'</article></div>')+
+ (g.nodes.length?'':'<div class="fb-empty"><article><h3>Lay out the harness</h3><p>Place the wired components together, then route the physical cables where they run in the vehicle.</p>'+btn('seed','Generate starter layout','fb-primary')+'</article></div>')+
  '<div class="fb-overlay"><span class="fb-canvas-help" id="fbHint">'+hint+'</span><span>Layout units · '+(view.page==='orbit'?'3D preview':'inches for entered lengths')+'</span></div></div><aside class="fb-sidebar">'+sidebar(g,report)+
- (view.page==='design'&&g.nodes.length?'<details><summary>Layout setup</summary>'+btn('seed','Regenerate draft')+'</details>':'')+'</aside></div>':
+ (view.page==='design'&&g.nodes.length?'<details><summary>Layout setup</summary>'+btn('seed','Restage components without breakouts')+'</details>':'')+'</aside></div>':
  '<div class="fb-sidebar" style="height:auto;border:0"><p class="muted">Review the branch and wire schedules before cutting. Verify cavity orientation, measurements and fit at the bench.</p><div class="fb-actions"><button class="btn" data-tab="pro">Production Studio</button><button class="btn" data-tab="bom">Electrical parts BOM</button><button class="btn" data-tab="book">Harness Book</button><button class="btn" data-tab="build">Build tracker</button></div></div>')+'</div>'+
  (stage?'':output(g,report));
  if(stage){renderScene(g,report);bindCanvas(g,report);}
@@ -666,7 +747,7 @@ function applyBulkhead(g,w){
  const p=part(val('fbBulk')),raw=val('fbCavity'),side=val('fbFace');
  const i=Number(raw),t=p&&T[p.t];
  if(!w||!t?.bulk||!raw||!Number.isInteger(i)||!t.pins[i]||!['L','R'].includes(side))return toast('Choose a housing, verified cavity and entry face.');
- if(w.tw||[w.a.p,w.b.p].includes(p.id))return toast('This wire requires editing in the wiring diagram.');
+ if(w.tw||w.wfShield||[w.a.p,w.b.p].includes(p.id))return toast('This wire requires editing in the wiring diagram.');
  if(usedOn(p.id,i).length)return toast('That cavity is already used. Choose an unused, verified cavity.');
  if(!confirm('Split this circuit at '+p.name+' cavity '+pinId(p,i)+'? Existing endpoints stay connected through the cavity. Measure both resulting legs.'))return;
  mutate(()=>{
@@ -717,6 +798,7 @@ document.addEventListener('click',e=>{
  if(['select','connect','junction','pan'].includes(action)){
   view.mode=action;view.origin=null;render();return;
  }
+ if(action==='guides'){view.guides=view.guides===false;render();return;}
  if(action==='labels'){view.details=!view.details;render();return;}
  if(action==='fit'){fit(g);camera($('wfFormSvg'));renderScene(g,analyze(g,S.wires,S.parts));return;}
  if(action==='zoomIn'||action==='zoomOut'){
@@ -794,4 +876,10 @@ document.addEventListener('change',e=>{
  if(e.target.id==='fbBulk'){view.bulk=e.target.value||null;render();$('fbBulk')?.closest('details')?.setAttribute('open','');}
 });
 root.WFFormboard={...api,render,report:()=>analyze(graph(),S.wires,S.parts)};
+function openFormboardLink(){
+ if(location.hash==='#hd30')showTab('formboard');
+}
+root.addEventListener('hashchange',openFormboardLink);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',openFormboardLink,{once:true});
+else openFormboardLink();
 })(typeof window!=='undefined'?window:null);

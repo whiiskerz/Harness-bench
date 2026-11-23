@@ -1002,6 +1002,7 @@ function draw(){
     out.push(`<g opacity="${network.size && !network.has(w.id) ? 0.23 : 1}">`);
     if(sel||network.has(w.id))out.push(`<path d="${dd}" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" opacity=".5"/>`);
     if(ERR.w.has(w.id))out.push(`<path d="${dd}" fill="none" stroke="var(--bad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="3 7" opacity=".85"/>`);
+    if(w.wfShield)out.push(`<path d="${dd}" fill="none" stroke="#62879c" stroke-width="12" stroke-opacity=".55" stroke-dasharray="5 4" pointer-events="none"><title>${esc(w.wfShield.part)} · shield ${esc(w.wfShield.id)}</title></path>`);
     if(PD&&PAIR[w.tw][0]===w)out.push(pairSVG(PAIR[w.tw]));
     if(!PD)out.push(`<path d="${d}" fill="none" stroke="${w.tw?'#000':'var(--mute)'}" stroke-width="${w.tw?5.6:6}" stroke-linecap="round" stroke-linejoin="round" opacity="${w.tw?.55:.5}"/>`);
     if(!PD)out.push(`<path d="${d}" fill="none" stroke="${c}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>`);
