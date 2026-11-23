@@ -27,7 +27,7 @@ function seed(parts,wires){
  const ordered=parts.filter(p=>used.has(key(p.id))).slice().sort((a,b)=>(Number(a.x)||0)-(Number(b.x)||0)||(Number(a.y)||0)-(Number(b.y)||0));
  // Draft trunk in schematic x-order; no inferred physical dimensions.
  for(let i=0;i<ordered.length;i+=4){
- const x=100+Math.floor(i/4)*350,j=addNode(g,x,300,'Breakout '+(Math.floor(i/4)+1));
+ const x=100+Math.floor(i/4)*470,j=addNode(g,x,300,'Breakout '+(Math.floor(i/4)+1));
  const prev=g.nodes.filter(n=>n.partId==null).at(-2);if(prev)addSegment(g,prev.id,j.id);
  ordered.slice(i,i+4).forEach((p,k)=>{const px=x+(k%2===0?-130:130),py=k<2?85:520;const n=addNode(g,px,py,p.name||'Connector '+p.id,p.id);addSegment(g,j.id,n.id);});
  }return g;
@@ -101,8 +101,9 @@ function segmentExtent(g,s,axis,direction){
 }
 function fit(g,detail=false){
  const box=boardBounds(g),svg=$('wfFormSvg');
- if(detail&&box.w>1750)box.w=1450;
- const ratio=(svg?.clientWidth||840)/(svg?.clientHeight||580);
+ const width=svg?.clientWidth||840;
+ if(detail&&box.w>1750)box.w=Math.max(650,width*1.1);
+ const ratio=width/(svg?.clientHeight||580);
  const w=Math.max(box.w,box.h*ratio),height=w/ratio;
  view.cam={x:box.x+(box.w-w)/2,y:box.y+(box.h-height)/2,w,h:height};
 }
