@@ -368,6 +368,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 </style>
 <link rel="stylesheet" href="./wireforge-workspace.css">
 <link rel="stylesheet" href="./wireforge-blueprint.css">
+<link rel="stylesheet" href="./wireforge-formboard.css">
 <link rel="stylesheet" href="./wireforge-premium.css">
 <link rel="stylesheet" href="./wireforge-dt-visual.css">
 <script>
@@ -2046,7 +2047,7 @@ function proAttach(){
  document.getElementById('proPrint')?.addEventListener('click',()=>{showTab('pro');document.body.classList.add('wf-pro-print');window.print();setTimeout(()=>document.body.classList.remove('wf-pro-print'),1000)});
 }
 
-const TABS=[['project','Overview'],['blueprint','E90 Blueprint'],['dt','Deutsch Assemblies'],['draw','Harness Designer'],['formboard','Physical Formboard'],['lab','Validation Lab'],['vault','Project Vault'],['pro','Production Studio'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
+const TABS=[['project','Overview'],['blueprint','E90 Blueprint'],['dt','Deutsch Assemblies'],['formboard','Physical Formboard'],['draw','Harness Designer'],['lab','Validation Lab'],['vault','Project Vault'],['pro','Production Studio'],['mock','Loom Studio'],['studio','Connector Studio'],['wires','Wire list'],['cut','Cut list'],['pins','Pinouts'],['book','Harness Book'],['bom','Parts & BOM'],['checks','Circuit Checks'],['electrical','Electrical Checker'],['power','Power Budget'],['ecu','MaxxECU Pinout'],['sim','Test Sim'],['build','Build tracker'],['notes','Notes'],['save','Project Backup']];
 const RENDER={formboard:()=>window.WFFormboard?.render?.(),dt:()=>window.WFDT?.render?.(),blueprint:()=>window.WFBlueprint?.render?.(),lab:()=>window.WFPro?.renderLab?.(),vault:()=>window.WFPro?.renderVault?.(),pro:rPro,project:rProject,studio:rStudio,mock:rMock,wires:rWires,cut:rCut,pins:rPins,book:rBook,bom:rBom,checks:rChecks,electrical:rElectrical,power:rPower,ecu:rEcu,sim:rSim,build:rBuild,notes:rNotes,save:rSave};
 const tabsEl=document.getElementById('tabs');
 const TAB_GROUP={formboard:'Design',dt:'Connectors',blueprint:'Workspace',lab:'Validation',vault:'Project',pro:'Build',project:'Workspace',draw:'Design',mock:'Design',studio:'Connectors',wires:'Documentation',cut:'Documentation',pins:'Documentation',book:'Documentation',bom:'Documentation',checks:'Validation',electrical:'Validation',power:'Validation',ecu:'Connectors',sim:'Validation',build:'Build',notes:'Project',save:'Project'};
@@ -2277,8 +2278,8 @@ document.addEventListener('click',e=>{
    case'designDel':{const a=designList();a.splice(+b.dataset.i,1);designPut(a);rSave();break}
    case'clearWires':{if(!S.wires.length){toast('There are no wires to delete');break}if(!confirm('Delete all '+S.wires.length+' wires? Parts, connector pinouts, zones, and loom definitions will be kept. This cannot be undone after you leave the current session.'))break;commit();const count=S.wires.length;S.wires=[];selection=null;pending=null;canMode=false;canQ=[];save();draw();renderInsp();syncBar();toast('Deleted '+count+' wires; parts and zones kept');break}
    case'toggleRoute':{S.route=S.route==='curved'?'ortho':'curved';save();draw();toast(S.route==='curved'?'Curved wires':'90° routing');break}
-   case'clearAll':{commit();S.parts=[];S.wires=[];S.zones=[];S.examples=false;selection=null;pending=null;S.view=null;save();showTab(S.tab);break}
-   case'loadEx':{commit();Object.assign(S,starter());S.zones=[];S.wfVaultId=null;S.wfProjectName='Starter Harness';selection=null;pending=null;save();showTab('draw');break}
+   case'clearAll':{commit();S.parts=[];S.wires=[];S.zones=[];S.wfFormboard=null;S.examples=false;selection=null;pending=null;S.view=null;save();showTab(S.tab);break}
+   case'loadEx':{commit();Object.assign(S,starter());S.zones=[];S.wfFormboard=null;S.wfVaultId=null;S.wfProjectName='Starter Harness';selection=null;pending=null;save();showTab('draw');break}
    case'bookAdd':{ensureBook();let id='NEW-'+(Date.now().toString().slice(-6));while(S.circuitBook.some(x=>x.id===id))id+='X';S.circuitBook.push({id,kind:'Circuit',name:'New circuit',from:'',to:'',cavity:'',wire:'',status:'Planned / unverified',notes:''});save();showTab('book');toast('Record added');break;}
    case'bookDelete':{ensureBook();S.circuitBook=S.circuitBook.filter(x=>x.id!==d.id);save();showTab('book');break;}
    case'bookCSV':copy(bookCSV(),b);break;
@@ -2324,12 +2325,12 @@ document.addEventListener('input',e=>{
 
 /* ---------- undo / redo ---------- */
 const UNDO=[],REDO=[];
-const snapS=()=>JSON.stringify({parts:S.parts,wires:S.wires,zones:S.zones,nid:S.nid,fw:S.fw,tk:S.tk,looms:S.looms});
+const snapS=()=>JSON.stringify({parts:S.parts,wires:S.wires,zones:S.zones,nid:S.nid,fw:S.fw,tk:S.tk,looms:S.looms,wfFormboard:S.wfFormboard??null});
 function syncUndo(){const u=document.getElementById('undoBtn'),r=document.getElementById('redoBtn');if(u)u.disabled=!UNDO.length;if(r)r.disabled=!REDO.length}
 function commit(){UNDO.push(snapS());if(UNDO.length>60)UNDO.shift();REDO.length=0;syncUndo()}
 let _ck='',_ct=0;
 function commitOnce(k){const n=Date.now();if(_ck===k&&n-_ct<1200){_ct=n;return}_ck=k;_ct=n;commit()}
-function applySnap(j){const o=JSON.parse(j);S.parts=o.parts;S.wires=o.wires;S.zones=o.zones||S.zones||[];S.nid=o.nid;S.fw=o.fw;S.tk=o.tk;S.looms=o.looms||[];selection=null;pending=null;save();syncBar();draw();renderInsp();hint();syncUndo()}
+function applySnap(j){const o=JSON.parse(j);S.parts=o.parts;S.wires=o.wires;S.zones=o.zones||S.zones||[];S.nid=o.nid;S.fw=o.fw;S.tk=o.tk;S.looms=o.looms||[];S.wfFormboard=o.wfFormboard;selection=null;pending=null;save();syncBar();draw();renderInsp();hint();syncUndo();if(S.tab==='formboard')window.WFFormboard?.render()}
 function doUndo(){if(!UNDO.length)return toast('Nothing to undo');REDO.push(snapS());applySnap(UNDO.pop())}
 function doRedo(){if(!REDO.length)return toast('Nothing to redo');UNDO.push(snapS());applySnap(REDO.pop())}
 document.addEventListener('keydown',e=>{
@@ -2337,7 +2338,7 @@ document.addEventListener('keydown',e=>{
   const m=e.ctrlKey||e.metaKey,k=(e.key||'').toLowerCase();
   if(m&&k==='z'){e.preventDefault();e.shiftKey?doRedo():doUndo()}
   else if(m&&k==='y'){e.preventDefault();doRedo()}
-  else if((e.key==='Delete'||e.key==='Backspace')&&selection){e.preventDefault();const b=document.querySelector('#insp [data-act="delPart"],#insp [data-act="delWire"]');if(b)b.click()}
+  else if((e.key==='Delete'||e.key==='Backspace')&&selection&&S.tab==='draw'){e.preventDefault();const b=document.querySelector('#insp [data-act="delPart"],#insp [data-act="delWire"]');if(b)b.click()}
 });
 
 /* ---------- HD30 circular insert renderer + controls ---------- */
@@ -2610,6 +2611,6 @@ if(S.tab==='draw'&&!S.view)requestAnimationFrame(fit);
 </script>
 
 <input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import WireForge project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js" defer></script>
-<script src="./wireforge-blueprint.js" defer></script><script src="./wireforge-formboard.js" defer></script>
+<script src="./wireforge-blueprint.js" defer></script><script src="./wireforge-formboard-art.js" defer></script><script src="./wireforge-formboard.js" defer></script>
 <script type="module" src="./wireforge-dt-assemblies.js"></script>
 </body></html>
