@@ -125,7 +125,8 @@ module.exports=async function testFormboard(browser,url='http://127.0.0.1:8765/i
   await trace.selectOption('31');
   await page.getByText('Route through bulkhead',{exact:true}).click();
   await page.locator('#fbBulk').selectOption('13');
-  await page.locator('#fbCavity').selectOption('2');
+  await page.locator('#fbCavity').selectOption({label:'3'});
+  assert.equal(await page.locator('#fbCavity').inputValue(),'2','Displayed cavity label maps to the intended index');
   await page.locator('#fbFace').selectOption('L');
   page.once('dialog',dialog=>dialog.accept());
   await act('bulkApply').click();
@@ -139,6 +140,11 @@ module.exports=async function testFormboard(browser,url='http://127.0.0.1:8765/i
   assert.equal(await page.evaluate(()=>S.wires.length),1,'Undo restores the original circuit');
   await page.keyboard.press('Control+Shift+z');
   assert.equal(await page.evaluate(()=>S.wires.length),2,'Redo reapplies the selected bulkhead assignment');
+  await page.locator('#tabs [data-tab="lab"]').click();
+  await page.locator('#wfLabFrom').selectOption({value:'11:0'});
+  await page.locator('#wfLabTo').selectOption({value:'12:1'});
+  await page.locator('[data-wfl="trace"]').click();
+  assert.equal(await page.locator('#wfLabTrace').getAttribute('data-connected'),'true');
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('#tabs [data-tab="formboard"]').click();
   assert.equal(await page.evaluate(()=>S.wfFormboard.segments[0].length),22,'Measurements survive reload');

@@ -47,8 +47,8 @@ function analyze(g,wires,parts){
  rows.push({w,route,run,cut,status:route===null?'Unrouted':!route.length?'Local lead – measure separately':cut===null?'Measure branch / allowance':'Measured route'});
  }
  const bundles=g.segments.map(s=>{
- const members=bySeg.get(s.id)||[],ds=members.map(w=>positive(g.od[key(w.id)])?Number(g.od[key(w.id)]):typical[w.awg]||null);
- const estimated=members.some(w=>!positive(g.od[key(w.id)]));
+ const members=bySeg.get(s.id)||[],ds=members.map(w=>positive(g.od?.[key(w.id)])?Number(g.od[key(w.id)]):typical[w.awg]||null);
+ const estimated=members.some(w=>!positive(g.od?.[key(w.id)]));
  const d=ds.length&&ds.every(positive)&&positive(g.packing)&&g.packing<=1?Math.sqrt(ds.reduce((v,d)=>v+d*d,0)/g.packing):null;
  return {s,members,d,estimated};
  });
@@ -74,6 +74,7 @@ const view={cam:null,mode:'select',page:'design',chosen:null,origin:null,trace:n
 function graph(){
  const g=S.wfFormboard;
  if(!g||g.version!==1||!Array.isArray(g.nodes)||!Array.isArray(g.segments))S.wfFormboard=fresh();
+ S.wfFormboard.od??={};
  return S.wfFormboard;
 }
 function mutate(fn){
@@ -82,7 +83,7 @@ function mutate(fn){
  save();
  render();
 }
-function caption(n,p){return n.label||p?.name||(n.partId==null?'Breakout':'Connector');}
+function caption(n,p){return String(n.label||p?.name||(n.partId==null?'Breakout':'Connector'));}
 function lookup(){return new Map(S.parts.map(p=>[key(p.id),p]));}
 function boardBounds(g){
  const left=Math.min(0,...g.nodes.map(n=>n.x-180),...g.segments.map(s=>segmentExtent(g,s,'x',-1)));
@@ -135,7 +136,7 @@ function branchMarkup(bundle,c,active,orbit){
  ${labels}${handle}</g>`;
 }
 function nodeMarkup(n,p,neighbors,project,orbit){
- const type=p&&T[p.t],connector=n.partId!=null,chosen=view.chosen?.id===n.id||view.origin===n.id;
+ const type=p&&T[p.t],connector=n.partId!=null,chosen=view.chosen?.id===n.id||view.origin===n.id||view.drag?.target===n.id;
  const target=project(n),near=neighbors[0];
  const rotation=Number.isFinite(n.rotation)?n.rotation:(near?angle(near,n):0);
  const displayAngle=angle(target,project(point(n.x+Math.cos(rotation*Math.PI/180)*45,n.y+Math.sin(rotation*Math.PI/180)*45)));
@@ -395,7 +396,11 @@ function bindCanvas(g,report){
    return;
   }
   const a=position(svg,e.clientX,e.clientY);
-  if(d.type==='connect')d.to=a;
+  if(d.type==='connect'){
+   const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-node]')?.dataset.node;
+   d.target=target&&target!==d.id?target:null;
+   d.to=g.nodes.find(n=>n.id===d.target)||a;
+  }
   else {
    const k=d.type==='bend'?4/3:1;
    d.to=point(Math.round(d.start.x+(a.x-d.p.x)*k),Math.round(d.start.y+(a.y-d.p.y)*k));

@@ -1,13 +1,15 @@
 /* Original, illustrative formboard geometry. All coordinates are drawing units. */
 (function(root){
 'use strict';
-const point=(x,y)=>({x,y});
+const coordinate=v=>Number.isFinite(Number(v))?Number(v):0;
+const point=(x,y)=>({x:coordinate(x),y:coordinate(y)});
 const mix=(a,b,t)=>point(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t);
 const xy=p=>p.x+' '+p.y;
 const offset=(p,x,y)=>point(p.x+x,p.y+y);
-function curve(a,b,segment){
+function curve(start,end,segment){
+ const a=point(start.x,start.y),b=point(end.x,end.y);
  const dx=b.x-a.x,dy=b.y-a.y;
- const bend=segment.bend||point(0,0);
+ const bend=point(segment.bend?.x,segment.bend?.y);
  const c=offset(a,dx*.52+bend.x,dy*.1+bend.y);
  const d=offset(b,-dx*.52+bend.x,-dy*.1+bend.y);
  const sample=t=>mix(mix(mix(a,c,t),mix(c,d,t),t),mix(mix(c,d,t),mix(d,b,t),t),t);
