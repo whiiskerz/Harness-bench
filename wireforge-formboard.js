@@ -294,6 +294,40 @@ function sidebar(g,report){
  '<details '+(traced?'open':'')+'><summary>Trace a circuit</summary>'+select('Schematic wire','fbTrace',option('','No highlight')+wires)+(traced?'<p class="muted">'+h(endName(traced.w.a))+' → '+h(endName(traced.w.b))+'</p><p>'+h(displayCut(traced).status)+'</p>'+field('Measured wire OD (mm)','fbOD',g.od[view.trace],'Approximate from gauge')+'<div class="fb-actions">'+btn('od','Save OD')+btn('schematicWire','Edit wiring')+'</div>'+bulkheadSelection(traced.w):'')+'</details>'+
  '<details><summary>Cut allowances</summary>'+field('Allowance per end (in)','fbAllowance',g.allowance)+field('Service loop per wire (in)','fbSlack',g.slack)+field('Material waste (%)','fbWaste',g.waste)+btn('settings','Save allowances')+'<p class="muted">The bundle model uses 65% packing by default. Verify insulation OD, sleeve fit and boot fit on the bench.</p></details>';
 }
+function openBulkheadMockup(el){
+ const existing=el.querySelector('.fb-mockup');
+ if(existing?.open)return;
+ const dialog=document.createElement('dialog');
+ dialog.className='fb-mockup';
+ dialog.setAttribute('aria-labelledby','fbMockupTitle');
+ dialog.innerHTML=`<div class="fb-mockup-top">
+  <div><h3 id="fbMockupTitle">E90 firewall bulkhead mockup</h3><p class="muted">Hypothetical engine-harness layout · illustrative only</p></div>
+  <form method="dialog"><button class="btn" aria-label="Close bulkhead mockup" autofocus>Close</button></form>
+ </div>
+ <div class="fb-mockup-diagram"></div>
+ <div class="fb-mockup-actions"><button type="button" class="btn primary" aria-pressed="false">Unplug engine loom</button><p aria-live="polite"></p></div>
+ <p>Example circuit from the MaxxECU’s AIN4 to the oil-pressure sensor.</p>
+ ${table(['Side','Wire leg','Length'],[
+  '<tr><td>Cabin</td><td>AIN4 → bulkhead cavity TBD</td><td>TBD</td></tr>',
+  '<tr><td>Engine bay</td><td>Same cavity → oil-pressure signal</td><td>TBD</td></tr>'
+ ])}
+ <p class="muted">If sensor 5 V and sensor ground cross the firewall, each uses its own cavity. Housing, contacts, cavity map and lengths are TBD. The 8HP70 and trunk DT6 are outside this mockup.</p>`;
+ const visual=dialog.querySelector('.fb-mockup-diagram');
+ const toggle=dialog.querySelector('.fb-mockup-actions button');
+ const status=dialog.querySelector('.fb-mockup-actions p');
+ function show(unplugged){
+  visual.innerHTML=art.bulkheadMockup(unplugged);
+  toggle.textContent=unplugged?'Reconnect engine loom':'Unplug engine loom';
+  toggle.setAttribute('aria-pressed',String(unplugged));
+  status.textContent=unplugged?'Engine loom detached. ECU and cabin loom stay in place.':'Engine loom connected through the firewall.';
+ }
+ toggle.addEventListener('click',()=>show(toggle.getAttribute('aria-pressed')==='false'));
+ dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+ show(false);
+ el.append(dialog);
+ dialog.showModal();
+}
+
 function render(){
  const el=$('t-formboard');if(!el)return;
  const g=graph(),report=analyze(g,S.wires,S.parts);
@@ -304,7 +338,7 @@ function render(){
  const actions=stage?'<div class="fb-actions">'+(view.page==='design'?btn('select','Select',view.mode==='select'?'active':'')+btn('connect','Route',view.mode==='connect'?'active':'')+btn('junction','+ Breakout',view.mode==='junction'?'active':'')+btn('pan','Pan',view.mode==='pan'?'active':''):'')+btn('zoomOut','−')+btn('zoomIn','+')+btn('fit','Fit')+btn('labels',view.details?'Hide labels':'Show labels')+'</div>':
  '<div class="fb-actions">'+btn('svg','Formboard SVG')+btn('cut','Cut list CSV')+btn('bom','Materials CSV')+btn('print','Print build pack','fb-primary')+'</div>';
  el.innerHTML='<header class="fb-header"><div><h2>Physical Formboard</h2><p class="muted">Harness layout and fabrication for '+h(S.wfProjectName||S.projectName||'the active project')+'.</p></div><div class="fb-counts"><span><b>'+g.nodes.length+'</b> nodes</span><span><b>'+g.segments.length+'</b> branches</span><span><b>'+report.rows.filter(r=>r.route?.length).length+' / '+report.rows.length+'</b> wires routed</span><span><b>'+count+'</b> cut lengths</span></div></header>'+
- '<div class="fb-workspace"><div class="fb-bar"><div class="fb-actions">'+btn('design','Design',view.page==='design'?'active':'')+'<button class="btn" data-tab="draw">Wiring</button>'+btn('orbit','3D Routing',view.page==='orbit'?'active':'')+btn('build','Fabrication',view.page==='build'?'active':'')+'</div>'+actions+'</div>'+
+ '<div class="fb-workspace"><div class="fb-bar"><div class="fb-actions">'+btn('design','Design',view.page==='design'?'active':'')+'<button class="btn" data-tab="draw">Wiring</button>'+btn('orbit','3D Routing',view.page==='orbit'?'active':'')+btn('build','Fabrication',view.page==='build'?'active':'')+btn('bulkheadMockup','Bulkhead Mockup')+'</div>'+actions+'</div>'+
  (stage?'<div class="fb-wrap"><div class="fb-stage">'+canvas()+
  (g.nodes.length?'':'<div class="fb-empty"><article><h3>Lay out the harness</h3><p>Generate a draft from the current schematic or start by placing a component.</p>'+btn('seed','Generate starter layout','fb-primary')+'</article></div>')+
  '<div class="fb-overlay"><span class="fb-canvas-help" id="fbHint">'+hint+'</span><span>Layout units · '+(view.page==='orbit'?'3D preview':'inches for entered lengths')+'</span></div></div><aside class="fb-sidebar">'+sidebar(g,report)+
@@ -511,7 +545,9 @@ function printPack(g,report){
 document.addEventListener('click',e=>{
  const button=e.target.closest('#t-formboard [data-fb]');
  if(!button)return;
- const action=button.dataset.fb,g=graph();
+ const action=button.dataset.fb;
+ if(action==='bulkheadMockup')return openBulkheadMockup($('t-formboard'));
+ const g=graph();
  const n=g.nodes.find(n=>n.id===view.chosen?.id),s=g.segments.find(s=>s.id===view.chosen?.id);
  if(['design','orbit','build'].includes(action)){
   view.page=action;view.origin=null;if(action==='orbit')view.cam=null;render();return;

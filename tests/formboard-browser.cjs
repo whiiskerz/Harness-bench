@@ -30,6 +30,18 @@ module.exports=async function testFormboard(browser,url='http://127.0.0.1:8765/i
   await page.waitForFunction(()=>!!window.WFFormboard);
   const original=await read();
   await page.locator('#tabs [data-tab="formboard"]').click();
+  const savedProject=()=>page.evaluate(()=>JSON.stringify({state:S,saved:localStorage.getItem(KEY)}));
+  const beforeMockup=await savedProject();
+  await act('bulkheadMockup').click();
+  const mockup=page.getByRole('dialog',{name:'E90 firewall bulkhead mockup'});
+  assert.equal(await mockup.isVisible(),true);
+  await mockup.getByRole('button',{name:'Unplug engine loom'}).click();
+  assert.equal(await mockup.getByRole('img',{name:'Engine-side plug detached from the firewall'}).isVisible(),true);
+  await mockup.getByRole('button',{name:'Reconnect engine loom'}).click();
+  assert.equal(await mockup.getByRole('img',{name:'Cabin loom connected to engine loom through the firewall'}).isVisible(),true);
+  await page.keyboard.press('Escape');
+  assert.equal(await mockup.isVisible(),false);
+  assert.equal(await savedProject(),beforeMockup,'Opening and using the mockup leaves the active project and browser save untouched');
   await act('seed').click();
   assert.equal(await read(),original,'Starter layout must preserve electrical records byte for byte');
   assert.equal(await page.evaluate(()=>WFFormboard.report().rows.filter(r=>r.cut!==null).length),0);
