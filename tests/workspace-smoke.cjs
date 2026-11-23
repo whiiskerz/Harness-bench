@@ -1,6 +1,7 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
+const testFormboard=require('./formboard-browser.cjs');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:1366,height:850},acceptDownloads:true});
@@ -82,5 +83,6 @@ const fs=require('node:fs');
   await page.screenshot({path:'wireforge-v023-project-vault-mobile.png',fullPage:true});
   assert.deepEqual(errors,[],'No uncaught JavaScript errors');
   console.log('PASS',JSON.stringify({original,namedProjects:saved.saves.length,restored:true,imported:true,continuity:true,validation:true,mobile:layout}));
+  await testFormboard(browser);
  }finally{await browser.close()}
 })().catch(err=>{console.error(err);process.exit(1)});
