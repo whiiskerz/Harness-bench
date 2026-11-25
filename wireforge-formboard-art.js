@@ -31,13 +31,24 @@ function hardware(family,type){
   const ribs=Array.from({length:7},(_,i)=>'<path d="M'+(23+i*6)+' -15v22" stroke="#141719" stroke-width="3"/><path d="M'+(24+i*6)+' -15v22" stroke="#4b5154"/>').join('');
   return '<path d="M0-7H10L18-17H'+w+'V17H18L10 7H0Z" fill="url(#fb-module)" stroke="#131719" stroke-width="2"/>'+ribs+'<rect x="'+(w-12)+'" y="-19" width="12" height="38" rx="2" fill="#25292c" stroke="#121517"/><path d="M18-15l5-15h'+(w-38)+'l9 11v6h-5l-8-10H27l-4 10Z" fill="#626a70" stroke="#272d30"/><rect x="30" y="-28" width="14" height="6" rx="1" fill="#a64a34"/><path d="M21 13H'+(w-15)+'" stroke="#697177"/>';
  }
+ if(type==='dt04_4p'||type==='dt06_4s'){
+  const plug=type==='dt06_4s',tone=plug?'#c9733a':'#2c9a90';
+  const holes=[[0,-1],[1,-1],[0,1],[1,1]].map(([c,r])=>plug?'<circle cx="'+(46+c*9)+'" cy="'+(r*6)+'" r="3.4" fill="#12181b" stroke="'+tone+'" stroke-width="1.2"/>':'<circle cx="'+(46+c*9)+'" cy="'+(r*6)+'" r="1.8" fill="#e0c07a" stroke="#6a5630"/>').join('');
+  const body=plug
+   ?'<rect x="14" y="-15" width="40" height="30" rx="6" fill="url(#fb-shell)" stroke="#3f4d55" stroke-width="1.5"/><path d="M22-15V-23H44V-15" fill="none" stroke="#56646b" stroke-width="3"/><path d="M26-23H40" stroke="'+tone+'" stroke-width="3" stroke-linecap="round"/><rect x="52" y="-12" width="10" height="24" rx="3" fill="#161d21" stroke="'+tone+'" stroke-width="1.5"/>'
+   :'<path d="M14-14H46L58-10V10L46 14H14Z" fill="url(#fb-shell)" stroke="#3f4d55" stroke-width="1.5"/><rect x="26" y="-19" width="14" height="6" rx="2" fill="'+tone+'" stroke="#1c5f59"/><rect x="38" y="-12" width="20" height="24" rx="3" fill="#161d21" stroke="'+tone+'" stroke-width="1.5"/>';
+  return '<path d="M0-6H10L16-12H20V12H16L10 6H0Z" fill="url(#fb-rubber)" stroke="#161b1d"/><path d="M4-6V6M8-8V8" stroke="#7c8a90" stroke-opacity=".6"/>'+body+holes+'<text x="34" y="30" text-anchor="middle" font-size="8" font-weight="700" fill="'+tone+'" transform="rotate(0 34 30)" pointer-events="none"></text>';
+ }
  if(type==='hd30_47'){
   const grip=Array.from({length:8},(_,i)=>'<path d="M'+(30+i*3)+' -17l-2 34" stroke="#697177" stroke-width="1.2"/>').join('');
   return '<path d="M0-9H12L16-16H30V16H16L12 9H0Z" fill="url(#fb-rubber)" stroke="#161b1d"/><rect x="24" y="-20" width="38" height="40" rx="5" fill="url(#fb-shell)" stroke="#41464a"/>'+grip+'<path d="M52-23H60L65-16V16L60 23H52Z" fill="url(#fb-shell)" stroke="#3b4348"/><rect x="63" y="-17" width="12" height="34" rx="2" fill="#737d85" stroke="#394247"/><path d="M65-14v28m3-29v30m3-30v30" stroke="#bdc2c3"/><path d="M20-16v32" stroke="#a48860" stroke-width="3"/>';
  }
  if(type==='relay4'||type==='relay'){
-  const blades=Array.from({length:type==='relay4'?4:5},(_,i)=>'<rect x="'+(8+i*9)+'" y="12" width="4" height="11" fill="#d5bb87" stroke="#756448"/>').join('');
-  return blades+'<path d="M2-15L12-22H52L61-15V13L53 18H2Z" fill="url(#fb-module)" stroke="#162125"/><path d="M2-15H52V17M52-15L60-20" fill="none" stroke="#87949a"/><text x="8" y="4" fill="white" font-size="9">RELAY</text>';
+  const n=type==='relay4'?4:5;
+  const base='<rect x="0" y="-19" width="64" height="38" rx="4" fill="#1b2327" stroke="#0e1417"/><rect x="2" y="-17" width="60" height="34" rx="3" fill="none" stroke="#4a5a62" stroke-dasharray="3 3"/>';
+  const stubs=Array.from({length:n},(_,i)=>'<path d="M0 '+((i-(n-1)/2)*7)+'H-9" stroke="#8b9aa1" stroke-width="2.2"/>').join('');
+  const slots=Array.from({length:n},(_,i)=>'<rect x="'+(10+i*(44/(n-1)))+'" y="14" width="4" height="9" fill="#d5bb87" stroke="#756448"/>').join('');
+  return stubs+slots+base+'<path d="M7-14L15-21H50L57-14V12L51 16H7Z" fill="url(#fb-module)" stroke="#162125"/><path d="M7-14H51V16M51-14L57-19" fill="none" stroke="#87949a"/><rect x="12" y="-9" width="26" height="12" rx="2" fill="#0f1518" opacity=".55"/><circle cx="46" cy="9" r="2" fill="#9fb0b8"/>';
  }
  if(type==='fuse6'){
   return '<rect y="-19" width="68" height="38" rx="4" fill="url(#fb-module)"/>'+Array.from({length:6},(_,i)=>'<rect x="'+(5+i*10)+'" y="-12" width="7" height="23" rx="2" fill="#93a6af" stroke="#29373e"/><circle cx="'+(8+i*10)+'" cy="4" r="1.4" fill="#d6cfac"/>').join('');
