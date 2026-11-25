@@ -480,9 +480,9 @@ group('Sensors & loads',[
 /* ---------- E90 LS / MaxxECU project-specific interfaces ---------- */
 group('E90 LS project connectors',[
  lab('e90dt12','DT12 power breakout — user pin map',[
- ['1','Coils +12V'],['2','Engine ground'],['3','GPO2 fuel pump 1'],['4','GPO6 A/C clutch'],['5','GPO3 fuel pump 2'],['6','Starter input'],['7','ECU switched +12V'],['8','GPO8 tach (unused)'],['9','GPO15 +12V (unused)'],['10','H-bridge 2 + (unused)'],['11','H-bridge 2 − (unused)'],['12','Alternator excite (unused; self-exciting alt)']],'dt','User-defined terminated breakout'),
+ ['1','Coils +12V'],['2','Engine ground'],['3','GPO2 fuel pump 1'],['4','GPO6 A/C clutch'],['5','GPO3 fuel pump 2'],['6','Starter input'],['7','ECU switched +12V'],['8','GPO8 tach (unused)'],['9','GPO15 → purge relay 86'],['10','Motor 2 H-bridge + → valved mufflers'],['11','Motor 2 H-bridge − → valved mufflers'],['12','Alternator excite (unused; self-exciting alt)']],'dt','User-defined terminated breakout'),
  lab('e90analog8','DT8 analog sub — user pin map',[
- ['1','Sensor +5V'],['2','MaxxECU sensor ground'],['3','Paddle resistor AIN1'],['4','AIN2 spare'],['5','Fuel pressure signal'],['6','A/C pressure signal'],['7','Spare DIN/GPO'],['8','Radiator fan PWM / GPO5']],'dt','User-defined terminated breakout'),
+ ['1','Sensor +5V'],['2','MaxxECU sensor ground'],['3','Paddle resistor AIN1'],['4','AIN2 nitrous pressure signal'],['5','Fuel pressure signal'],['6','A/C pressure signal'],['7','GPO7 → nitrous heater trigger'],['8','Radiator fan PWM / GPO5']],'dt','User-defined terminated breakout'),
  lab('e90can8','DT8 CAN/control sub — user pin map',[
  ['1','CAN Low'],['2','CAN High'],['3','Brake DIN1'],['4','Shifter input 1'],['5','Shifter input 2'],['6','Flex fuel DIN5'],['7','Nitrous GPO4 → SSR'],['8','Spare']],'dt','User-defined terminated breakout'),
  lab('e90dt4shifter','Shifter control DT4',[
@@ -1571,11 +1571,11 @@ const KINDS={
  starter:['p12','p12'],bmwbig:['p12'],bmwsmall:['p12'],bat:['p12','gnd'],
  sens3:['p5','sgnd','ain'],sens2:['ain','sgnd'],load2:['ldp','ldm'],flex:['p12','din',null],heater:['ldp','ldm'],nsol:['ldp','ldm'],psol:['ldp','ldm'],
  surge:['ldp','ldm','ldp','ldm','ldp','ldm'],
- canhub4:['p12','gnd'].concat(rp(8,'can')),canhub6:['p12','gnd'].concat(rp(12,'can'))
+ canhub4:Array.from({length:4},()=>['can','can','p12','gnd']).flat(),canhub6:Array.from({length:6},()=>['can','can','p12','gnd']).flat(),cansplit:rp(8,'can')
 };
 if(T.gnd)T.gnd.kind='gnd';
 const BUSES={pdb:[[0,1,2,3,4]],gbus6:[[0,1,2,3,4,5,6]],gbus12:[Array.from({length:13},(_,i)=>i)],fusegnd:[Array.from({length:13},(_,i)=>i+13)]};
-[4,6].forEach(m=>{const h=[],l=[];for(let k=0;k<m;k++){h.push(2+2*k);l.push(3+2*k)}BUSES['canhub'+m]=[h,l]});
+[4,6].forEach(m=>{const q=[[],[],[],[]];for(let k=0;k<m;k++)for(let n=0;n<4;n++)q[n].push(4*k+n);BUSES['canhub'+m]=q});BUSES.cansplit=[[0,2,4,6],[1,3,5,7]];
 const RATE={relay:30,relay4:30,rp5:30,rp4:30,leash1:70};
 const MVP={8:{12:8},20:{16:2,20:18},21:{20:21},16:{12:16},29:{12:4,16:19,20:6},35:{16:3,20:32},47:{16:5,20:42}};
 const csz=a=>a<=14?'12':a<=18?'16':'20';

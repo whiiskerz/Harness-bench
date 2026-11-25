@@ -20,3 +20,6 @@
 - Drawing zones are saved project data and are now draggable/resizable; custom zones can be created, renamed, recolored, resized, and deleted. Undo/redo snapshots include zones.
 - Circuit Audit is based on wire records and direct endpoints. Review status is user-entered; the app does not automatically certify a circuit.
 - Expanded E90 examples preserve uncertain sensor pin/channel assignments as placeholders rather than claiming unverified connections. Flex-fuel signal is drawn to the owner-mapped DIN5 connection on the DT8 CAN/control branch.
+
+## DT pin labels reconciled to wires (Nov 24)
+DT12 pin 9 = GPO15 → purge relay 86; pins 10/11 = Motor 2 H-bridge → valved mufflers. DT8 analog pin 4 = AIN2 nitrous pressure; pin 7 = GPO7 → nitrous heater trigger. CAN hub: owner has none installed; planned hub ports are pin 1 CAN H, 2 CAN L, 3 switched 12V, 4 GND. Compat checks now use that layout.
