@@ -167,15 +167,15 @@ function nodeMarkup(n,p,neighbors,project,orbit){
  const bodyAngle=orbit?displayAngle:rotation;
  const label=caption(n,p);
  const family=type?.fam;
- const shellLength=family==='mxecu'?(p.t==='mxrace48'?94:76):family==='mx'?110:family==='term'?47:family==='bulk'||family==='maven'?72:family==='dt'||family==='pwr'?64:51;
+ const shellLength=family==='mxecu'?(p.t==='mxrace48'||p.t==='mxpig48'?94:76):family==='mx'?110:family==='term'?47:family==='bulk'||family==='maven'?72:family==='dt'||family==='pwr'?64:51;
  const center=point(target.x+Math.cos(bodyAngle*Math.PI/180)*shellLength*.54,target.y+Math.sin(bodyAngle*Math.PI/180)*shellLength*.54);
  const boot=n.boot?`<path d="M-26-5H-16L-8-11H4V11H-8L-16 5H-26Z" fill="url(#fb-rubber)" stroke="#1c282d"/><path d="M-19-5V5M-11-8V8M-4-10V10" stroke="#65767c" stroke-opacity=".5"/>`:'';
  let tails='';
- if(p?.wfFlying||p?.wfLeadDrafts){
+ if(p?.wfFlying||p?.wfLeadDrafts||T[p?.t]?.pigtail){
   const wired=new Set(S.wires.flatMap(w=>[w.a,w.b]).filter(end=>end.p===p.id).map(end=>end.i));
   const count=type.pins.length;
   tails=type.pins.map((pin,i)=>{
-   if(wired.has(i)||(!p.wfFlying&&!p.wfLeadDrafts[i]))return '';
+   if(wired.has(i)||(!p.wfFlying&&!T[p.t]?.pigtail&&!p.wfLeadDrafts?.[i]))return '';
    const dy=(i-(count-1)/2)*1.65,dx=-52-(i%4)*4;
    return `<g pointer-events="none"><title>${h(pin.p)} · flying lead</title><path d="M0 0 Q-20 0 ${dx} ${dy}" fill="none" stroke="#677984" stroke-width="1.2"/><path d="M${dx} ${dy}h-4" stroke="#b18b5e"/>${!view.advanced&&!orbit?`<circle data-lead-tip="${i}" cx="${dx-4}" cy="${dy}" r="3" fill="transparent" pointer-events="all"/>`:''}</g>`;
   }).join('');
@@ -361,6 +361,7 @@ function sidebar(g,report){
 const powerHardware=['relay4','relay','dual','e90leash1','fuse6'];
 function placeHardware(g,t,name,x,y,sx,sy){
  const p={id:nid(),t,name,pl:{},x:sx,y:sy};
+ if(T[t]?.pigtail)p.wfFlying=true;
  S.parts.push(p);S.examples=false;
  return addNode(g,x,y,name,p.id);
 }
@@ -434,13 +435,15 @@ function insertLoom(){
  });
 }
 const leadTypes={
+ mxpig48:'MaxxECU RACE C1 · 48-pin prewired pigtail',
+ mxpig32:'MaxxECU RACE C2 · 32-pin prewired pigtail',
  mxrace32:'MaxxECU RACE C2 · 32-pin',
  mxrace48:'MaxxECU RACE C1 · 48-pin',
  cust32:'Molex · 32-pin blank layout',
  cust48:'Molex · 48-pin blank layout'
 };
 function leadSources(){
- return S.parts.filter(p=>p.wfFlying||p.t==='mxrace32'||p.t==='mxrace48');
+ return S.parts.filter(p=>p.wfFlying||T[p.t]?.pigtail||p.t==='mxrace32'||p.t==='mxrace48');
 }
 function leadRows(){
  const rows=[];
@@ -448,7 +451,8 @@ function leadRows(){
   const ends=usedOn(p.id,i),draft=p.wfLeadDrafts?.[i]||{};
   for(const w of ends.length?ends:[null]){
    const e=w&&(w.a.p===p.id?w.b:w.a);
-   rows.push({p,i,pin,w,e,sig:w?.sig||draft.sig||plabel(p,i)||'',color:w?.color||draft.color||'',awg:w?.awg||draft.awg||'',
+   const sp=window.WF_PIG?.isPig(p.t)?WF_PIG.spec(p.t,pin.p):null;
+   rows.push({p,i,pin,w,e,sp,sig:w?.sig||draft.sig||plabel(p,i)||'',color:w?.color||draft.color||sp?.color||'',awg:w?.awg||draft.awg||'',
     status:w?'Connected':(p.wfFlying||p.wfLeadDrafts?.[i])?'Flying lead':'Open cavity'});
   }
  }
@@ -469,6 +473,17 @@ function leadDrawing(rows){
  }
  return bands.join('');
 }
+function pigPanel(row){
+ const sp=row.sp;if(!sp)return '';
+ const m=WF_PIG.molex(row.p.t),n=WF_PIG.notes,tag={official:'Verified · MaxxECU wiring PDF',owner:'Owner-supplied',tbd:'Not verified'}[sp.status];
+ return '<div class="fb-lead-spec"><p><b>ECU function:</b> '+h(sp.fn)+' <small>(ECU pin function, separate from your vehicle assignment)</small></p>'+
+  '<p><b>Wire:</b> '+h(row.color||'Color TBD')+' · '+h(row.awg?row.awg+' AWG':'size TBD (your design choice)')+'</p>'+
+  '<p><b>Contact:</b> '+h(sp.contact)+'. '+h(n.contactStatus)+'</p>'+
+  (sp.group?'<p><b>Twist / shield:</b> '+h(sp.group)+'</p>':'')+
+  (sp.note?'<p>'+h(sp.note)+'</p>':'')+(sp.review?'<p><b>Review:</b> flag any intermediate bulkhead in this lead.</p>':'')+
+  '<p><small>Status: '+h(tag)+'. Length and destination stay blank until you enter them.</small></p>'+
+  '<details><summary>Molex reference · '+h(m.name)+'</summary><p>Housing '+h(m.housing)+' · cover '+h(m.cover)+' · contacts '+h(m.contacts.join(', '))+'</p><p><small>'+h(n.molexStatus)+'</small></p></details></div>';
+}
 function openFlyingLeads(initial){
  const visible=document.querySelector('dialog.fb-flying');
  if(visible){visible.focus();return;}
@@ -477,7 +492,7 @@ function openFlyingLeads(initial){
  d.setAttribute('aria-label','Flying lead workbench');
  const sources=leadSources();
  let scope=initial?.id||'all',chosen=initial?.id||sources[0]?.id,idx=0,targetId=S.parts.find(p=>T[p.t]?.bulk)?.id,face='R';
- let status='',filter='all',wireId=null,diagram=false;
+ let status='',filter='all',wireId=null,diagram=false,query='';
  const faceName=s=>s==='L'?'engine':'cabin';
  function place(t,name){
   const g=graph(),x=Math.max(0,...g.nodes.map(n=>n.x))+250;
@@ -495,7 +510,8 @@ function openFlyingLeads(initial){
  }
  function update(){
   const all=leadRows(),src=leadSources(),bulkheads=S.parts.filter(p=>T[p.t]?.bulk);
-  const visible=all.filter(r=>(scope==='all'||r.p.id===Number(scope))&&(filter==='all'||r.status===filter));
+  const qn=query.toLowerCase().replace(/\s+/g,'');
+  const visible=all.filter(r=>(scope==='all'||r.p.id===Number(scope))&&(filter==='all'||r.status===filter)&&(!qn||r.pin.p.toLowerCase()===qn||(!/^[a-z]\d{1,2}$/.test(qn)&&[r.sig,r.sp?.fn,r.sp?.group].some(v=>String(v||'').toLowerCase().replace(/\s+/g,'').includes(qn)))));
   const matches=all.filter(r=>r.p.id===chosen&&r.i===idx);
   const row=matches.find(r=>wireId&&r.w?.id===wireId)||matches[0];
 
@@ -503,7 +519,7 @@ function openFlyingLeads(initial){
    const current=r===row;
    const route=r.e?endName(r.e):r.status;
    const wire=r.color||'Color TBD';
-   return '<tr'+(current?' class="fb-current-lead"':'')+'><th><button type="button" data-lead-part="'+r.p.id+'" data-lead-pin="'+r.i+'" data-lead-wire="'+(r.w?.id||'')+'">'+h(r.pin.p)+'</button></th><td>'+h(r.p.name)+'</td><td>'+h(r.sig||'—')+'</td><td>'+h(wire)+' · '+h(r.awg?r.awg+' AWG':'AWG TBD')+'</td><td>'+h(route)+'</td><td>'+h(onward(r))+'</td></tr>';
+   return '<tr'+(current?' class="fb-current-lead"':'')+'><th><button type="button" data-lead-part="'+r.p.id+'" data-lead-pin="'+r.i+'" data-lead-wire="'+(r.w?.id||'')+'">'+h(r.pin.p)+'</button></th><td>'+h(r.p.name)+'</td><td>'+h(r.sig||'—')+'</td><td>'+h(wire)+' · '+h(r.awg?r.awg+' AWG':'AWG TBD')+'</td><td>'+(r.sp?h(r.sp.contact==='TBD'?'Contact TBD':r.sp.contact)+(r.sp.group?'<small> · '+h(r.sp.group)+'</small>':''):'—')+'</td><td>'+h(route)+'</td><td>'+h(onward(r))+'</td></tr>';
   });
   const newPart=select('Plug','fbLeadType',Object.entries(leadTypes).map(([t,label])=>option(t,label)).join(''))+input('Plug name','fbLeadName','','Optional')+'<button type="button" class="btn" data-lead-add>Add flying leads</button>';
   const head='<form method="dialog"><button class="btn">Close</button></form><h3>Flying lead workbench</h3>';
@@ -512,7 +528,7 @@ function openFlyingLeads(initial){
    const linked=!!row.w,managed=!!row.w?.wfFlyingWire;
    editor='<section class="fb-lead-editor"><h4>'+h(row.p.name)+' · cavity '+h(row.pin.p)+'</h4>'+
     (linked?'<p>'+h(row.sig||'Unnamed wire')+' → '+h(endName(row.e))+'</p>':'')+
-    input('Circuit','fbLeadSignal',row.sig)+input('Color / stripe','fbLeadColor',row.color,'e.g. GRN/WHT')+
+    pigPanel(row)+input('Circuit','fbLeadSignal',row.sig)+input('Color / stripe','fbLeadColor',row.color,'e.g. GRN/WHT')+
     field('Gauge (AWG)','fbLeadGauge',row.awg,'Unknown','1')+
     '<button type="button" class="btn" data-lead-save>Save wire details</button>'+
     (!linked?'<div>'+select('Bulkhead','fbLeadBulk',option('','Choose housing',targetId)+bulkheads.map(p=>option(p.id,p.name,targetId)).join(''))+
@@ -527,9 +543,9 @@ function openFlyingLeads(initial){
    '<details '+(src.length&&!bulkheads.length?'open':'')+'><summary>Add a bulkhead</summary>'+input('Housing name','fbLeadHousing','','e.g. BH-B')+
    '<button type="button" class="btn" data-lead-housing>Add 47-position HD30</button> <button type="button" class="btn" data-lead-custom>Add generic 48-position bulkhead</button></details>'+
    (src.length?select('View plugs','fbLeadScope',option('all','All plugs',scope)+src.map(p=>option(p.id,p.name,scope)).join(''))+
-   select('Show wires','fbLeadFilter',['all','Flying lead','Connected','Open cavity'].map(v=>option(v,v==='all'?'All wires':v,filter)).join(''))+
+   '<label class="fb-lead-search"><span>Find a lead</span><input id="fbLeadQuery" type="search" value="'+h(query)+'" placeholder="J4, AIN 4, trigger, EGT 3+" autocomplete="off"></label>'+select('Show wires','fbLeadFilter',['all','Flying lead','Connected','Open cavity'].map(v=>option(v,v==='all'?'All wires':v,filter)).join(''))+
    '<button type="button" class="btn" data-lead-csv>Export visible wires</button><p>'+visible.length+' rows · '+connected+' connected</p>'+editor+batch+
-   '<p role="status">'+h(status)+'</p><details data-lead-drawing '+(diagram?'open':'')+'><summary>Wire-by-wire drawing</summary><div class="fb-lead-lines">'+(diagram?leadDrawing(visible):'')+'</div></details>'+table(['Cavity','Source plug','Circuit','Wire','Destination','Beyond bulkhead'],rowHtml):'<p>Create a plug to start with a loose end at every cavity.</p>');
+   '<p role="status">'+h(status)+'</p><details data-lead-drawing '+(diagram?'open':'')+'><summary>Wire-by-wire drawing</summary><div class="fb-lead-lines">'+(diagram?leadDrawing(visible):'')+'</div></details>'+table(['Cavity','Source plug','Circuit','Wire','Contact · group','Destination','Beyond bulkhead'],rowHtml):'<p>Create a plug to start with a loose end at every cavity.</p>');
   d.querySelector('[data-lead-add]').onclick=()=>{
    const t=val('fbLeadType');if(!Object.hasOwn(leadTypes,t))return;
    const name=val('fbLeadName').trim()||leadTypes[t]+' #'+(S.parts.filter(p=>p.t===t).length+1);
@@ -545,6 +561,8 @@ function openFlyingLeads(initial){
   };
   if(!src.length)return;
   d.querySelector('#fbLeadScope').onchange=e=>{scope=e.target.value;if(scope!=='all'){chosen=Number(scope);idx=0;}status='';update();};
+  const qi=d.querySelector('#fbLeadQuery');
+  qi.oninput=e=>{query=e.target.value;const at=e.target.selectionStart;update();const n=d.querySelector('#fbLeadQuery');n.focus();n.setSelectionRange(at,at);};
   d.querySelector('#fbLeadFilter').onchange=e=>{filter=e.target.value;status='';update();};
   d.querySelector('[data-lead-csv]').onclick=()=>csv('flying-lead-wire-list.csv',[['Source plug','Cavity','Circuit','AWG','Color','Status','Destination','Beyond bulkhead','Wire ID'],...visible.map(r=>[r.p.name,r.pin.p,r.sig,r.awg,r.color,r.status,r.e?endName(r.e):'',onward(r),r.w?.id||''])]);
   const drawing=d.querySelector('[data-lead-drawing]');
@@ -817,6 +835,7 @@ function openBulkheadMockup(el){
 
 const palette=[
  ['mxrace48','C1 · RACE main','48 cavities'],['mxrace32','C2 · RACE auxiliary','32 cavities'],
+ ['mxpig48','C1 · RACE pigtail','48 prewired leads'],['mxpig32','C2 · RACE pigtail','32 prewired leads'],
  ['hd30_47','HD30 · bulkhead','47 positions'],['relay4','4-pin relay','Power'],['relay','5-pin relay','Power'],
  ['dual','Dual relay board','Leash'],['e90leash1','Single relay board','Leash'],['fuse6','Fuse box','6 circuits']
 ];

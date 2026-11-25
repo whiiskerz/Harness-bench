@@ -26,8 +26,8 @@ function definitions(){
 }
 function angle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;}
 function hardware(family,type){
- if(type==='mxrace32'||type==='mxrace48'){
-  const w=type==='mxrace48'?94:76;
+ if(type==='mxrace32'||type==='mxrace48'||type==='mxpig32'||type==='mxpig48'){
+  const w=type==='mxrace48'||type==='mxpig48'?94:76;
   const ribs=Array.from({length:7},(_,i)=>'<path d="M'+(23+i*6)+' -15v22" stroke="#141719" stroke-width="3"/><path d="M'+(24+i*6)+' -15v22" stroke="#4b5154"/>').join('');
   return '<path d="M0-7H10L18-17H'+w+'V17H18L10 7H0Z" fill="url(#fb-module)" stroke="#131719" stroke-width="2"/>'+ribs+'<rect x="'+(w-12)+'" y="-19" width="12" height="38" rx="2" fill="#25292c" stroke="#121517"/><path d="M18-15l5-15h'+(w-38)+'l9 11v6h-5l-8-10H27l-4 10Z" fill="#626a70" stroke="#272d30"/><rect x="30" y="-28" width="14" height="6" rx="1" fill="#a64a34"/><path d="M21 13H'+(w-15)+'" stroke="#697177"/>';
  }
