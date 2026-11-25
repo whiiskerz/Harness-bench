@@ -177,3 +177,28 @@ body:has(.ds-shell):has(#t-formboard:not([hidden])) {overflow:hidden}
 .ds-schematic p {margin:60px 20px 0}
 .ds-conductors {display:block;width:90px;height:90px;margin:8px auto}
 .ds-portrait {max-height:57vh}
+
+/* Wire workflow: cavity picker, wire editor */
+.ds-wirepanel,.ds-wireeditor{overflow:auto;max-height:calc(100% - 24px)}
+.ds-sub{margin:0 0 8px;font-size:12px;color:var(--mute,#8d99a1)}
+.ds-faces{display:flex;gap:6px;margin:0 0 8px}
+.ds-faces button{flex:1;min-height:40px;border-radius:10px;border:1px solid #3a4850;background:#161d21;color:inherit;font-size:12px}
+.ds-faces button[aria-pressed=true]{background:#1f6f6a;border-color:#4fd1c5}
+.ds-cavs{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px;max-height:36vh;overflow:auto;padding:2px}
+.ds-cav{display:grid;gap:1px;text-align:left;min-height:52px;padding:6px 8px;border-radius:10px;border:1px solid #33424a;background:#141b1f;color:inherit;touch-action:manipulation}
+.ds-cav b{font-size:14px}.ds-cav span{font-size:11px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ds-cav small{font-size:10px;color:#7fd6a5}
+.ds-cav.used{border-color:#8a6a2c;background:#241d12}.ds-cav.used small{color:#f0c070}
+.ds-cav.lead small{color:#8fb7ff}
+.ds-cav.sel,.ds-cav:focus-visible{outline:2px solid #4fd1c5;outline-offset:1px}
+.ds-cavinfo{margin:8px 0 4px;font-size:13px}
+.ds-hint{margin:8px 0;font-size:13px}
+.ds-wirelist,.ds-chain,.ds-exits{margin-top:10px;display:grid;gap:6px}
+.ds-wirelist h4,.ds-chain h4,.ds-exits h4{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute,#8d99a1)}
+.ds-wirelist button{display:grid;text-align:left;min-height:44px;padding:6px 8px;border-radius:10px;border:1px solid #33424a;background:#141b1f;color:inherit}
+.ds-wirelist small,.ds-chain small,.ds-exits small{display:block;font-size:11px;color:#9aa8b0}
+.ds-chain .cur{border-left:3px solid #4fd1c5;padding-left:6px}
+.ds-end{border:1px solid #33424a;border-radius:10px;margin:8px 0;padding:6px 8px}
+.ds-more{margin-top:10px}
+.ds-wireeditor input,.ds-wireeditor select{min-height:40px}
+@media (max-width:1100px){.ds-wirepanel,.ds-wireeditor{max-height:46vh}}
