@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.28 — MaxxECU Gen1 RACE prewired pigtails
+- New C1 (48-pin) and C2 (32-pin) pigtail templates, lead search (J4, AIN 4), per-lead spec and provenance. Molex numbers are shown as owner-supplied until confirmed.
+
 ## v0.27 preview — Two-sided DT assembly visualization and premium UI
 - Added a navigable two-housing Deutsch cavity diagram inside Assembly Studio: one A-side drawn termination and a separately tracked B-side planned/confirmed termination per cavity.
 - The cavity diagram is keyboard accessible and clicking a schematic position focuses the corresponding assembly matrix row; unassigned and planned mates remain visibly distinct.

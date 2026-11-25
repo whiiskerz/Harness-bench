@@ -399,7 +399,9 @@ const MAXXECU_AUX=[["A1","EGT 5+"],["A2","EGT 6+"],["A3","EGT 7+"],["A4","EGT 8+
 group('DEUTSCH HD30 firewall',[Object.assign(gen('hd30_47','HD30 · 47-position receptacle',47,true,'bulk','24-47 · verify key and contact arrangement','HD34-24-47PE'),{bulk:true})]);
 group('MaxxECU Gen1 RACE connectors',[
  {id:'mxrace48',name:'MaxxECU Gen1 RACE · 48-pin main Molex',fam:'mxecu',sub:'V1 / RACE / PRO · main connector',pn:'48 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_MAIN.map(r=>({p:r[0],l:r[1]}))},
- {id:'mxrace32',name:'MaxxECU Gen1 RACE · 32-pin black Connector 2',fam:'mxecu',sub:'Connector 2 · EGT / knock / I/O',pn:'32 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_AUX.map(r=>({p:r[0],l:r[1]}))}
+ {id:'mxrace32',name:'MaxxECU Gen1 RACE · 32-pin black Connector 2',fam:'mxecu',sub:'Connector 2 · EGT / knock / I/O',pn:'32 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_AUX.map(r=>({p:r[0],l:r[1]}))},
+ {id:'mxpig48',pigtail:true,name:'MaxxECU Gen1 RACE C1 · 48-pin prewired pigtail',fam:'mxecu',sub:'Connector option · each lead starts at its ECU cavity, loose end',pn:'48 leads',desc:'Prewired pigtail template. Functions from the RACE V1/RACE/PRO table; wire size, contacts, lengths and destinations TBD until entered.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_MAIN.map(r=>({p:r[0],l:r[1]}))},
+ {id:'mxpig32',pigtail:true,name:'MaxxECU Gen1 RACE C2 · 32-pin black prewired pigtail',fam:'mxecu',sub:'Connector option · each lead starts at its ECU cavity, loose end',pn:'32 leads',desc:'Prewired pigtail template. Functions from the RACE Connector 2 table; wire size, contacts, lengths and destinations TBD until entered.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_AUX.map(r=>({p:r[0],l:r[1]}))}
 ]);
 const fuseLabels=n=>[['IN','Power in']].concat(Array.from({length:n},(_,i)=>['F'+(i+1),'']));
 
@@ -2629,6 +2631,6 @@ if(S.tab==='draw'&&!S.view)requestAnimationFrame(fit);
 </script>
 
 <input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import WireForge project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js" defer></script>
-<script src="./wireforge-blueprint.js" defer></script><script src="./wireforge-formboard-art.js" defer></script><script src="./wireforge-formboard.js" defer></script>
+<script src="./wireforge-pigtails.js" defer></script><script src="./wireforge-blueprint.js" defer></script><script src="./wireforge-formboard-art.js" defer></script><script src="./wireforge-formboard.js" defer></script>
 <script type="module" src="./wireforge-dt-assemblies.js"></script>
 </body></html>
