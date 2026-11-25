@@ -103,6 +103,15 @@ module.exports=async function testBranchHarness(browser,url){
   for(const id of ['L30','L87','M30','L85']){const r=csv.find(l=>l[0]===id);assert.ok(r,id);assert.ok(r[2]&&r[4]&&r[7]&&r[9],'both ends '+id);}
   assert.equal(csv.find(l=>l[0]==='L30')[18],'Supplied lead');
   assert.equal(csv.find(l=>l[0]==='M30')[18],'Cut wire');
+  // BOM supplier is the relay socket in both directions (relay -> DT and DT -> relay)
+  const bomSup=async()=>{await page.locator('[data-fb="studioBom"]').tap();return (await page.locator('.ds-report').textContent());};
+  const fwd=await bomSup();
+  assert.match(fwd,/Supplied lead[\s\S]*Relay pigtail/);
+  await page.evaluate(()=>{for(const w of S.wires.filter(w=>w.wfSupplied)){const t=w.a;w.a=w.b;w.b=t}save()});
+  await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector('.ds-shell');
+  const rev=await bomSup();
+  assert.match(rev,/Supplied lead[\s\S]*Relay pigtail/);
+  assert.equal((rev.match(/Supplied lead/g)||[]).length,(fwd.match(/Supplied lead/g)||[]).length);
   assert.deepEqual(errs,[]);
  }finally{await ctx.close();}
 };

@@ -300,7 +300,7 @@ function materials(g,report){
  for(const r of report.rows.map(displayCut)){
   const sh=r.w.wfShield;if(sh)shields.set(sh.id,sh);
   for(const marker of r.w.wfMarkers||[])add('Marker',marker,'',1,'ea','User specified');
-  if(r.w.wfSupplied){add('Supplied lead',(T[part(r.w.a.p)?.t]?.name||'Prewired socket')+' · '+(wireName(r.w)),[r.w.awg?r.w.awg+' AWG':'AWG TBD',r.w.color||'color TBD'].join(' · '),1,'ea','Supplied with socket · not cut');continue;}
+  if(r.w.wfSupplied){add('Supplied lead',(T[[part(r.w.a.p),part(r.w.b.p)].find(x=>x&&T[x.t]?.suppliedLeads)?.t]?.name||'Prewired socket')+' · '+(wireName(r.w)),[r.w.awg?r.w.awg+' AWG':'AWG TBD',r.w.color||'color TBD'].join(' · '),1,'ea','Supplied with socket · not cut');continue;}
   const spec=[r.w.wfWirePart,r.w.color||'Color TBD'].filter(Boolean).join(' · ');
   if(r.cut!==null)add('Wire',r.w.awg?r.w.awg+' AWG':'AWG TBD',spec,r.cut,'in',r.status);
   else add('Wire',r.w.awg?r.w.awg+' AWG':'AWG TBD',spec,1,'wire',r.status);
