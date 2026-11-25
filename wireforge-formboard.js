@@ -133,7 +133,7 @@ function camera(svg,box=view.cam){
  if(paper)for(const [name,v] of Object.entries({x:box.x,y:box.y,width:box.w,height:box.h}))paper.setAttribute(name,v);
 }
 
-function wiresMarkup(bundle,c){
+function wiresMarkup(bundle,c,active){
  const {s,members}=bundle,n=members.length,gap=9,N=28;
  const pts=Array.from({length:N+1},(_,i)=>c.sample(i/N));
  const out=members.map((w,k)=>{
@@ -207,7 +207,7 @@ function nodeMarkup(n,p,neighbors,project,orbit){
    return `<g pointer-events="none"><title>${h(pin.p)} · ${off?'unused lead':'flying lead'}</title><path d="M0 0 Q-20 0 ${dx} ${dy}" fill="none" stroke="#677984" stroke-width="1.2"/><path d="M${dx} ${dy}h-4" stroke="#b18b5e"/>${!view.advanced&&!orbit?`<circle data-lead-tip="${i}" cx="${dx-4}" cy="${dy}" r="3" fill="transparent" pointer-events="all"/>`:''}</g>`;
   }).join('');
  }
- const port=orbit?'':`<circle data-port="${h(n.id)}" class="fb-node-mark" r="${connector?6:8}" fill="${chosen?'#007e73':'#e0f2ed'}" stroke="#42686a" stroke-width="1.7"><title>Drag port to another port to route</title></circle>`;
+ const port=orbit?'':`<circle data-port="${h(n.id)}" class="fb-node-mark" r="${connector?6:6}" fill="${chosen?'#007e73':'#e0f2ed'}" stroke="#42686a" stroke-width="1.7"><title>Drag port to another port to route</title></circle>`;
  const rad=bodyAngle*Math.PI/180;
  const bottomOfShell=target.y+Math.max(0,Math.sin(rad)*shellLength)+Math.abs(Math.cos(rad))*23;
  const centerY=connector?(view.advanced?center.y+34:bottomOfShell+15):target.y+24;
@@ -215,7 +215,7 @@ function nodeMarkup(n,p,neighbors,project,orbit){
  return `<g data-node="${h(n.id)}"><title>${h(label)}</title>
  <g transform="translate(${xy(target)}) rotate(${bodyAngle})">
  ${connector?`<path class="fb-node-mark" d="M-28-28H${shellLength+4}V29H-28Z" fill="transparent" stroke="${chosen?'#008d82':'transparent'}" rx="4" stroke-dasharray="4 3"/>${tails}${boot}${art.hardware(family,p?.t)}`:
- `<circle class="fb-node-mark" r="12" fill="#273d43" stroke="${chosen?'#008d82':'#738a90'}" stroke-width="2"/>`}${port}</g>${text}</g>`;
+ `<circle r="20" fill="#4fd1c5" fill-opacity="${chosen?.18:.07}"/><circle class="fb-node-mark" r="12" fill="#273d43" stroke="${chosen?'#008d82':'#738a90'}" stroke-width="2"/>`}${port}</g>${text}</g>`;
 }
 function scene(g,report){
  const moved=view.drag?.type==='node'&&view.drag.to,reshaped=view.drag?.type==='bend'&&view.drag.to;
@@ -350,7 +350,7 @@ function conductorView(members){
 }
 function branchInspector(seg){
  const {s,members,d,estimated}=seg;
- return '<div class="fb-panel-title">Branch '+h(s.id)+'</div>'+(!view.advanced?conductorView(members):'')+input('Cable label','fbSegLabel',s.label)+
+ return '<div class="fb-panel-title">Branch '+h(s.id)+'</div>'+(s.needsMeasure&&!positive(s.length)?'<p class="ds-assume"><b>Needs measuring.</b> This branch was split'+(s.wasLength?' from a '+num(s.wasLength)+' in cable':'')+'. Enter its measured length.</p>':'')+(!view.advanced?conductorView(members):'')+input('Cable label','fbSegLabel',s.label)+
  '<div class="fb-unit">'+field('Measured length (in)','fbLength',s.length,'TBD')+field('Sleeve ID (mm)','fbSize',s.size,'TBD')+'</div>'+
  '<label>Covering<input id="fbSleeve" list="fbCoverings" value="'+h(s.sleeve)+'" placeholder="Unspecified"></label><datalist id="fbCoverings"><option value="DR-25"><option value="Braided PET"><option value="Split loom"></datalist>'+
  '<p class="muted">'+members.length+' wires · '+(d?(estimated?'Approx. ':'Modeled ')+num(d)+' mm bundle OD':'Bundle OD TBD')+'</p><div class="fb-actions">'+btn('segSave','Save branch','fb-primary')+btn('split','Insert breakout')+btn('resetCurve','Reset curve')+btn('delete','Remove')+'</div>'+
@@ -1182,7 +1182,13 @@ function bindCanvas(g,report){
   e.preventDefault();
   zoomAt(svg,e.clientX,e.clientY,Math.exp(Math.max(-100,Math.min(100,e.deltaY))*.0025));
  },{passive:false});
+ let lp=null;
+ const targetAt=e=>{const seg=e.target.closest('[data-seg]')?.dataset.seg,node=e.target.closest('[data-node]')?.dataset.node;return seg?{seg,pt:position(svg,e.clientX,e.clientY)}:node?{node}:null;};
+ svg.addEventListener('contextmenu',e=>{const t=targetAt(e);if(view.page&&view.page!=='design')return;e.preventDefault();if(t){view.drag=null;showMenu(e.clientX,e.clientY,t);}});
+ svg.addEventListener('pointermove',e=>{if(lp&&Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>8){clearTimeout(lp.t);lp=null;}});
+ ['pointerup','pointercancel'].forEach(ev=>svg.addEventListener(ev,()=>{if(lp){clearTimeout(lp.t);lp=null;}}));
  svg.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='touch'&&view.mode==='select'&&!view.placing){const t=targetAt(e);if(t){const cx=e.clientX,cy=e.clientY;lp={x:cx,y:cy,t:setTimeout(()=>{lp=null;view.drag=null;showMenu(cx,cy,t);},520)};}}
   if(view.drag||![0,1].includes(e.button))return;
   const p=position(svg,e.clientX,e.clientY);
   if(view.placing){
@@ -1315,6 +1321,52 @@ function saveNode(n){
  const z=val('fbElevation'),rotation=val('fbRotation');
  if([z,rotation].some(v=>v&&!Number.isFinite(Number(v))))return toast('Enter valid preview values.');
  mutate(()=>Object.assign(n,{label:val('fbLabel').trim(),boot:val('fbBoot').trim(),elevation:z===''?null:Number(z),rotation:rotation===''?null:Number(rotation)}));
+}
+function splitAt(g,s,pt){
+ const a=g.nodes.find(n=>n.id===s.a),b=g.nodes.find(n=>n.id===s.b);if(!a||!b)return;
+ const c=curve(a,b,s);let best=.5,bd=1e9;
+ for(let i=1;i<40;i++){const q=c.sample(i/40),d=Math.hypot(q.x-pt.x,q.y-pt.y);if(d<bd){bd=d;best=i/40;}}
+ const p=c.sample(best),had=positive(s.length)?Number(s.length):null;
+ mutate(g=>{
+  const j=addNode(g,Math.round(p.x),Math.round(p.y),'Breakout '+g.next);
+  g.segments=g.segments.filter(q=>q!==s);
+  addSegment(g,a.id,j.id);addSegment(g,j.id,b.id);
+  for(const sg of g.segments.slice(-2))Object.assign(sg,{sleeve:s.sleeve,size:s.size,label:s.label,needsMeasure:true,wasLength:had});
+  view.chosen={id:j.id};
+ });
+ toast('Breakout added. Measure both new branches.');
+}
+function closeMenu(){document.getElementById('dsMenu')?.remove();}
+function showMenu(cx,cy,t){
+ closeMenu();
+ const g=graph(),node=t.node&&g.nodes.find(n=>n.id===t.node),p=node&&part(node.partId);
+ const items=t.seg?[['breakout','Add breakout here'],['wires','Choose wires for branch'],['covering','Set covering'],['label','Label'],['length','Enter measured length']]
+  :p&&!T[p.t]?.node?[['cavities','Inspect cavities'],['run','Run wire'],['mate','Show mate']]
+  :[['delnode','Delete breakout']];
+ const m=document.createElement('div');m.id='dsMenu';m.className='ds-menu';m.setAttribute('role','menu');
+ m.innerHTML=items.map(([k,l])=>'<button type="button" role="menuitem" data-menu="'+k+'">'+l+'</button>').join('');
+ document.body.appendChild(m);
+ const W=innerWidth,H=innerHeight,r=m.getBoundingClientRect();
+ m.style.left=Math.max(8,Math.min(cx,W-r.width-8))+'px';m.style.top=Math.max(8,Math.min(cy,H-r.height-8))+'px';
+ m.addEventListener('click',e=>{
+  const k=e.target.closest('[data-menu]')?.dataset.menu;if(!k)return;closeMenu();
+  const g=graph(),seg=t.seg&&g.segments.find(x=>x.id===t.seg);
+  view.wsel=null;view.pick=null;view.cav=null;
+  if(seg){
+   view.chosen={id:seg.id};
+   if(k==='breakout')return splitAt(g,seg,t.pt);
+   if(k==='wires'){const rep=analyze(g,S.wires,S.parts).rows.filter(r=>r.route?.some(x=>x.id===seg.id)).map(r=>r.w.id);view.pick=rep;render();return;}
+   render();setTimeout(()=>{const id={covering:'fbSleeve',label:'fbSegLabel',length:'fbLength'}[k];const el=$(id);if(el){el.scrollIntoView({block:'center'});el.focus();}},30);return;
+  }
+  if(node){
+   view.chosen={id:node.id};
+   if(k==='mate'){const q=p?.mate&&part(p.mate),qn=q&&g.nodes.find(x=>x.partId===q.id);if(!qn)return toast(p?.mate?'The mated half is not on the formboard.':'This connector is not mated.');view.chosen={id:qn.id};render();return;}
+   if(k==='delnode'){mutate(g=>{g.segments=g.segments.filter(x=>x.a!==node.id&&x.b!==node.id);g.nodes=g.nodes.filter(x=>x!==node);});view.chosen=null;return;}
+   if(k==='run')toast('Tap a cavity, then Run wire.');
+   render();
+  }
+ });
+ setTimeout(()=>document.addEventListener('pointerdown',function f(ev){if(!ev.target.closest('#dsMenu')){closeMenu();}document.removeEventListener('pointerdown',f,true);},true),0);
 }
 function splitBranch(g,s){
  const a=g.nodes.find(n=>n.id===s.a),b=g.nodes.find(n=>n.id===s.b);
