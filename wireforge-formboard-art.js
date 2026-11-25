@@ -43,8 +43,8 @@ function hardware(family,type){
   const grip=Array.from({length:8},(_,i)=>'<path d="M'+(30+i*3)+' -17l-2 34" stroke="#697177" stroke-width="1.2"/>').join('');
   return '<path d="M0-9H12L16-16H30V16H16L12 9H0Z" fill="url(#fb-rubber)" stroke="#161b1d"/><rect x="24" y="-20" width="38" height="40" rx="5" fill="url(#fb-shell)" stroke="#41464a"/>'+grip+'<path d="M52-23H60L65-16V16L60 23H52Z" fill="url(#fb-shell)" stroke="#3b4348"/><rect x="63" y="-17" width="12" height="34" rx="2" fill="#737d85" stroke="#394247"/><path d="M65-14v28m3-29v30m3-30v30" stroke="#bdc2c3"/><path d="M20-16v32" stroke="#a48860" stroke-width="3"/>';
  }
- if(type==='relay4'||type==='relay'){
-  const n=type==='relay4'?4:5;
+ if(type==='relay4'||type==='relay'||type==='rp4'||type==='rp5'){
+  const n=type==='relay4'||type==='rp4'?4:5;
   const base='<rect x="0" y="-19" width="64" height="38" rx="4" fill="#1b2327" stroke="#0e1417"/><rect x="2" y="-17" width="60" height="34" rx="3" fill="none" stroke="#4a5a62" stroke-dasharray="3 3"/>';
   const stubs=Array.from({length:n},(_,i)=>'<path d="M0 '+((i-(n-1)/2)*7)+'H-9" stroke="#8b9aa1" stroke-width="2.2"/>').join('');
   const slots=Array.from({length:n},(_,i)=>'<rect x="'+(10+i*(44/(n-1)))+'" y="14" width="4" height="9" fill="#d5bb87" stroke="#756448"/>').join('');
