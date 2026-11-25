@@ -1,21 +1,22 @@
 # HANDOFF
 
-**Branch:** `feature/maxxecu-pigtails` (Phase 1). Merge, then start Phase 2 from latest `main`.
+**Branch:** `feature/formboard-wire-workflow` (Phase 2, PR #40). Phase 1 pigtails merged in #39.
 
-## What works (Phase 1: MaxxECU Race Gen1 pigtails)
-- Two parts-picker templates: `mxpig48` (C1, 48-pin) and `mxpig32` (C2, 32-pin black). Every cavity is a loose lead.
-- Flying Lead Workbench (`#flying-leads`) has a **Find a lead** box: `J4`, `AIN 4`, `trigger`, `EGT 3+`. Pin-style searches (`J4`) match the cavity only.
-- Selecting a lead shows ECU function, wire color/size, contact, twist/shield group, status and Molex reference.
-- Land a lead on a bulkhead cavity. It shows in the schematic, wire schedule and CSV. Loose leads stay loose. Both survive reload.
-- Data: `wireforge-pigtails.js`. Each fact is tagged official / owner / tbd.
+## What works
+- Tap a connector in Design: compact cavity picker (function + Open / Used / Loose lead). Tap a cavity, **Run wire**, tap the destination connector, tap its cavity. Mouse users can also drag a cavity onto another connector.
+- Wire editor: ID, circuit, color, stripe, gauge, measured length, from/to connector and cavity (used cavities blocked), swap, delete, trace.
+- Separate DT04-4P receptacle and DT06-4S plug parts. Set **Mated with** on either half: cavity n joins cavity n, adds no wire to the cut list, and the wire editor shows the chain across the mate (also joins nets in the compat checker).
+- Landing a MaxxECU pigtail lead uses the same flow and reuses its function/color data, no duplicate.
+- Cut list page shows endpoints, gauge/color and measured length. **Wire schedule CSV** adds connector instance, cavity, side, contact (TBD if unknown), covering.
+- Loom inspector lists each wire and where it exits.
 
-## Verified vs not
-- Verified (MaxxECU RACE REV9+ wiring PDF): trigger wire black, home/cam wire grey, shields grounded only through the ECU, sensor GND never to chassis, knock sensor part and polarity, EGT needs K/N thermocouple parts.
-- Owner-supplied: Molex housing/cover/contact numbers (not found in the MaxxECU docs reachable; need confirming), CAN H grey / L pink convention, C1/C2 cavity tables.
-- **Not verified:** which contact goes in which cavity, wire sizes, cavity face orientation, crank/cam twist and shield build, exact cold-junction note wording (no prior note existed in the repo). All shown as TBD.
+## Passed
+`tests/wire-workflow-browser.cjs` (iPad touch, blank project, relay 30 to DT04-4P cav 1, DT06-4S cav 1 to device, mate trace, reload, CSV rows, loom measurements survive moving a connector, C1 AIN 4 landed, H3 left loose), node tests, workspace smoke (E90 still 59 parts / 94 wires), e90 blueprint, pigtails.
 
-## How to test
-`python3 -m http.server 8765`, then `NODE_PATH=<playwright> node tests/pigtails-browser.cjs` (also runs inside `tests/workspace-smoke.cjs`). It runs at 390px wide.
+## Not done / unverified
+- DT cavity face orientation and mate drawing: labeled "confirm on Deutsch drawing". Contacts stay TBD.
+- Tapping a wire on the canvas to select it (use the connector's wire list for now).
+- Broader visual redesign, catalog expansion.
 
-## Next exact task (Phase 2, start small)
-Parts library records: add a record shape `{mfr, pn, series, category}` and a search box in the picker. Convert the two pigtail templates and the Molex numbers into records first. The same record must be used for placing, cavity assignment and BOM.
+## Next exact task
+Tap-to-select wires on the canvas (24px+ hit area), then bigger relay/DT part art with cavity numbers on the body.
