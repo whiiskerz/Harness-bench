@@ -23,29 +23,34 @@ module.exports=async function testWireWorkflow(browser,url){
    const box=await page.locator('#wfFormSvg').boundingBox();
    await page.touchscreen.tap(box.x+x,box.y+y);
   };
-  await place('4-pin relay',200,250);
-  await place('DT pair',520,250);
-  await place('Device',840,250);
-  assert.equal(await page.evaluate(()=>S.parts.length),3);
+  await place('4-pin relay',120,250);
+  await place('DT04-4P',330,250);
+  await place('DT06-4S',540,250);
+  await place('Device',750,250);
+  assert.equal(await page.evaluate(()=>S.parts.length),4);
   const tapPart=async name=>{
-   const n=await page.evaluate(n=>{const p=S.parts.find(p=>p.name.includes(n));const g=S.wfFormboard.nodes.find(x=>x.partId===p.id);return g.id},name);
+   const n=await page.evaluate(n=>{const p=S.parts.find(p=>p.name.includes(n));return S.wfFormboard.nodes.find(x=>x.partId===p.id).id},name);
    await page.locator('[data-node="'+n+'"]').first().tap();
   };
-  // relay 30 -> DT receptacle side cavity 1
+  // mate the two separately placed halves
+  await tapPart('DT04-4P');
+  await page.locator('#dsMate').selectOption({index:1});
+  assert.equal(await page.evaluate(()=>{const a=S.parts.find(p=>p.t==='dt04_4p'),b=S.parts.find(p=>p.t==='dt06_4s');return a.mate===b.id&&b.mate===a.id}),true);
+  // compact cavity picker: cavities big enough to tap, panel inside the viewport
+  const cav=await page.locator('.ds-cav').first().boundingBox();
+  assert.ok(cav.height>=44&&cav.width>=80,'touch size');
+  // relay 30 -> receptacle cavity 1
   await tapPart('Relay 4-pin');
   await page.locator('.ds-cav',{hasText:'Battery'}).tap();
   await page.getByRole('button',{name:'Run wire'}).tap();
-  await tapPart('Deutsch DT pair');
-  await page.locator('.ds-faces button').first().tap();
+  await tapPart('DT04-4P');
   await page.locator('.ds-cav').first().tap();
-  // wire editor opens: set ID, color, stripe, gauge, length
   await page.fill('#weId','RLY-30');await page.fill('#weColor','RED');await page.fill('#weStripe','WHT');
   await page.fill('#weAwg','14');await page.fill('#weLen','18.5');
   await page.getByRole('button',{name:'Save wire'}).tap();
   await page.getByRole('button',{name:'Done'}).tap();
-  // plug side cavity 1 -> device +
-  await tapPart('Deutsch DT pair');
-  await page.locator('.ds-faces button').nth(1).tap();
+  // plug cavity 1 -> device +
+  await tapPart('DT06-4S');
   await page.locator('.ds-cav').first().tap();
   await page.getByRole('button',{name:'Run wire'}).tap();
   await tapPart('2-wire load');
@@ -55,8 +60,9 @@ module.exports=async function testWireWorkflow(browser,url){
   const trace=await page.locator('.ds-chain').textContent();
   assert.match(trace,/RLY-30/);assert.match(trace,/DEV-PWR/);assert.match(trace,/adds no wire/);
   if(OUT)await page.screenshot({path:OUT+'/ipad-route.png'});
-  const rows=await page.evaluate(()=>S.wires.map(w=>[w.wid,w.awg,w.color,w.len,w.a.s||'',w.b.s||'']));
-  assert.deepEqual(rows,[['RLY-30',14,'RED/WHT',18.5,'','L'],['DEV-PWR',16,'',42,'R','']]);
+  const rows=await page.evaluate(()=>S.wires.map(w=>[w.wid,w.awg,w.color,w.len,w.a.i,w.b.i]));
+  assert.deepEqual(rows,[['RLY-30',14,'RED/WHT',18.5,0,0],['DEV-PWR',16,'',42,0,0]]);
+  assert.equal(await page.evaluate(()=>compatIssues().filter(i=>/DT0/.test(i.plain)).length),0);
   // loom: cover the relay→DT cable with DR-25 and label
   const seg=await page.evaluate(()=>{const g=S.wfFormboard;return g.segments.map(s=>s.id)});
   assert.equal(seg.length,2);
@@ -82,6 +88,14 @@ module.exports=async function testWireWorkflow(browser,url){
   const sched=await page.evaluate(()=>S.wires.map(w=>w.wid||w.sig));
   assert.equal(sched.length,3);
   await page.locator('[data-fb="studioCuts"]').tap();
+  const [dl]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Wire schedule CSV'}).tap()]);
+  const csvText=require('fs').readFileSync(await dl.path(),'utf8');
+  const lines=csvText.replace(/^\uFEFF/,'').split('\n').map(l=>l.replace(/"/g,'').split(','));
+  const rly=lines.find(l=>l[0]==='RLY-30'),dev=lines.find(l=>l[0]==='DEV-PWR');
+  assert.ok(rly&&dev,'both wires in CSV');
+  assert.match(rly[2],/DT04-4P|Relay/);assert.equal(rly[4],'30');assert.equal(rly[9],'1');assert.equal(rly[14],'18.5');
+  assert.equal(dev[4],'1');assert.equal(dev[14],'42');assert.notEqual(rly[0],dev[0]);
+  assert.equal(await page.evaluate(()=>S.parts.filter(p=>p.mate).length),2);
   const txt=await page.locator('.ds-report').textContent();
   assert.match(txt,/RLY-30/);assert.match(txt,/DEV-PWR/);assert.match(txt,/18\.5/);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));

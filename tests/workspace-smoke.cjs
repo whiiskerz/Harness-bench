@@ -86,6 +86,7 @@ const testFormboard=require('./formboard-browser.cjs');
   await testFormboard(browser);
   await require("./flying-leads-browser.cjs")(browser,"http://127.0.0.1:8765/index.html");
   await require("./pigtails-browser.cjs")(browser,"http://127.0.0.1:8765/index.html");
+  await require("./wire-workflow-browser.cjs")(browser,"http://127.0.0.1:8765/index.html");
   await require("./canvas-studio-browser.cjs")(browser,"http://127.0.0.1:8765/index.html");
  }finally{await browser.close()}
 })().catch(err=>{console.error(err);process.exit(1)});

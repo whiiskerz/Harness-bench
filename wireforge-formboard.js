@@ -836,7 +836,7 @@ function openBulkheadMockup(el){
 const palette=[
  ['mxrace48','C1 · RACE main','48 cavities'],['mxrace32','C2 · RACE auxiliary','32 cavities'],
  ['mxpig48','C1 · RACE pigtail','48 prewired leads'],['mxpig32','C2 · RACE pigtail','32 prewired leads'],
- ['dtmate4','DT pair · 4-way','Plug + receptacle'],['load2','Device','2 terminals'],['hd30_47','HD30 · bulkhead','47 positions'],['relay4','4-pin relay','Power'],['relay','5-pin relay','Power'],
+ ['dt04_4p','DT04-4P receptacle','DT 4-way'],['dt06_4s','DT06-4S plug','DT 4-way'],['load2','Device','2 terminals'],['hd30_47','HD30 · bulkhead','47 positions'],['relay4','4-pin relay','Power'],['relay','5-pin relay','Power'],
  ['dual','Dual relay board','Leash'],['e90leash1','Single relay board','Leash'],['fuse6','Fuse box','6 circuits']
 ];
 const toolPaths={parts:'M10 3v14M3 10h14',select:'M4 2l12 9-6 1-3 6z',connect:'M2 14h4c5 0 2-8 8-8h4M2 12v4m16-12v4',pan:'M5 10V6a1 1 0 012 0v4-6a1 1 0 012 0v6-7a1 1 0 012 0v7-5a1 1 0 012 0v6l2-2q2-1 2 1l-3 6q-2 3-5 2l-4-2-3-5q-1-2 1-2z',flying:'M2 6h6l4-3h6M2 10h16M2 14h6l4 3h6'};
@@ -929,11 +929,12 @@ function chain(w){
  for(const dir of ['a','b']){
   let cur=w,end=dir;
   for(let k=0;k<12;k++){
-   const e=cur[end],p=part(e.p);if(!T[p?.t]?.bulk||!e.s)break;
-   const next=usedOn(p.id,e.i).find(x=>x!==cur&&faceOf(x,p.id,e.i)!==e.s);
+   const e=cur[end],p=part(e.p),m=p?.mate&&part(p.mate);let next=null,np=null;
+   if(m){np=m;next=usedOn(m.id,e.i).find(x=>x!==cur);}
+   else if(T[p?.t]?.bulk&&e.s){np=p;next=usedOn(p.id,e.i).find(x=>x!==cur&&faceOf(x,p.id,e.i)!==e.s);}
    if(!next||out.includes(next))break;
    if(dir==='a')out.unshift(next);else out.push(next);
-   end=(next.a.p===p.id&&next.a.i===e.i&&next.a.s!==e.s)?'b':'a';cur=next;
+   end=(next.a.p===np.id&&next.a.i===e.i)?'b':'a';cur=next;
   }
  }
  return out;
@@ -960,6 +961,11 @@ function cavityGrid(p,face,run){
   return '<button type="button" class="ds-cav'+(ws.length?' used':isLead(p,i)?' lead':'')+(sel?' sel':'')+'" data-fb="cav" data-i="'+i+'" data-s="'+face+'" aria-pressed="'+sel+'" aria-label="Cavity '+h(pin.p)+', '+h(fn||'no function')+', '+h(st)+'"><b>'+h(pin.p)+'</b><span>'+h(fn||'—')+'</span><small>'+h(st)+'</small></button>';
  }).join('')+'</div>';
 }
+function mateSel(p){
+ const w=T[p.t]?.mateWith;if(!w)return '';
+ const opts=S.parts.filter(q=>q.t===w&&(!q.mate||q.mate===p.id));
+ return '<label class="ds-mate">Mated with<select id="dsMate"><option value="">Not mated</option>'+opts.map(q=>option(q.id,q.name,p.mate)).join('')+'</select></label>'+(p.mate?'<p class="muted">Cavity n joins cavity n. The mate adds no wire to the cut list.</p>':'');
+}
 function wirePanel(g,n){
  const p=part(n.partId),t=T[p.t],run=view.run,srcNode=run&&g.nodes.find(x=>x.id===run.nid),srcPart=part(srcNode?.partId);
  const dst=!!run&&run.nid!==n.id,bulk=!!t.bulk,face=bulk?(view.face||'L'):'';
@@ -978,7 +984,7 @@ function wirePanel(g,n){
  const here=S.wires.filter(w=>w.a.p===p.id||w.b.p===p.id);
  const list=here.length&&!run?'<div class="ds-wirelist"><h4>Wires on this connector</h4>'+here.map(w=>'<button type="button" data-fb="selWire" data-wire="'+w.id+'"><b>'+h(w.wid||'#'+w.id)+'</b> '+h(w.sig||'')+'<small>'+h(endWho(w.a))+' → '+h(endWho(w.b))+'</small></button>').join('')+'</div>':'';
  return '<aside class="ds-panel ds-wirepanel"><div class="ds-panelhead"><h3>'+h(n.label||p.name)+'</h3>'+btn('dismiss','Close')+'</div>'+
-  '<p class="ds-sub">'+h(t.name)+(t.mate?' · '+h(t.mate):'')+'</p>'+tabs+cavityGrid(p,face,run)+msg+list+
+  '<p class="ds-sub">'+h(t.name)+'</p>'+mateSel(p)+tabs+cavityGrid(p,face,run)+msg+list+
   '<details class="ds-more"><summary>Component details</summary>'+nodeInspector(n)+'</details></aside>';
 }
 function wireEditor(g,w){
@@ -1041,6 +1047,7 @@ function exitList(seg,g){
 }
 
 function studioRender(el,g,report){
+ const tst=document.getElementById('toast');if(tst&&/^Blank harness ready/.test(tst.textContent))tst.hidden=true;
  const page=view.page,stage=page==='design'||page==='orbit';
  const n=g.nodes.find(n=>n.id===view.chosen?.id),seg=report.bundles.find(b=>b.s.id===view.chosen?.id);
  const selected=n||seg,empty=!g.nodes.length;
@@ -1051,7 +1058,7 @@ function studioRender(el,g,report){
  const wsel=view.wsel&&S.wires.find(w=>w.id===view.wsel);
  const inspector=wsel&&page==='design'?wireEditor(g,wsel):view.landing?landingPanel(g):page==='design'&&n?.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node?wirePanel(g,n):page==='design'&&selected?'<aside class="ds-panel ds-inspector"><div class="ds-panelhead"><h3>'+h(n?captionForNode(n):seg.s.label||'Cable run')+'</h3>'+btn('dismiss','Close')+'</div>'+(n?.partId&&['mxrace32','mxrace48'].includes(part(n.partId)?.t)?btn('landStart','Land a wire','fb-primary'):'')+(n?nodeInspector(n):branchInspector(seg))+'</aside>':'';
  const preview=empty&&page==='design'&&!view.placing&&view.mode==='select'?'<div class="ds-start">'+previewLoom()+'<div class="ds-start-actions"><span>Proposed E90 loom</span>'+btn('loom','Use this layout','fb-primary')+btn('parts','Place my own parts')+'</div></div>':'';
- const controls='<div class="ds-zoom">'+btn('zoomOut','−')+btn('fit','Fit')+btn('zoomIn')+'</div>';
+ const controls='<div class="ds-zoom">'+btn('zoomOut','−')+btn('fit','Fit')+btn('zoomIn','+')+'</div>';
  el.innerHTML='<div class="ds-shell fb-workspace"><div class="ds-head"><strong>Harness Bench</strong><span class="ds-project">'+name+'</span><div>'+btn('advanced','Project tools')+'<button type="button" data-tab="project">Overview</button></div></div>'+
  '<div class="ds-desk">'+toolbar+(stage?canvas()+preview+(page==='design'?tools:'')+(caption?'<div class="ds-prompt">'+h(caption)+' '+btn('dismiss','Cancel')+'</div>':'')+
  (view.panel==='parts'&&page==='design'?studioParts():inspector)+controls:page==='studioWiring'?wiringSheet(g):'<div class="ds-report"><div class="ds-panelhead"><h3>'+(page==='studioBom'?'Bill of materials':'Wire cut list')+'</h3>'+btn(page==='studioBom'?'bom':'cut','Cut list CSV')+(page==='studioBom'?'':btn('schedule','Wire schedule CSV'))+'</div>'+studioReport(page,report,g)+'</div>')+
@@ -1072,7 +1079,7 @@ function render(){
  const count=report.rows.map(displayCut).filter(r=>r.cut!==null).length;
  const stage=view.page!=='build';
  const hint=view.page==='orbit'?'Drag to orbit · scroll to zoom':view.mode==='junction'?'Click open space to place a breakout':view.origin?'Select a destination port':view.mode==='connect'?'Drag between ports or click two endpoints':'Dashed lines show electrical connections awaiting a physical route. Drag ports to route a cable.';
- const actions=stage?'<div class="fb-actions">'+(view.page==='design'?btn('select','Select',view.mode==='select'?'active':'')+btn('connect','Route',view.mode==='connect'?'active':'')+btn('guides',view.guides===false?'Show wiring guides':'Hide wiring guides')+btn('junction','+ Breakout',view.mode==='junction'?'active':'')+btn('pan','Pan',view.mode==='pan'?'active':''):'')+btn('zoomOut','−')+btn('zoomIn')+btn('fit','Fit')+btn('labels',view.details?'Hide labels':'Show labels')+'</div>':
+ const actions=stage?'<div class="fb-actions">'+(view.page==='design'?btn('select','Select',view.mode==='select'?'active':'')+btn('connect','Route',view.mode==='connect'?'active':'')+btn('guides',view.guides===false?'Show wiring guides':'Hide wiring guides')+btn('junction','+ Breakout',view.mode==='junction'?'active':'')+btn('pan','Pan',view.mode==='pan'?'active':''):'')+btn('zoomOut','−')+btn('zoomIn','+')+btn('fit','Fit')+btn('labels',view.details?'Hide labels':'Show labels')+'</div>':
  '<div class="fb-actions">'+btn('svg','Formboard SVG')+btn('cut','Cut list CSV')+btn('bom','Materials CSV')+btn('print','Print build pack','fb-primary')+'</div>';
  el.innerHTML='<header class="fb-header"><div><h2>Physical Formboard</h2><p class="muted">Harness layout and fabrication for '+h(S.wfProjectName||S.projectName||'the active project')+'.</p></div><div class="fb-counts"><span><b>'+g.nodes.filter(n=>n.partId!=null).length+'</b> components</span><span><b>'+g.nodes.filter(n=>n.partId==null).length+'</b> breakouts</span><span><b>'+g.segments.length+'</b> cable runs</span><span><b>'+report.rows.filter(r=>r.route?.length).length+' / '+report.rows.length+'</b> wires routed</span><span><b>'+count+'</b> cut lengths</span></div></header>'+
  '<div class="fb-workspace"><div class="fb-bar"><div class="fb-actions">'+btn('design','Design',view.page==='design'?'active':'')+'<button class="btn" data-tab="draw">Wiring</button>'+btn('orbit','3D Routing',view.page==='orbit'?'active':'')+btn('build','Fabrication',view.page==='build'?'active':'')+btn('flying','Flying leads')+btn('loom',S.parts.some(p=>p.wfHd30Loom)?'Find pinned HD30 loom':'Add pinned HD30 loom','fb-primary')+btn('bulkheadMockup','Bulkhead Mockup')+btn('studio','Canvas studio')+'</div>'+actions+'</div>'+
@@ -1453,6 +1460,13 @@ document.addEventListener('pointerup',e=>{
  view.run={nid:src,i:Number(d.b.dataset.i),s:d.b.dataset.s||''};view.cav=null;view.chosen={id:tn.id};render();
 });
 document.addEventListener('change',e=>{
+ if(e.target.id==='dsMate'){
+  const n=graph().nodes.find(x=>x.id===view.chosen?.id),p=part(n?.partId);if(!p)return;
+  commit();
+  const old=p.mate&&part(p.mate);if(old)delete old.mate;delete p.mate;
+  const q=part(Number(e.target.value));if(q){p.mate=q.id;q.mate=p.id;}
+  save();render();return;
+ }
  if(/^we[AB][PSI]$/.test(e.target.id||'')&&view.wdraft){
   const k=e.target.id[2]==='A'?'a':'b',d=view.wdraft,f=e.target.id[3];
   if(f==='P'){const p=part(Number(e.target.value));d[k]={p:p.id,i:0,s:T[p.t].bulk?'L':undefined};}
