@@ -19,11 +19,11 @@ module.exports=async function testWireWorkflow(browser,url){
   assert.deepEqual(await page.evaluate(()=>[S.parts.length,S.wires.length]),[0,0]);
   const place=async(label,x,y)=>{
    await page.locator('button[aria-label="Parts"]').tap();
-   await page.locator('.ds-part',{hasText:label}).tap();
+   await (label.startsWith('type:')?page.locator('.ds-part[data-type="'+label.slice(5)+'"]'):page.locator('.ds-part',{hasText:label})).tap();
    const box=await page.locator('#wfFormSvg').boundingBox();
    await page.touchscreen.tap(box.x+x,box.y+y);
   };
-  await place('4-pin relay',120,250);
+  await place('type:relay4',120,250);
   await place('DT04-4P',330,250);
   await place('DT06-4S',540,250);
   await place('Device',750,250);
