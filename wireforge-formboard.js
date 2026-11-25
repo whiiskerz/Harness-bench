@@ -364,7 +364,16 @@ function placeHardware(g,t,name,x,y,sx,sy){
  const p={id:nid(),t,name,pl:{},x:sx,y:sy};
  if(T[t]?.pigtail)p.wfFlying=true;
  S.parts.push(p);S.examples=false;
- return addNode(g,x,y,name,p.id);
+ return addNode(g,x,y,T[t]?.short||name,p.id);
+}
+function focusWire(g,w){
+ const svg=$('wfFormSvg');if(!svg||!w)return;
+ const ends=chain(w).flatMap(x=>[x.a.p,x.b.p]),ns=g.nodes.length<=10?g.nodes:g.nodes.filter(n=>ends.includes(n.partId));
+ if(!ns.length)return;
+ const x0=Math.min(...ns.map(n=>n.x))-90,x1=Math.max(...ns.map(n=>n.x))+130,y0=Math.min(...ns.map(n=>n.y))-80,y1=Math.max(...ns.map(n=>n.y))+110;
+ const W=svg.clientWidth,H=svg.clientHeight,left=W>900?120:20,panel=W>900?Math.min(340,W*.42)+20:0,vw=Math.max(240,W-left-panel);
+ const k=Math.max((x1-x0)/vw,(y1-y0)/(H*.7),.3);
+ view.cam={x:(x0+x1)/2-(left+vw/2)*k,y:(y0+y1)/2-H/2*k,w:W*k,h:H*k};
 }
 function focusLoom(g){
  const n=g.nodes.find(n=>part(n.partId)?.t==='hd30_47'&&part(n.partId)?.wfHd30Loom);
@@ -1185,7 +1194,7 @@ function bindCanvas(g,report){
    if(!view.advanced&&view.page==='design'){
     const ids=[...new Set(document.elementsFromPoint(e.clientX,e.clientY).map(x=>x.closest?.('[data-seg]')?.dataset.seg).filter(Boolean))];
     const ws=analyze(g,S.wires,S.parts).rows.filter(r=>r.route?.some(sg=>ids.includes(sg.id))).map(r=>r.w);
-    if(ws.length===1){view.wsel=ws[0].id;view.wdraft=null;view.trace=key(ws[0].id);}
+    if(ws.length===1){view.wsel=ws[0].id;view.wdraft=null;view.trace=key(ws[0].id);focusWire(g,ws[0]);}
     else if(ws.length>1){view.pick=ws.map(w=>w.id);}
    }
    render();
@@ -1360,7 +1369,7 @@ document.addEventListener('click',e=>{
    if(ws.length){toast('That cavity is already used.');return;}
    commit();
    const w=makeWire(g,view.run,{nid:nn.id,i,s:sd});
-   if(w){view.run=null;view.cav=null;view.wsel=w.id;view.wdraft=null;view.trace=key(w.id);save();render();}
+   if(w){view.run=null;view.cav=null;view.wsel=w.id;view.wdraft=null;view.trace=key(w.id);focusWire(g,w);save();render();}
    return;
   }
   if(ws.length){view.wsel=ws[0].id;view.wdraft=null;view.trace=key(ws[0].id);render();return;}
@@ -1372,7 +1381,7 @@ document.addEventListener('click',e=>{
   const w=S.wires.find(x=>x.id===view.wsel),r=w&&analyze(g,S.wires,S.parts).rows.find(x=>x.w===w);
   if(r?.route?.length)view.chosen={id:r.route[0].id};
   view.pick=null;view.wsel=null;render();return;}
- if(action==='selWire'){view.pick=null;view.wsel=Number(button.dataset.wire);view.wdraft=null;view.trace=key(view.wsel);render();return;}
+ if(action==='selWire'){view.pick=null;view.wsel=Number(button.dataset.wire);view.wdraft=null;view.trace=key(view.wsel);focusWire(g,S.wires.find(x=>x.id===view.wsel));render();return;}
  if(action==='wireDone'){view.wsel=null;view.wdraft=null;render();return;}
  if(['wireSave','wireTrace','wireSwap','wireDelete'].includes(action)){
   const w=S.wires.find(x=>x.id===view.wsel);if(!w)return;

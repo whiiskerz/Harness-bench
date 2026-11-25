@@ -18,5 +18,10 @@
 - Tapping a wire on the canvas to select it (use the connector's wire list for now).
 - Broader visual redesign, catalog expansion.
 
-## Next exact task
+## PR (tap wires and hardware art)
+- Tap any cable on the canvas: one wire opens its editor, several open a picker (ID + endpoints). Selected wire and its continuation through the mate highlight. Empty tap dismisses, drag pans, pinch zooms. Camera refits so the route stays visible beside the inspector.
+- Distinct relay-in-socket, DT04-4P (teal, pins) and DT06-4S (orange, sockets) art. Short node labels.
+- DT source check (TE DT06-4S product page, Deutsch DT Series catalog): confirms 4-way, size 16 contacts, the pair mates. Cavity view (mating face vs wire entry) and cavity-to-cavity map NOT stated, so shown as ASSUMPTION in the inspector and the schedule CSV (column Mate assumption).
+
+## Next exact task (earlier)
 Tap-to-select wires on the canvas (24px+ hit area), then bigger relay/DT part art with cavity numbers on the body.

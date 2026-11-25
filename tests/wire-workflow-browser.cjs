@@ -63,6 +63,44 @@ module.exports=async function testWireWorkflow(browser,url){
   const rows=await page.evaluate(()=>S.wires.map(w=>[w.wid,w.awg,w.color,w.len,w.a.i,w.b.i]));
   assert.deepEqual(rows,[['RLY-30',14,'RED/WHT',18.5,0,0],['DEV-PWR',16,'',42,0,0]]);
   assert.equal(await page.evaluate(()=>compatIssues().filter(i=>/DT0/.test(i.plain)).length),0);
+  // ---- tap, trace, pan, pinch ----
+  const svgBox=await page.locator('#wfFormSvg').boundingBox();
+  const segPoint=async(i,frac)=>page.evaluate(([i,f])=>{const p=document.querySelectorAll('[data-seg]')[i].querySelectorAll('path')[1];const pt=p.getPointAtLength(p.getTotalLength()*f);const m=p.getScreenCTM();return{x:m.a*pt.x+m.c*pt.y+m.e,y:m.b*pt.x+m.d*pt.y+m.f}},[i,frac]);
+  await page.touchscreen.tap(svgBox.x+380,svgBox.y+620);               // empty canvas dismisses
+  assert.equal(await page.locator('.ds-wireeditor,.ds-wirepanel').count(),0);
+  await page.getByRole('button',{name:'Fit'}).tap();
+  if(OUT)await page.screenshot({path:OUT+'/ipad-harness.png'});
+  const vb=()=>page.evaluate(()=>document.getElementById('wfFormSvg').getAttribute('viewBox'));
+  const v0=await vb();
+  await page.mouse.move(svgBox.x+300,svgBox.y+640);await page.mouse.down();await page.mouse.move(svgBox.x+380,svgBox.y+700,{steps:6});await page.mouse.up();
+  assert.notEqual(await vb(),v0,'drag on empty canvas pans');
+  assert.equal(await page.locator('.ds-wireeditor').count(),0);
+  await page.evaluate(()=>{const svg=document.getElementById('wfFormSvg'),r=svg.getBoundingClientRect(),mk=(x,y)=>new Touch({identifier:x,target:svg,clientX:x,clientY:y});
+   const cx=r.x+r.width/2,cy=r.y+r.height/2,fire=(t,a,b)=>svg.dispatchEvent(new TouchEvent(t,{touches:[mk(a,cy),mk(b,cy)],bubbles:true,cancelable:true}));
+   fire('touchstart',cx-40,cx+40);fire('touchmove',cx-90,cx+90);svg.dispatchEvent(new TouchEvent('touchend',{touches:[],bubbles:true}));});
+  const wOf=async()=>Number((await vb()).split(' ')[2]);
+  const w1=await wOf();assert.ok(w1<Number(v0.split(' ')[2]),'pinch zooms in');
+  await page.getByRole('button',{name:'Fit'}).tap();
+  // tap the relay wire on the canvas: one wire, inspector opens with both ends
+  let pt=await segPoint(0,.3);await page.touchscreen.tap(pt.x,pt.y);
+  assert.match(await page.locator('.ds-ends').textContent(),/Relay 4-pin.*30.*DT04-4P.*1/);
+  // a second wire in the same cable: picker lists both
+  await page.getByRole('button',{name:'Done'}).tap();
+  await tapPart('Relay 4-pin');await page.locator('.ds-cav',{hasText:'Coil +'}).tap();await page.getByRole('button',{name:'Run wire'}).tap();
+  await tapPart('DT04-4P');await page.locator('.ds-cav').nth(1).tap();
+  await page.fill('#weId','RLY-86');await page.getByRole('button',{name:'Save wire'}).tap();await page.getByRole('button',{name:'Done'}).tap();
+  pt=await segPoint(0,.3);await page.touchscreen.tap(pt.x,pt.y);
+  assert.equal(await page.locator('.ds-wirelist button').count(),2);
+  await page.locator('.ds-wirelist button',{hasText:'RLY-86'}).tap();
+  await page.getByRole('button',{name:'Delete'}).tap();
+  assert.equal(await page.evaluate(()=>S.wires.length),2);
+  // tap the device wire, edit it, trace through the mate
+  pt=await segPoint(1,.5);await page.touchscreen.tap(pt.x,pt.y);
+  assert.match(await page.locator('.ds-ends').textContent(),/DT06-4S.*1.*load/i);
+  assert.match(await page.locator('.ds-assume').textContent(),/ASSUMPTION/);
+  await page.fill('#weColor','BLK');await page.fill('#weStripe','YEL');await page.getByRole('button',{name:'Save wire'}).tap();
+  if(OUT)await page.screenshot({path:OUT+'/ipad-trace.png'});
+  assert.equal(await page.evaluate(()=>S.wires.find(w=>w.wid==='DEV-PWR').color),'BLK/YEL');
   // loom: cover the relay→DT cable with DR-25 and label
   const seg=await page.evaluate(()=>{const g=S.wfFormboard;return g.segments.map(s=>s.id)});
   assert.equal(seg.length,2);
@@ -94,7 +132,7 @@ module.exports=async function testWireWorkflow(browser,url){
   const rly=lines.find(l=>l[0]==='RLY-30'),dev=lines.find(l=>l[0]==='DEV-PWR');
   assert.ok(rly&&dev,'both wires in CSV');
   assert.match(rly[2],/DT04-4P|Relay/);assert.equal(rly[4],'30');assert.equal(rly[9],'1');assert.equal(rly[14],'18.5');
-  assert.equal(dev[4],'1');assert.equal(dev[14],'42');assert.notEqual(rly[0],dev[0]);
+  assert.equal(dev[4],'1');assert.match(csvText,/ASSUMPTION/);assert.equal(dev[14],'42');assert.notEqual(rly[0],dev[0]);
   assert.equal(await page.evaluate(()=>S.parts.filter(p=>p.mate).length),2);
   const txt=await page.locator('.ds-report').textContent();
   assert.match(txt,/RLY-30/);assert.match(txt,/DEV-PWR/);assert.match(txt,/18\.5/);
