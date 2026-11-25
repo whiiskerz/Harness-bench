@@ -396,6 +396,7 @@ const MAXXECU_MAIN=[["A1","GPO 5","-","GPO 4"],["A2","IGN 1","IGN 1","IGN 1"],["
 const MAXXECU_AUX=[["A1","EGT 5+"],["A2","EGT 6+"],["A3","EGT 7+"],["A4","EGT 8+"],["B1","EGT 5−"],["B2","EGT 6−"],["B3","EGT 7−"],["B4","EGT 8−"],["C1","EGT 1+"],["C2","EGT 2+"],["C3","EGT 3+"],["C4","EGT 4+"],["D1","EGT 1−"],["D2","EGT 2−"],["D3","EGT 3−"],["D4","EGT 4−"],["E1","Knock GND"],["E2","Knock 1"],["E3","Knock 2"],["E4","AIN 6 (0–5 V)"],["F1","AIN 7 (0–5 V)"],["F2","AIN 8 (0–5 V)"],["F3","DIN/VR 4"],["F4","DIN/VR 5"],["G1","GPO 15 (+12 V)"],["G2","GPO 16 (+12 V)"],["G3","AIN 5 (0–5 V)"],["G4","Engine Ground"],["H1","Motor 2+"],["H2","Motor 1−"],["H3","Motor 2−"],["H4","Motor 1+"]];
 /* Pinout-backed physical connectors for the user's Gen1 RACE ECU.
    Main connector functions use the V1/RACE/PRO column of the existing reference table. */
+group('DEUTSCH DT mating halves',[Object.assign(gen('dt04_4p','DT04-4P receptacle',4,true,'dt','4-way receptacle · mates DT06-4S · cavity n to n · confirm face orientation on the Deutsch drawing','DT04-4P'),{mateWith:'dt06_4s'}),Object.assign(gen('dt06_4s','DT06-4S plug',4,true,'dt','4-way plug · mates DT04-4P · cavity n to n · confirm face orientation on the Deutsch drawing','DT06-4S'),{mateWith:'dt04_4p'})]);
 group('DEUTSCH HD30 firewall',[Object.assign(gen('hd30_47','HD30 · 47-position receptacle',47,true,'bulk','24-47 · verify key and contact arrangement','HD34-24-47PE'),{bulk:true})]);
 group('MaxxECU Gen1 RACE connectors',[
  {id:'mxrace48',name:'MaxxECU Gen1 RACE · 48-pin main Molex',fam:'mxecu',sub:'V1 / RACE / PRO · main connector',pn:'48 cavities',desc:'Functions transcribed from the supplied RACE pinout reference; verify cavity face/orientation against official documentation.',pinGridCols:4,gridCellW:82,gridRowH:22,pins:MAXXECU_MAIN.map(r=>({p:r[0],l:r[1]}))},
@@ -1621,6 +1622,7 @@ function netsOf(){
   const find=k=>{if(!par.has(k))par.set(k,k);let r=k;while(par.get(r)!==r)r=par.get(r);while(par.get(k)!==r){const n=par.get(k);par.set(k,r);k=n}return r};
   const uni=(a,b)=>{const x=find(a),y=find(b);if(x!==y)par.set(x,y)};
   S.wires.forEach(w=>uni(key(w.a.p,w.a.i),key(w.b.p,w.b.i)));
+  S.parts.forEach(p=>{const q=p.mate&&S.parts.find(x=>x.id===p.mate);if(q&&T[p.t].pins)T[p.t].pins.forEach((_,i)=>uni(key(p.id,i),key(q.id,i)))});
   S.parts.forEach(p=>(BUSES[p.t]||[]).forEach(g=>g.slice(1).forEach(i=>uni(key(p.id,g[0]),key(p.id,i)))));
   return{find,key};
 }
