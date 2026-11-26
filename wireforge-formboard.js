@@ -139,18 +139,19 @@ function wiresMarkup(bundle,c,active){
  const out=members.map((w,k)=>{
   const off=(k-(n-1)/2)*gap,line=pts.map((p,i)=>{
    const a=pts[Math.max(0,i-1)],b=pts[Math.min(N,i+1)],dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1;
-   return point(p.x-dy/L*off,p.y+dx/L*off);
+   const spread=n>12?Math.min(1,i/5,(N-i)/5):1;
+   return point(p.x-dy/L*off*spread,p.y+dx/L*off*spread);
   });
   const d='M'+line.map(xy).join(' L'),on=key(w.id)===view.trace||(view.wsel===w.id)||view.multi?.includes(w.id)||(!!view.trace&&S.wires.some(x=>key(x.id)===view.trace&&chain(x).includes(w))),inChain=active.has(s.id)&&on;
   const col=cpart(w.color,0)||'#8e9ca3',stripe=cpart(w.color,1);
-  const mid=line[Math.floor(N/2)];
+  const mid=line[Math.floor(N/2)+(n>12?(k%3-1)*4:0)];
   return `<g data-wire-hit="${h(w.id)}"><title>${h(wireName(w))} · ${h(w.color||'color TBD')} · ${h(endWho(w.a))} → ${h(endWho(w.b))}</title>
   <path d="${d}" stroke="transparent" stroke-width="${gap+1}" fill="none" stroke-linecap="round"/>
   ${on?`<path d="${d}" stroke="#4fd1c5" stroke-opacity=".55" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:''}
   <path d="${d}" stroke="#10181b" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="${d}" stroke="${col}" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   ${stripe?`<path d="${d}" stroke="${stripe}" stroke-width="3.2" stroke-dasharray="4 5" fill="none" stroke-linejoin="round"/>`:''}
-  ${n<=6||on?`<text x="${mid.x}" y="${mid.y-6}" text-anchor="middle" font-size="8.5" font-weight="700" fill="#1b3440" stroke="#edf2f3" stroke-width="2.6" paint-order="stroke" pointer-events="none">${h(w.wid||'#'+w.id)}</text>`:''}</g>`;
+  ${n<=6||n>12||on?`<text x="${mid.x}" y="${mid.y-6}" text-anchor="middle" font-size="8.5" font-weight="700" fill="#1b3440" stroke="#edf2f3" stroke-width="2.6" paint-order="stroke" pointer-events="none">${h(w.wid||'#'+w.id)}</text>`:''}</g>`;
  }).join('');
  return `<g data-seg="${h(s.id)}" data-look="wires">${out}</g>`;
 }
@@ -268,7 +269,7 @@ function scene(g,report){
  const components=nodes.map(n=>nodeMarkup(n,parts.get(key(n.partId)),neighbors.get(n.id)||[],project,orbit)).join('');
  const from=view.drag?.type==='lead'?view.drag.start:view.drag?.type==='connect'?ns.get(view.drag.id):null,to=view.drag?.to;
  const preview=from&&to?`<path d="${curve(from,to,{}).path}" fill="none" stroke="#008578" stroke-width="3" stroke-dasharray="6 4" pointer-events="none"/>`:'';
- const mates=nodes.map(n=>{const p=part(n.partId),q=p?.mate&&byPart.get(key(p.mate));if(!q||key(p.id)>key(p.mate))return '';const on=tchain.some(w=>[w.a,w.b].some(e=>e.p===p.id||e.p===p.mate));return '<path d="M'+xy(project(n))+' L'+xy(project(q))+'" stroke="'+(on?'#00a88e':'#87979a')+'" stroke-width="'+(on?7:3)+'" stroke-dasharray="6 4" fill="none" pointer-events="none"><title>Assumed mate interface, not a physical wire</title></path>';}).join('');
+ const mates=nodes.map(n=>{const p=part(n.partId),q=p?.mate&&byPart.get(key(p.mate));if(!q||key(p.id)>key(p.mate))return '';const on=tchain.some(w=>[w.a,w.b].some(e=>e.p===p.id||e.p===p.mate));return '<path data-mate-trace="'+(on?'active':'idle')+'" d="M'+xy(project(n))+' L'+xy(project(q))+'" stroke="'+(on?'#00a88e':'#87979a')+'" stroke-width="'+(on?7:3)+'" stroke-dasharray="6 4" fill="none" pointer-events="none"><title>Assumed mate interface, not a physical wire</title></path>';}).join('');
  return guideMarkup+branches+mates+components+preview;
 }
 function renderScene(g,report){
@@ -890,7 +891,7 @@ function openBulkheadMockup(el){
 const palette=[
  ['mxrace48','C1 · RACE main','48 cavities'],['mxrace32','C2 · RACE auxiliary','32 cavities'],
  ['mxpig48','C1 · RACE pigtail','48 prewired leads'],['mxpig32','C2 · RACE pigtail','32 prewired leads'],
- ['dt04_4p','DT04-4P receptacle','DT 4-way'],['dt06_4s','DT06-4S plug','DT 4-way'],['load2','Device','2 terminals'],['hd30_47','HD30 · bulkhead','47 positions'],['rp4','4-pin relay + socket','30 85 86 87 leads'],['rp5','5-pin relay + socket','30 85 86 87 87a leads'],['relay4','4-pin relay','Power'],['relay','5-pin relay','Power'],
+ ['hd30_demo_socket','HD36-24-47SE','47-position socket plug'],['hd30_demo_pin','HD34-24-47PE','47-position pin receptacle'],['demo_fused12','Local fused 12V','Fused output · TBD'],['dt04_4p','DT04-4P receptacle','DT 4-way'],['dt06_4s','DT06-4S plug','DT 4-way'],['load2','Device','2 terminals'],['hd30_47','HD30 · bulkhead','47 positions'],['rp4','4-pin relay + socket','30 85 86 87 leads'],['rp5','5-pin relay + socket','30 85 86 87 87a leads'],['relay4','4-pin relay','Power'],['relay','5-pin relay','Power'],
  ['inj2','Injector','2 pins · P/N TBD'],['coil3','Ignition coil','3 pins · P/N TBD'],['dual','Dual relay board','Leash'],['e90leash1','Single relay board','Leash'],['fuse6','Fuse box','6 circuits']
 ];
 const toolPaths={parts:'M10 3v14M3 10h14',select:'M4 2l12 9-6 1-3 6z',connect:'M2 14h4c5 0 2-8 8-8h4M2 12v4m16-12v4',pan:'M5 10V6a1 1 0 012 0v4-6a1 1 0 012 0v6-7a1 1 0 012 0v7-5a1 1 0 012 0v6l2-2q2-1 2 1l-3 6q-2 3-5 2l-4-2-3-5q-1-2 1-2z',flying:'M2 6h6l4-3h6M2 10h16M2 14h6l4 3h6'};
@@ -941,7 +942,7 @@ function shopModel(g,report){
  const bund=new Map(report.bundles.map(b=>[b.s.id,b.members.length]));
  const label=id=>{const n=g.nodes.find(n=>n.id===id);return n?String(n.label||part(n.partId)?.name||'Breakout'):'?';};
  const endC=e=>{const p=part(e.p);return p?{c:connLabel(g,p),pn:pnOf(p)||'TBD',cav:(T[p.t]?.pins[e.i]?.p||'TBD')+(e.s?' '+faceLabel(p,e.s):'')}:{c:'TBD',pn:'TBD',cav:'TBD'};};
- const notes=(S.wfProjectName===root.WFHD30Demo?.name&&S.wfDemoNotice)?[S.wfDemoNotice]:[],parts=g.nodes.filter(n=>n.partId!=null&&part(n.partId));
+ const notes=S.wires.some(w=>w.auditNotes?.includes('UNVERIFIED EXAMPLE'))?[root.WFHD30Demo.notice]:[],parts=g.nodes.filter(n=>n.partId!=null&&part(n.partId));
  const noPn=parts.filter(n=>!pnOf(part(n.partId)));
  if(noPn.length)notes.push('Housing part number TBD: '+noPn.map(n=>n.label||part(n.partId).name).join(', '));
  const mated=parts.filter(n=>part(n.partId).mate);
@@ -1210,7 +1211,7 @@ function loadHD30Demo(){
  for(const p of parts){const n=addNode(g,p.x,p.y,p.name,p.id);n.rotation=p.rotation;}
  addSegment(g,g.nodes[0].id,g.nodes[1].id);Object.assign(g.segments[0],{length:450/25.4,label:'L01 · ECU Main Bulkhead',sleeve:'DR-25',wfDemoMm:450});
  addSegment(g,g.nodes[0].id,g.nodes[3].id);Object.assign(g.segments[1],{length:5.91,label:'Local fused supply'});
- S.parts=parts;S.wires=wires;S.looms=[{id:60,name:'ECU Main Bulkhead',ref:'L01',cover:'DR-25',color:'#343b40',lengthMm:450}];S.nid=63;S.zones=[];S.circuitBook=[];S.wfBranches=[];S.examples=false;S.pro=null;S.wfFormboard=g;S.wfVaultId=null;S.wfProjectName=D.name;S.wfDemoNotice=D.notice;S.tab='formboard';
+ UNDO.length=0;REDO.length=0;syncUndo();S.parts=parts;S.wires=wires;S.looms=[{id:60,name:'ECU Main Bulkhead',ref:'L01',cover:'DR-25',color:'#343b40',lengthMm:450}];S.nid=63;S.zones=[];S.circuitBook=[];S.wfBranches=[];S.examples=false;S.pro=null;S.wfFormboard=g;S.wfVaultId=null;S.wfProjectName=D.name;S.wfDemoNotice=D.notice;S.tab='formboard';
  resetDesignSelection();view.cam=null;view.look='loom';view.page='design';view.advanced=false;save();root.WFPro?.saveNamed({asNew:true,name:D.name});render();
 }
 function importWireCSV(){
@@ -1263,8 +1264,8 @@ function studioRender(el,g,report){
  const inspector=view.multiMode&&page==='design'?'<aside class="ds-panel ds-wirepanel"><h3>Select wires</h3>'+btn('deleteSelected','Delete selected wires')+'<div class="ds-wirelist">'+S.wires.map(w=>'<button type="button" data-fb="multiWire" data-wire="'+w.id+'" aria-pressed="'+!!view.multi?.includes(w.id)+'">'+(view.multi?.includes(w.id)?'✓ ':'')+h(wireName(w))+'<small>'+h(endWho(w.a))+' → '+h(endWho(w.b))+'</small></button>').join('')+'</div></aside>':wsel&&page==='design'?wireEditor(g,wsel):view.pick&&page==='design'?pickPanel(g):view.landing?landingPanel(g):page==='design'&&n?.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node?wirePanel(g,n):page==='design'&&selected?'<aside class="ds-panel ds-inspector"><div class="ds-panelhead"><h3>'+h(n?captionForNode(n):seg.s.label||'Cable run')+'</h3>'+btn('dismiss','Close')+'</div>'+(n?.partId&&['mxrace32','mxrace48'].includes(part(n.partId)?.t)?btn('landStart','Land a wire','fb-primary'):'')+(n?nodeInspector(n):branchInspector(seg))+'</aside>':'';
  const preview=empty&&page==='design'&&!view.placing&&view.mode==='select'?'<div class="ds-start ds-start-first">'+firstCard()+'</div>':'';
  const controls='<div class="ds-look" role="group" aria-label="Harness view">'+btn('lookLoom','Loom',view.look!=='wires'?'active':'')+btn('lookWires','Individual wires',view.look==='wires'?'active':'')+'</div><div class="ds-zoom">'+btn('zoomOut','−')+btn('fit','Fit')+btn('zoomIn','+')+'</div>';
- el.innerHTML='<div class="ds-shell fb-workspace"><div class="ds-head"><strong>Harness Bench</strong><span class="ds-project">'+name+'</span><div>'+btn('studioShop','Export for manufacturer','fb-primary')+(page==='design'?btn('loadHD30Demo','Load Demo Harness → MaxxECU Race / HD30')+btn('importWireCSV','Import CSV')+btn('multiMode',view.multiMode?'Exit multi-select':'Multi-select')+btn('deleteSelected','Delete selected'+(view.multi?.length?' ('+view.multi.length+')':''))+btn('designUndo','Undo')+btn('designRedo','Redo')+btn('clearDesign','Clear canvas'):'')+btn('advanced','Project tools')+'<button type="button" data-tab="project">Overview</button></div></div>'+
- '<div class="ds-desk">'+toolbar+((S.wfProjectName===root.WFHD30Demo?.name&&S.wfDemoNotice)?'<p role="note" style="margin:4px 12px;color:#9a5510;font-weight:bold">UNVERIFIED EXAMPLE — NOT FOR FABRICATION</p>':'')+(page==='design'&&!empty?stepsBar(g,report):'')+(page==='studioShop'?shopPanel(g,report):stage?canvas()+preview+(page==='design'?tools:'')+(caption?'<div class="ds-prompt">'+h(caption)+' '+btn('dismiss','Cancel')+'</div>':'')+
+ el.innerHTML='<div class="ds-shell fb-workspace"><div class="ds-head"><strong>Harness Bench</strong><span class="ds-project">'+name+'</span><div>'+btn('studioShop','Export for manufacturer','fb-primary')+(page==='design'?'<details class="ds-demomenu"><summary>Design actions</summary><div>'+btn('loadHD30Demo','Load Demo Harness → MaxxECU Race / HD30')+btn('importWireCSV','Import CSV')+btn('multiMode',view.multiMode?'Exit multi-select':'Multi-select')+btn('deleteSelected','Delete selected'+(view.multi?.length?' ('+view.multi.length+')':''))+btn('designUndo','Undo')+btn('designRedo','Redo')+btn('clearDesign','Clear Design')+'</div></details>':'')+btn('advanced','Project tools')+'<button type="button" data-tab="project">Overview</button></div></div>'+
+ '<div class="ds-desk">'+toolbar+(S.wires.some(w=>w.auditNotes?.includes('UNVERIFIED EXAMPLE'))?'<p role="note" class="ds-demo-warning">UNVERIFIED EXAMPLE — NOT FOR FABRICATION</p>':'')+(page==='design'&&!empty?stepsBar(g,report):'')+(page==='studioShop'?shopPanel(g,report):stage?canvas()+preview+(page==='design'?tools:'')+(caption?'<div class="ds-prompt">'+h(caption)+' '+btn('dismiss','Cancel')+'</div>':'')+
  (view.panel==='parts'&&page==='design'?studioParts():inspector)+controls:page==='studioWiring'?wiringSheet(g):'<div class="ds-report"><div class="ds-panelhead"><h3>'+(page==='studioBom'?'Bill of materials':'Wire cut list')+'</h3>'+btn(page==='studioBom'?'bom':'cut','Cut list CSV')+(page==='studioBom'?'':btn('schedule','Wire schedule CSV'))+'</div>'+studioReport(page,report,g)+'</div>')+
  '</div><div class="ds-foot"><b>Formboard</b><span>'+g.nodes.filter(n=>n.partId!=null).length+' parts &nbsp;·&nbsp; '+g.segments.length+' cable runs</span><span>'+ (page==='orbit'?'Drag to orbit':'Dimensions in inches')+'</span></div></div>';
  if(stage){renderScene(g,report);bindCanvas(g,report);}
@@ -1480,7 +1481,7 @@ function bindCanvas(g,report){
 function saveBranch(s){
  const length=numeric('fbLength'),size=numeric('fbSize');
  if((val('fbLength')&&length===null)||(val('fbSize')&&size===null))return toast('Enter positive dimensions or leave the fields blank.');
- mutate(()=>Object.assign(s,{length,size,label:val('fbSegLabel').trim(),sleeve:val('fbSleeve').trim()}));
+ mutate(()=>{if(s.wfDemoMm&&length!==s.length)delete s.wfDemoMm;Object.assign(s,{length,size,label:val('fbSegLabel').trim(),sleeve:val('fbSleeve').trim()});});
 }
 function saveNode(n){
  const z=val('fbElevation'),rotation=val('fbRotation');
