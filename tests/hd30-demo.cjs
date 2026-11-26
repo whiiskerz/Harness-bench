@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict');
+const D=require('../wireforge-hd30-demo.js');
+const pins=labels=>labels.map(p=>({p}));
+const parts=[{id:1,name:'C1',t:'ecu'},{id:2,name:'X1',t:'hd'},{id:3,name:'F1',t:'fuse'}];
+const types={ecu:{pins:pins([...('ABCDEFGHJKLM')].flatMap(c=>[1,2,3,4].map(n=>c+n)))},hd:{pins:pins(Array.from({length:47},(_,i)=>String(i+1)))},fuse:{pins:pins(['OUT'])}};
+const rows=D.plan(D.demoCSV,parts,types,[]);
+assert.equal(rows.length,48);assert.equal(new Set(rows.map(w=>w.a.i)).size,48);assert.equal(rows.filter(w=>w.b.p===2).length,47);assert.equal(new Set(rows.slice(0,47).map(w=>w.b.i)).size,47);
+assert.deepEqual(rows[47].b,{p:3,i:0});assert.equal(rows[47].len,5.91);assert.equal(rows[33].color,'VIO/WHT');assert.equal(rows[16].sig,'CAN H');assert.equal(rows[17].sig,'CAN L');
+assert.throws(()=>D.plan(D.demoCSV,parts,types,[rows[0]]),/duplicate/i);
+assert.throws(()=>D.plan(D.demoCSV.replace('W02,C1,A2','W02,C1,A1'),parts,types,[]),/Duplicate cavity/);
+assert.throws(()=>D.plan(D.demoCSV.replace('W02,C1,A2','W02,C1,A9'),parts,types,[]),/Unknown cavity/);
+assert.equal(D.parse(D.demoCSV.replace('GPO 5 - Fan','"Fan, relay"'))[0].Circuit,'Fan, relay');
+console.log('HD30 CSV checks passed');

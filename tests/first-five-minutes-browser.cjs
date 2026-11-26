@@ -80,7 +80,7 @@ module.exports=async function testFirstFive(browser,url){
   assert.equal(pb.slice(0,5).toString(),'%PDF-');
   assert.match(pb.toString('latin1'),/INJ1/);assert.match(pb.toString('latin1'),/42 in/);
   const lines=ct.trim().split('\n');
-  assert.equal(lines[0],'Wire ID,AWG,Base color,Stripe color,From connector ID,From housing P/N,From cavity,To connector ID,To housing P/N,To cavity,Length in (user-entered),Wire source,Mate mapping');
+  assert.equal(lines[0],'Wire ID,AWG,Base color,Stripe color,From connector ID,From housing P/N,From cavity,To connector ID,To housing P/N,To cavity,Length in (user-entered),Wire source,Mate mapping,Circuit,Loom,Review status');
   assert.equal(lines.length,3);
   assert.match(ct,/INJ1/);assert.match(ct,/TBD/);
   if(OUT){fs.copyFileSync(await pdf.path(),OUT+'/harness-bench-manufacturer.pdf');fs.copyFileSync(await csv.path(),OUT+'/harness-bench-manufacturer.csv');fs.writeFileSync(OUT+'/tap-sequence.txt',T.map((s,i)=>(i+1)+'. '+s).join('\n')+'\n');}

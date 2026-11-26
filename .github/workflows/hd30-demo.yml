@@ -1,0 +1,24 @@
+name: HD30 demo regression
+on:
+  pull_request:
+    paths:
+      - 'wireforge-*.js'
+      - 'wireforge-formboard.css'
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/hd30-demo.yml'
+  workflow_dispatch:
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/hd30-demo.cjs
+      - run: node --check wireforge-formboard.js && node --check wireforge-export.js
+      - run: npm install --no-save playwright && npx playwright install --with-deps chromium
+      - run: |
+          python3 -m http.server 8765 >/tmp/hd30-http.log 2>&1 &
+          node -e "const {chromium}=require('playwright'); (async()=>{const b=await chromium.launch({headless:true});try{await require('./tests/hd30-demo-browser.cjs')(b,'http://127.0.0.1:8765/index.html');}finally{await b.close()}})().catch(e=>{console.error(e);process.exit(1)})"

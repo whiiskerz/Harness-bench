@@ -74,8 +74,8 @@
   (m.notes.length?m.notes:['No open items recorded.']).slice(0,40).forEach((t,i)=>pn.text(36,80+i*13,'- '+trunc(t,170),8.5));
   return build(pages).replace(/\{N\}/g,String(pages.length));
  }
- const csvHeaders=['Wire ID','AWG','Base color','Stripe color','From connector ID','From housing P/N','From cavity','To connector ID','To housing P/N','To cavity','Length in (user-entered)','Wire source','Mate mapping'];
- const csvRows=m=>m.rows.map(r=>[r.id,r.awg,r.base,r.stripe,r.aConn,r.aPn,r.aCav,r.bConn,r.bPn,r.bCav,r.len,r.source,r.mate]);
+ const csvHeaders=['Wire ID','AWG','Base color','Stripe color','From connector ID','From housing P/N','From cavity','To connector ID','To housing P/N','To cavity','Length in (user-entered)','Wire source','Mate mapping','Circuit','Loom','Review status'];
+ const csvRows=m=>m.rows.map(r=>[r.id,r.awg,r.base,r.stripe,r.aConn,r.aPn,r.aCav,r.bConn,r.bPn,r.bCav,r.len,r.source,r.mate,r.circuit||'',r.loom||'',m.notes.some(n=>n.includes('UNVERIFIED EXAMPLE'))?'UNVERIFIED EXAMPLE':'Review required']);
  root.WF_EXPORT={pdf,csvHeaders,csvRows};
 })(typeof window!=='undefined'?window:globalThis);
 if(typeof module!=='undefined')module.exports=globalThis.WF_EXPORT;
