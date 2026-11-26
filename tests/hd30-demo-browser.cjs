@@ -8,7 +8,7 @@ module.exports=async function(browser,url){
  await page.goto(url.split('#')[0]+'#studio');await page.waitForSelector('.ds-shell');await action('loadHD30Demo');
  assert.deepEqual(await page.evaluate(()=>[S.parts.length,S.wires.length,T[S.parts[0].t].pins.length,S.wires.filter(w=>w.loom).length,S.parts[1].mate,S.parts[2].mate]),[4,48,48,47,3,2]);
  await action('lookWires');assert.equal(await page.locator('[data-wire-hit]').count(),48);
- await page.locator('[data-wire-hit="10"] path').first().tap({force:true});await page.waitForSelector('#weId');
+ const pt=await page.locator('[data-wire-hit="10"] path').first().evaluate(p=>{const q=p.getPointAtLength(p.getTotalLength()*.5),m=p.getScreenCTM();return {x:m.a*q.x+m.c*q.y+m.e,y:m.b*q.x+m.d*q.y+m.f};});await page.touchscreen.tap(pt.x,pt.y);await page.waitForSelector('#weId');
  assert.equal(await page.inputValue('#weId'),'W01');assert.equal(await page.inputValue('#weColor'),'GRN');assert.equal(await page.inputValue('#weLen'),'17.72');
  await action('wireTrace');assert.equal(await page.locator('[data-mate-trace="active"]').count(),1);
  await page.fill('#weSig','Fan edited');await action('wireSave');assert.equal(await page.evaluate(()=>S.wires[0].sig),'Fan edited');
