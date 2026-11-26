@@ -366,13 +366,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 :root[data-wf-finish="stealth"]:not([data-theme="light"]) #wf3dProLaunch{background:linear-gradient(130deg,#f4f6f9,#a9bccb);color:#19212b;border-color:#d5e3eb}
 @media(max-width:720px){.wf-finish-choice{width:100%;justify-content:space-between;margin:0}#wfEditorFinish{flex:1;max-width:220px}}
 </style>
-<link rel="stylesheet" href="./wireforge-workspace.css">
-<link rel="stylesheet" href="./wireforge-blueprint.css">
-<link rel="stylesheet" href="./wireforge-formboard.css">
-<link rel="stylesheet" href="./wireforge-premium.css">
-<link rel="stylesheet" href="./wireforge-dt-visual.css">
+<link rel="stylesheet" href="./wireforge-workspace.css?v=028-quick-wire">
+<link rel="stylesheet" href="./wireforge-blueprint.css?v=028-quick-wire">
+<link rel="stylesheet" href="./wireforge-formboard.css?v=028-quick-wire">
+<link rel="stylesheet" href="./wireforge-premium.css?v=028-quick-wire">
+<link rel="stylesheet" href="./wireforge-dt-visual.css?v=028-quick-wire">
 <script>
-const APP_VERSION='0.27.0-assembly-preview';
+const APP_VERSION='0.28.0-quick-wire';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -2639,7 +2639,7 @@ proAttach();
 if(S.tab==='draw'&&!S.view)requestAnimationFrame(fit);
 </script>
 
-<input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import WireForge project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js" defer></script>
-<script src="./wireforge-export.js" defer></script><script src="./wireforge-pigtails.js" defer></script><script src="./wireforge-blueprint.js" defer></script><script src="./wireforge-formboard-art.js" defer></script><script src="./wireforge-hd30-demo.js" defer></script><script src="./wireforge-formboard.js" defer></script>
-<script type="module" src="./wireforge-dt-assemblies.js"></script>
+<input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import WireForge project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js?v=028-quick-wire" defer></script>
+<script src="./wireforge-export.js?v=028-quick-wire" defer></script><script src="./wireforge-pigtails.js?v=028-quick-wire" defer></script><script src="./wireforge-blueprint.js?v=028-quick-wire" defer></script><script src="./wireforge-formboard-art.js?v=028-quick-wire" defer></script><script src="./wireforge-hd30-demo.js?v=028-quick-wire" defer></script><script src="./wireforge-formboard.js?v=028-quick-wire" defer></script>
+<script type="module" src="./wireforge-dt-assemblies.js?v=028-quick-wire"></script>
 </body></html>
