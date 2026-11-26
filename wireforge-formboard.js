@@ -120,7 +120,8 @@ function segmentExtent(g,s,axis,direction){
  return (direction<0?Math.min:Math.max)(c.c[axis],c.d[axis])+direction*42;
 }
 function fit(g,detail=false){
- const box=boardBounds(g),svg=$('wfFormSvg');
+ const raw=boardBounds(g),svg=$('wfFormSvg');
+ const box=view.demoFit&&view.page==='design'?{x:raw.x-raw.w*.05,y:raw.y-raw.h*.22,w:raw.w*1.1,h:raw.h*1.3}:raw;
  const width=svg?.clientWidth||840;
  if(detail&&box.w>1750)box.w=Math.max(650,width*1.1);
  const ratio=width/(svg?.clientHeight||580);
@@ -959,6 +960,8 @@ function shopModel(g,report){
  if(c(r=>r.awg==='TBD'))notes.push(c(r=>r.awg==='TBD')+' wire(s) have AWG TBD');
  if(c(r=>r.color==='TBD'))notes.push(c(r=>r.color==='TBD')+' wire(s) have color TBD');
  if(c(r=>r.len==='TBD'))notes.push(c(r=>r.len==='TBD')+' wire(s) have no measured length (TBD)');
+ {const thin=S.wires.filter(w=>Number(w.awg)>=22&&[w.a,w.b].some(e=>/^hd30/.test(part(e.p)?.t||''))).length;if(thin)notes.push(thin+' wire(s) are 22 AWG or finer on HD30 cavities: contact size per cavity and gauge compatibility are UNVERIFIED (size 16 contacts need verification against TE drawing 0425-014-2400)');}
+ {const sug=S.wires.filter(w=>w.wfSuggested||w.auditStatus==='unverified').length;if(sug)notes.push(sug+' wire(s) carry SUGGESTED planning gauge/color/destination values, not verified specifications');}
  if(c(r=>!r.routed))notes.push(c(r=>!r.routed)+' wire(s) are not bundled into a loom yet');
  return{project:String(S.wfProjectName||S.projectName||'Harness'),date:new Date().toISOString().slice(0,10),
   nodes:g.nodes.map(n=>{const p=part(n.partId);return{id:n.id,x:n.x,y:n.y,kind:p?'part':'breakout',label:String(n.label||p?.name||'Breakout'),pn:p?pnOf(p)||'TBD':'',cav:p?T[p.t]?.pins.length:0};}),
@@ -1154,7 +1157,7 @@ function wireEditor(g,w){
  const ch=chain(w);
  const mate=contTarget(w);const trace=ch.length>1?'<div class="ds-chain"><h4>Through the connector</h4>'+ch.map((x,k)=>'<div'+(x===w?' class="cur"':'')+'><b>'+h(x.wid||'#'+x.id)+'</b> '+h(endWho(x.a))+' → '+h(endWho(x.b))+'<small>'+(positive(x.len)?num(x.len)+' in':'length TBD')+'</small></div>').join('')+'<p class="muted">The mated connector joins these electrically and adds no wire to the cut list.</p></div>':'';
  return '<aside class="ds-panel ds-wireeditor"><div class="ds-panelhead"><h3>Wire '+h(w.wid||'#'+w.id)+'</h3>'+btn('wireDone','Done')+'</div>'+
-  '<div class="ds-ends"><div><small>From</small><b>'+h(endWho(w.a))+'</b></div><span aria-hidden="true">→</span><div><small>To</small><b>'+h(endWho(w.b))+'</b></div></div>'+'<div class="fb-actions">'+(contTarget(w)?btn('contMate','Continue from mate','fb-primary'):'')+(graph().segments.some(x=>x.id===view.chosen?.id)?btn('editRun','Cable run: length + breakout'):'')+'</div>'+(mate?'<p>Mate continuation: '+h(mate.p.name)+' · '+h(T[mate.p.t].pins[mate.i]?.p)+' (assumed)</p>':'')+(mateNote(w)?'<p class="ds-assume"><b>Mate assumption.</b> '+h(mateNote(w))+'</p>':'')+
+  '<div class="ds-ends"><div><small>From</small><b>'+h(endWho(w.a))+'</b></div><span aria-hidden="true">→</span><div><small>To</small><b>'+h(endWho(w.b))+'</b></div></div>'+'<div class="fb-actions">'+(contTarget(w)?btn('contMate','Continue from mate','fb-primary'):'')+(graph().segments.some(x=>x.id===view.chosen?.id)?btn('editRun','Cable run: length + breakout'):'')+'</div>'+(mate?'<p>Mate continuation: '+h(mate.p.name)+' · '+h(T[mate.p.t].pins[mate.i]?.p)+' (assumed)</p>':'')+(w.wfSuggested||w.auditStatus==='unverified'?'<p class="ds-assume"><b>Suggested, not verified.</b> Gauge, color and destination are planning values. Unknown details stay TBD.</p>':'')+(mateNote(w)?'<p class="ds-assume"><b>Mate assumption.</b> '+h(mateNote(w))+'</p>':'')+
   '<div class="fb-unit">'+input('Wire ID','weId',w.wid||'','W01')+input('Circuit','weSig',w.sig||'','Circuit name')+'</div>'+
   '<div class="fb-unit">'+'<label>Color<input id="weColor" list="weColors" value="'+h(baseOf(w.color))+'" placeholder="TBD"></label><datalist id="weColors">'+Object.keys(typeof COLORS!=='undefined'?COLORS:{}).filter(k=>k.length===3).map(k=>'<option value="'+k+'">').join('')+'</datalist>'+input('Stripe','weStripe',stripeOf(w.color),'None')+'</div>'+
   '<div class="fb-unit">'+field('Gauge (AWG)','weAwg',w.awg||'','TBD','1')+field('Measured length (in)','weLen',w.len||'','TBD')+'</div>'+
@@ -1212,7 +1215,7 @@ function loadHD30Demo(){
  addSegment(g,g.nodes[0].id,g.nodes[1].id);Object.assign(g.segments[0],{length:450/25.4,label:'L01 · ECU Main Bulkhead',sleeve:'DR-25',wfDemoMm:450});
  addSegment(g,g.nodes[0].id,g.nodes[3].id);Object.assign(g.segments[1],{length:5.91,label:'Local fused supply'});
  UNDO.length=0;REDO.length=0;syncUndo();S.parts=parts;S.wires=wires;S.looms=[{id:60,name:'ECU Main Bulkhead',ref:'L01',cover:'DR-25',color:'#343b40',lengthMm:450}];S.nid=63;S.zones=[];S.circuitBook=[];S.wfBranches=[];S.examples=false;S.pro=null;S.wfFormboard=g;S.wfVaultId=null;S.wfProjectName=D.name;S.wfDemoNotice=D.notice;S.tab='formboard';
- resetDesignSelection();view.cam=null;view.look='loom';view.page='design';view.advanced=false;save();root.WFPro?.saveNamed({asNew:true,name:D.name});render();
+ resetDesignSelection();view.demoFit=true;view.cam=null;view.look='loom';view.page='design';view.advanced=false;save();root.WFPro?.saveNamed({asNew:true,name:D.name});render();
 }
 function importWireCSV(){
  const d=document.createElement('dialog');d.innerHTML='<h3>Import wire CSV</h3><p>Use existing connector names and cavity labels. Includes no automatic electrical approval. Bulk connectors require FromSide/ToSide.</p><input type="file" accept=".csv,text/csv" id="hdCsvFile"><textarea id="hdCsvText" rows="9" style="width:100%" placeholder="WireID,From,FromPin,To,ToPin,Circuit,Color,Stripe,AWG,LengthIn"></textarea><p role="status" id="hdCsvStatus"></p><button type="button" id="hdCsvApply">Validate and import</button> <button type="button" id="hdCsvClose">Cancel</button>';
@@ -1226,7 +1229,7 @@ function loadLSBulkheadDemo(){
  if((S.parts.length||S.wires.length)&&!root.WFPro?.saveNamed({asNew:false,name:S.wfProjectName||S.projectName||'Previous harness'}))return;
  const name='E90 LS – Dual HD30 Bulkhead Planning Demo',notice='UNVERIFIED EXAMPLE — NOT FOR FABRICATION. Logical ECU-to-bulkhead planning only; colors and AWG are suggested planning values, not approved sizes; per-cavity contact assignments, ratings, shielding, lengths and vehicle-side destinations require verification. Engine grounds and thermocouples intentionally remain unrouted.';
  const p=(id,t,name,x,y,rotation)=>({id,t,name,x,y,rotation,pl:{}});
- const parts=[p(1,'mxrace48','C1 · RACE main',140,180,180),p(2,'mxrace32','C2 · RACE auxiliary',140,490,180),p(3,'hd30_demo_socket','X1A · Main plug',720,180,0),p(4,'hd30_demo_pin','X1B · Main receptacle',870,180,180),p(5,'hd30_demo_socket','X2A · Aux plug',720,490,0),p(6,'hd30_demo_pin','X2B · Aux receptacle',870,490,180),p(7,'demo_fused12','F1 · Local ECU supply',350,720,0)];
+ const parts=[p(1,'mxrace48','C1 · RACE main',140,180,180),p(2,'mxrace32','C2 · RACE auxiliary',140,490,180),p(3,'hd30_demo_socket','X1A plug',720,180,0),p(4,'hd30_demo_pin','X1B recept.',870,180,180),p(5,'hd30_demo_socket','X2A plug',720,490,0),p(6,'hd30_demo_pin','X2B recept.',870,490,180),p(7,'demo_fused12','F1 · Local ECU supply',350,720,0)];
  parts[2].mate=4;parts[3].mate=3;parts[4].mate=6;parts[5].mate=5;
  const g=fresh(),wires=[];let next=20;
  for(const q of parts){const n=addNode(g,q.x,q.y,q.name,q.id);n.rotation=q.rotation;}
@@ -1241,9 +1244,28 @@ function loadLSBulkheadDemo(){
   }
  }
  const can=wires.filter(w=>/^CAN [HL]$/.test(w.sig));if(can.length===2){const pair=next++;can.forEach(w=>w.tw=pair);} const shield=next++;for(const w of wires.filter(w=>w.a.p===1&&['E3','H2','H3','H4'].includes(T[parts[0].t].pins[w.a.i].p)))w.wfShield={id:shield,part:'Trigger shielding example · verify cable and termination',from:'ECU',to:'Remote end TBD'};
+ /* Vehicle side from the owner's E90 LS circuit names. Pins/colors/gauges are SUGGESTED; destinations beyond the bulkhead are examples. */
+ const VEH=[[/^CLT/,'clt','sens2','Coolant temp sensor (CLT)','SIG'],[/^IAT/,'iat','sens2','Intake air temp sensor (IAT)','SIG'],[/^AIN 4/,'oil','sens3','Oil pressure sensor (AIN4)','SIG'],[/^AIN 2/,'ntp','sens3','Nitrous pressure sensor (AIN2)','SIG'],[/^AIN 6/,'fpr','sens3','Fuel pressure sensor (AIN6)','SIG'],[/^DIN 5/,'flex','flex','Flex fuel sensor (DIN5)','SIG'],[/^DIN 1/,'brk','bmwx60001if','BMW X60001 DME box (brake, fan)','38'],[/^GPO 5/,'fan','bmwx60001if','BMW X60001 DME box (brake, fan)','20'],[/^GPO 6/,'ac','relay','A/C compressor relay','85'],[/^GPO 4/,'ssr','ssr','Nitrous SSR (GPO4 trigger)','3'],[/^CAN H/,'canh','cansplit','Installed CAN1 DT splitter','H-IN'],[/^CAN L/,'canl','cansplit','Installed CAN1 DT splitter','L-IN']];
+ {
+  const devs=new Map(),loomV=12,nodeOf=id=>g.nodes.find(n=>n.partId===id);
+  const bo=[addNode(g,1040,180,'Vehicle breakout · main'),addNode(g,1040,490,'Vehicle breakout · aux')];
+  addSegment(g,nodeOf(4).id,bo[0].id);Object.assign(g.segments.at(-1),{label:'L03 · Vehicle side (main)',sleeve:'DR-25'});
+  addSegment(g,nodeOf(6).id,bo[1].id);Object.assign(g.segments.at(-1),{label:'L03 · Vehicle side (aux)',sleeve:'DR-25'});
+  const row=[0,0];let vn=1;
+  for(const w of [...wires]){
+   const idx=w.a.p===1?0:1,mate=idx?parts[5]:parts[3],fn=String(T[parts[idx].t].pins[w.a.i].l||'');
+   const m=VEH.find(v=>v[0].test(fn));if(!m)continue;
+   let d=devs.get(m[1].replace(/^(brk|fan)$/,'x60'));
+   const key=m[1].replace(/^(brk|fan)$/,'x60');
+   if(!d){const part={id:parts.length+1,t:m[2],name:m[3],x:idx?1460:1260,y:(idx?330:40)+row[idx]*80,rotation:0,pl:{}};row[idx]++;parts.push(part);const n=addNode(g,part.x,part.y,part.name,part.id);addSegment(g,bo[idx].id,n.id);Object.assign(g.segments.at(-1),{label:''});devs.set(key,d=part);}
+   const pi=T[d.t].pins.findIndex(p=>String(p.p)===m[4]);if(pi<0)continue;
+   wires.push(mkW({p:mate.id,i:w.b.i},{p:d.id,i:pi},{id:next++,wid:'V'+String(vn++).padStart(2,'0'),sig:w.sig,awg:w.awg,color:w.color,loom:loomV,measuredOnly:true,wfSuggested:true,auditStatus:'unverified',auditNotes:'Vehicle-side destination taken from the owner E90 circuit list; pin, color and gauge are suggested, not verified.'}));
+  }
+ }
+ {const vc=wires.filter(w=>/^V/.test(w.wid||'')&&/^CAN [HL]$/.test(w.sig));if(vc.length===2){const t=next++;vc.forEach(w=>w.tw=t);}}
  const i=T[parts[0].t].pins.findIndex(p=>p.p==='M4');wires.push(mkW({p:1,i},{p:7,i:0},{id:next++,wid:'P01',sig:'ECU fused supply (rating TBD)',awg:16,color:'RED',measuredOnly:true,auditStatus:'unverified',auditNotes:notice}));
- UNDO.length=0;REDO.length=0;syncUndo();Object.assign(S,{parts,wires,looms:[{id:10,name:'Main bulkhead',cover:'DR-25',color:'#343b40'},{id:11,name:'Aux bulkhead',cover:'DR-25',color:'#343b40'}],nid:next,zones:[],circuitBook:[],wfBranches:[],examples:false,pro:null,wfFormboard:g,wfVaultId:null,wfProjectName:name,wfDemoNotice:notice,tab:'formboard'});
- resetDesignSelection();view.cam=null;view.look='loom';view.page='design';view.advanced=false;save();root.WFPro?.saveNamed({asNew:true,name});render();
+ UNDO.length=0;REDO.length=0;syncUndo();Object.assign(S,{parts,wires,looms:[{id:10,name:'Main bulkhead',cover:'DR-25',color:'#343b40'},{id:11,name:'Aux bulkhead',cover:'DR-25',color:'#343b40'},{id:12,name:'Vehicle side · E90 LS',cover:'DR-25',color:'#2f4650'}],nid:next,zones:[],circuitBook:[],wfBranches:[],examples:false,pro:null,wfFormboard:g,wfVaultId:null,wfProjectName:name,wfDemoNotice:notice,tab:'formboard'});
+ resetDesignSelection();view.demoFit=true;view.cam=null;view.look='loom';view.page='design';view.advanced=false;save();root.WFPro?.saveNamed({asNew:true,name});render();
 }
 function quickWirePanel(g){
  const ps=g.nodes.filter(n=>n.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node);

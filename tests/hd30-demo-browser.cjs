@@ -1,4 +1,5 @@
-const assert=require('node:assert/strict');
+const real=require('node:assert/strict');let assertions=0;
+const assert=Object.fromEntries(['equal','deepEqual','ok','match','notEqual'].map(k=>[k,(...a)=>{assertions++;return real[k](...a);}]));
 module.exports=async function(browser,url){
  const ctx=await browser.newContext({viewport:{width:1180,height:820},hasTouch:true,deviceScaleFactor:2,acceptDownloads:true});
  const page=await ctx.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
@@ -7,14 +8,16 @@ module.exports=async function(browser,url){
  try{
  await page.goto(url.split('#')[0]+'#studio');await page.waitForSelector('.ds-shell');
  await page.locator('#dsDemoSelect').selectOption('ls');
- assert.deepEqual(await page.evaluate(()=>[S.parts.length,S.parts.filter(p=>p.mate).length,S.looms.length]),[7,4,2]);
+ assert.deepEqual(await page.evaluate(()=>[S.parts.length>7,S.parts.filter(p=>p.mate).length,S.looms.length,S.wires.filter(w=>/^V/.test(w.wid||'')).length>8]),[true,4,3,true]);
  await action('quickWire');
  await page.locator('[data-quick-connector="Source"]').selectOption(await page.evaluate(()=>S.wfFormboard.nodes.find(n=>n.partId===4).id));
  await page.locator('[data-quick-connector="Destination"]').selectOption(await page.evaluate(()=>S.wfFormboard.nodes.find(n=>n.partId===6).id));
  const before=await count();
- await page.locator('[data-fb="quickPin"][data-side="Source"]').first().tap();
- await page.locator('[data-fb="quickPin"][data-side="Destination"]').first().tap();
+ await page.locator('[data-fb="quickPin"][data-side="Source"]:not([disabled])').first().tap();
+ await page.locator('[data-fb="quickPin"][data-side="Destination"]:not([disabled])').first().tap();
  assert.equal(await count(),before+1);
+ await page.locator('[data-fb="quickPin"][data-side="Source"]:not([disabled])').first().tap();await page.locator('[data-fb="quickPin"][data-side="Destination"]:not([disabled])').first().tap();
+ assert.equal(await count(),before+2,'second consecutive wire needs only two taps');
  await action('quickEdit');await page.waitForSelector('#weId');
  await page.locator('#dsDemoSelect').selectOption('hd30');
  assert.deepEqual(await page.evaluate(()=>[S.parts.length,S.wires.length,T[S.parts[0].t].pins.length,S.wires.filter(w=>w.loom).length,S.parts[1].mate,S.parts[2].mate]),[4,48,48,47,3,2]);
@@ -29,6 +32,17 @@ module.exports=async function(browser,url){
  await page.reload();await page.waitForSelector('.ds-shell');assert.equal(await count(),48);
  await action('studioShop');for(const id of ['shopPdf','shopCsv','bom']){const [dl]=await Promise.all([page.waitForEvent('download'),action(id)]);assert.ok(await dl.path());}
  await action('design');await action('clearDesign');assert.equal(await count(),0);await action('designUndo');assert.equal(await count(),48);await action('designRedo');assert.equal(await count(),0);
+ await page.locator('#dsDemoSelect').selectOption('ls');await page.waitForTimeout(300);
+ await page.reload();await page.waitForSelector('.ds-shell');
+ assert.ok(await page.evaluate(()=>S.wires.filter(w=>/^V/.test(w.wid||'')&&w.awg&&w.color).length>8),'vehicle-side wires keep gauge and color after reload');
+ assert.equal(await page.evaluate(()=>S.wires.filter(w=>!w.color).length),0);
+ await action('studioShop');for(const id of ['shopPdf','shopCsv','bom']){const [dl]=await Promise.all([page.waitForEvent('download'),action(id)]);assert.ok(await dl.path());}
  assert.deepEqual(errors,[]);
  }finally{await ctx.close();}
 };
+module.exports.assertions=()=>assertions;
+if(require.main===module)(async()=>{
+ const {chromium}=require('playwright');const b=await chromium.launch();
+ try{await module.exports(b,process.argv[2]||'http://127.0.0.1:8765/index.html');console.log('PASS hd30 demo browser: '+assertions+' assertions executed');}
+ catch(e){console.error(e.stack);process.exitCode=1;}finally{await b.close();}
+})();
