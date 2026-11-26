@@ -1,26 +1,19 @@
-# Handoff (checkpoint: relay pigtails, Loom/Individual wires, breakouts)
+# Handoff: first five minutes + manufacturer export
 
-Branch: feature/loomwright-assembly
+Branch: feature/first-five-minutes. Test: tests/first-five-minutes-browser.cjs (iPad 1024x768 touch, reloads, downloads PDF + CSV).
 
-## Passed (tests/branch-harness-browser.cjs, iPad touch)
-- 4/5-pin relay+socket pigtails: each lead selectable, lands on a DT cavity, unused leads markable.
-- Loom / Individual wires toggle. Same harness, IDs, lengths and covering kept in both views.
-- Breakouts: right-click or 520 ms long-press menu; Add breakout splits a segment, flags both new pieces "needs measure"; drag moves only conductors, wire lengths stay.
-- Reload keeps wires, unused lead, breakout and flags.
-- Wire schedule CSV: both ends per wire; L30 = "Supplied lead", M30 = "Cut wire".
-- E90 project still loads (59 parts / 94 wires).
-
-## Where to tap
-- Long-press or right-click a segment: Add breakout / Mark unused.
-- Top toggle: Loom | Individual wires. Tap a wire in Individual view for its editor.
-- Tap near a lead tip selects the lead, not the wire; tap mid-wire.
+## New on the main canvas
+- Blank project shows "Add your first connector": search, chips (RACE pigtails, bulkhead, injector, coil), "My own housing" (P/N + cavity labels).
+- Connector panel: Name + Housing P/N + Duplicate (INJ1 -> INJ2). Cavity search (J4, AIN 4). Run wire. Continue from mate (bulkhead other side, or DT mate).
+- Step bar: Place, Make wires, Bundle into loom, Breakout + measure, Export for manufacturer.
+- Tap a cable run -> "Cable run: length + breakout".
+- Export for manufacturer (header + tab): drawing PDF + wire CSV. Lengths = user-entered only (wire length = sum of entered run lengths, else TBD). Unknown P/N, AWG, color, unverified mate mapping go to the TBD list.
 
 ## Needs manufacturer confirmation (TBD)
-- DT04-4P / DT06-4S cavity view and 1:1 mate mapping (assumed, shown in exports).
-- Relay socket lead gauge/colors, MaxxECU Molex numbers and contact map.
+- Injector and coil housings (inj2, coil3) have no part numbers or pin functions yet.
+- DT mate cavity mapping assumed 1:1. MaxxECU Molex numbers.
 
-## Not done yet
-- Add electrical splice action, true wire choice per branch.
-- Five parts: Leash 1HO, Dual 70X, Big Dog 1, RIFE SSR, P3 BMW E9X gauge.
-- Complete-circuit test + electrical checks.
-- Loomwright rename, logo, docs page.
+## Not done
+- Select several wires and bundle only those (Bundle currently routes every unrouted wire).
+- PDF drawing labels can overlap on very short runs.
+- Parts library expansion, splice action, circuit test, Loomwright rename/logo/docs.

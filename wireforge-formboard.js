@@ -875,7 +875,7 @@ const palette=[
  ['mxrace48','C1 · RACE main','48 cavities'],['mxrace32','C2 · RACE auxiliary','32 cavities'],
  ['mxpig48','C1 · RACE pigtail','48 prewired leads'],['mxpig32','C2 · RACE pigtail','32 prewired leads'],
  ['dt04_4p','DT04-4P receptacle','DT 4-way'],['dt06_4s','DT06-4S plug','DT 4-way'],['load2','Device','2 terminals'],['hd30_47','HD30 · bulkhead','47 positions'],['rp4','4-pin relay + socket','30 85 86 87 leads'],['rp5','5-pin relay + socket','30 85 86 87 87a leads'],['relay4','4-pin relay','Power'],['relay','5-pin relay','Power'],
- ['dual','Dual relay board','Leash'],['e90leash1','Single relay board','Leash'],['fuse6','Fuse box','6 circuits']
+ ['inj2','Injector','2 pins · P/N TBD'],['coil3','Ignition coil','3 pins · P/N TBD'],['dual','Dual relay board','Leash'],['e90leash1','Single relay board','Leash'],['fuse6','Fuse box','6 circuits']
 ];
 const toolPaths={parts:'M10 3v14M3 10h14',select:'M4 2l12 9-6 1-3 6z',connect:'M2 14h4c5 0 2-8 8-8h4M2 12v4m16-12v4',pan:'M5 10V6a1 1 0 012 0v4-6a1 1 0 012 0v6-7a1 1 0 012 0v7-5a1 1 0 012 0v6l2-2q2-1 2 1l-3 6q-2 3-5 2l-4-2-3-5q-1-2 1-2z',flying:'M2 6h6l4-3h6M2 10h16M2 14h6l4 3h6'};
 function studioTool(action,label,active=false){
@@ -894,6 +894,84 @@ function previewLoom(){
  run('M222 94 C355 94 439 58 615 58',390,79,'MAIN')+run('M222 211 C374 211 463 199 615 199',495,203,'AUX')+
  fit(222,94,180,'mxrace48','RACE C1','48-PIN MOLEX')+fit(222,211,180,'mxrace32','RACE C2','32-PIN MOLEX')+
  fit(615,58,0,'hd30_47','BH-A','HD30  /  47 POS')+fit(615,199,0,'hd30_47','BH-B','HD30  /  47 POS')+'</svg>';
+}
+/* ---------- First five minutes: find a part, name it, bundle, export for the shop ---------- */
+const pnOf=p=>{const t=T[p?.t];const v=(p?.wfPN||'').trim();if(v)return v;return t?.pn&&!/cavit|position|prewired|blank|leads?$/i.test(t.pn)?t.pn:'';};
+const connLabel=(g,p)=>p?String(g.nodes.find(n=>n.partId===p.id)?.label||p.name):'TBD';
+function incName(name){const m=/^(.*?)(\d+)$/.exec(String(name||'').trim());return m?m[1]+(Number(m[2])+1):(String(name||'Part').trim()+' 2');}
+function partChoices(q){
+ const toks=String(q||'').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).map(x=>x.replace(/s$/,''));
+ const label=new Map(palette.map(x=>[x[0],x[1]+' '+x[2]]));
+ const all=Object.values(T).filter(t=>t&&!t.node&&!/^(cust|bulk)\d/.test(t.id));
+ return all.map(t=>{const hay=(t.name+' '+(t.sub||'')+' '+(t.pn||'')+' '+t.id+' '+(label.get(t.id)||'')).toLowerCase();return{t,score:toks.filter(k=>hay.includes(k)).length};})
+  .filter(r=>!toks.length?palette.some(x=>x[0]===r.t.id):r.score>0).sort((a,b)=>b.score-a.score||a.t.name.localeCompare(b.t.name)).slice(0,8).map(r=>r.t);
+}
+function firstResults(){
+ return partChoices(view.firstQ).map(t=>'<button type="button" class="ds-part" data-fb="startPlace" data-type="'+h(t.id)+'"><svg viewBox="-4 -35 122 70" aria-hidden="true">'+art.hardware(t.fam,t.id)+'</svg><span>'+h(t.name)+'<small>'+h(t.sub||(t.pins.length+' cavities'))+'</small></span></button>').join('')||'<p class="muted">No match. Try another word, or define your own housing.</p>';
+}
+function firstCard(){
+ const chips=[['RACE pigtail','MaxxECU RACE C1/C2 pigtails'],['bulkhead','Bulkhead'],['injector','Injector'],['coil','Coil']].map(c=>'<button type="button" class="ds-chip" data-fb="firstChip" data-q="'+h(c[0])+'">'+h(c[1])+'</button>').join('')+'<button type="button" class="ds-chip" data-fb="firstCustom">My own housing</button>';
+ const custom=view.firstCustom?'<div class="ds-customform"><label>Housing part number<input id="usrPN" placeholder="e.g. DT04-2P"></label><label>Cavity labels, comma separated<input id="usrLabels" placeholder="1, 2  or  A, B, C"></label><label>Name (optional)<input id="usrName" placeholder="INJ1"></label><div class="fb-actions">'+btn('firstMake','Create and place','fb-primary')+'</div></div>':'';
+ return '<div class="ds-first"><h2>Add your first connector</h2><p>Search, then tap a result and tap the canvas to place it.</p>'+
+  '<input id="dsFirstQ" type="search" placeholder="Search: RACE pigtail, injector, coil, bulkhead" value="'+h(view.firstQ||'')+'" autocomplete="off"><div class="ds-chips">'+chips+'</div>'+custom+'<div id="dsFirstRes" class="ds-firstres">'+firstResults()+'</div>'+
+  '<div class="ds-first-or">'+btn('loom','Or open the sample E90 layout')+'</div></div>';
+}
+function stepsBar(g,report){
+ const parts=g.nodes.filter(n=>n.partId!=null).length,runs=g.segments.length,brk=g.nodes.filter(n=>n.partId==null).length,measured=g.segments.some(s=>positive(s.length));
+ const st=[['1 Place',parts>1,'parts'],['2 Make wires',S.wires.length>0,'runHelp'],['3 Bundle into loom',S.wires.length>0&&report.rows.every(r=>r.route?.length),'bundle'],['4 Breakout + measure',brk>0&&measured,'breakHelp'],['5 Export for manufacturer',false,'studioShop']];
+ return '<div class="ds-steps" role="group" aria-label="Build steps">'+st.map(x=>'<button type="button" data-fb="'+x[2]+'" class="'+(x[1]?'done':'')+'">'+(x[1]?'✓ ':'')+h(x[0])+'</button>').join('')+'</div>';
+}
+function shopModel(g,report){
+ const bund=new Map(report.bundles.map(b=>[b.s.id,b.members.length]));
+ const label=id=>{const n=g.nodes.find(n=>n.id===id);return n?String(n.label||part(n.partId)?.name||'Breakout'):'?';};
+ const endC=e=>{const p=part(e.p);return p?{c:connLabel(g,p),pn:pnOf(p)||'TBD',cav:(T[p.t]?.pins[e.i]?.p||'TBD')+(e.s?' '+faceLabel(p,e.s):'')}:{c:'TBD',pn:'TBD',cav:'TBD'};};
+ const notes=[],parts=g.nodes.filter(n=>n.partId!=null&&part(n.partId));
+ const noPn=parts.filter(n=>!pnOf(part(n.partId)));
+ if(noPn.length)notes.push('Housing part number TBD: '+noPn.map(n=>n.label||part(n.partId).name).join(', '));
+ const mated=parts.filter(n=>part(n.partId).mate);
+ if(mated.length)notes.push('Mate cavity mapping is assumed 1:1 and NOT verified against manufacturer drawings (TBD): '+mated.map(n=>n.label||part(n.partId).name).join(', '));
+ const segs=g.segments.map(s=>({id:s.id,a:s.a,b:s.b,fromLabel:label(s.a),toLabel:label(s.b),length:positive(s.length)?Number(s.length):null,wires:bund.get(s.id)||0,sleeve:s.sleeve||'',label:s.label||''}));
+ const un=segs.filter(s=>s.length==null);
+ if(un.length)notes.push('Cable run length TBD (not measured): '+un.map(s=>s.fromLabel+' to '+s.toLabel).join('; '));
+ const by=new Map(report.rows.map(r=>[r.w,r]));
+ const rows=S.wires.map(w=>{
+  const a=endC(w.a),b=endC(w.b),[base,stripe]=String(w.color||'').split('/');
+  return{id:w.wid||String(w.id),awg:w.awg||'TBD',color:w.color||'TBD',base:base||'TBD',stripe:stripe||'',aConn:a.c,aPn:a.pn,aCav:a.cav,bConn:b.c,bPn:b.pn,bCav:b.cav,len:positive(w.len)?String(w.len):(rt=>rt.length&&rt.every(x=>positive(x.length))?String(Math.round(rt.reduce((t,x)=>t+Number(x.length),0)*100)/100):'TBD')(by.get(w)?.route||[]),source:w.wfSupplied?'Supplied lead':'Cut wire',mate:[w.a,w.b].some(e=>part(e.p)?.mate)?'TBD - assumed 1:1, unverified':'',routed:!!by.get(w)?.route?.length};
+ });
+ const c=f=>rows.filter(f).length;
+ if(c(r=>r.awg==='TBD'))notes.push(c(r=>r.awg==='TBD')+' wire(s) have AWG TBD');
+ if(c(r=>r.color==='TBD'))notes.push(c(r=>r.color==='TBD')+' wire(s) have color TBD');
+ if(c(r=>r.len==='TBD'))notes.push(c(r=>r.len==='TBD')+' wire(s) have no measured length (TBD)');
+ if(c(r=>!r.routed))notes.push(c(r=>!r.routed)+' wire(s) are not bundled into a loom yet');
+ return{project:String(S.wfProjectName||S.projectName||'Harness'),date:new Date().toISOString().slice(0,10),
+  nodes:g.nodes.map(n=>{const p=part(n.partId);return{id:n.id,x:n.x,y:n.y,kind:p?'part':'breakout',label:String(n.label||p?.name||'Breakout'),pn:p?pnOf(p)||'TBD':'',cav:p?T[p.t]?.pins.length:0};}),
+  segments:segs,breakouts:g.nodes.filter(n=>n.partId==null).map(n=>({label:String(n.label)})),
+  parts:parts.map(n=>{const p=part(n.partId);return{label:String(n.label||p.name),name:T[p.t]?.name||p.t,pn:pnOf(p),cav:T[p.t]?.pins.length,mate:p.mate?connLabel(g,part(p.mate)):''};}),rows,notes};
+}
+function saveBlob(name,data,type){
+ const bytes=new Uint8Array(data.length);for(let i=0;i<data.length;i++)bytes[i]=data.charCodeAt(i)&255;
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([type==='text/csv'?data:bytes],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function exportPdf(g,report){saveBlob('harness-bench-manufacturer.pdf',WF_EXPORT.pdf(shopModel(g,report)),'application/pdf');}
+function exportShopCsv(g,report){
+ const m=shopModel(g,report),q=v=>{v=String(v??'');if(/^[=+\-@\t\r]/.test(v))v="'"+v;return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+ saveBlob('harness-bench-manufacturer.csv',[WF_EXPORT.csvHeaders,...WF_EXPORT.csvRows(m)].map(r=>r.map(q).join(',')).join('\n'),'text/csv');
+}
+function shopPanel(g,report){
+ const m=shopModel(g,report);
+ return '<div class="ds-report ds-shop"><div class="ds-panelhead"><h3>Export for manufacturer</h3></div>'+
+  '<p>One drawing PDF and one wire CSV. Each connector shows its housing part number and each cable run shows the length you entered. Anything not entered or not verified prints as TBD.</p>'+
+  '<div class="fb-actions"><button type="button" class="fb-primary" data-fb="shopPdf">Download drawing PDF</button><button type="button" class="fb-primary" data-fb="shopCsv">Download wire CSV</button></div>'+
+  '<h4>'+m.parts.length+' connectors · '+m.segments.length+' cable runs · '+m.rows.length+' wires</h4>'+
+  '<h4>Carried into the quote as TBD</h4>'+(m.notes.length?'<ul>'+m.notes.map(t=>'<li>'+h(t)+'</li>').join('')+'</ul>':'<p>Nothing open.</p>')+'</div>';
+}
+function bundleLoom(g){
+ let n=0;
+ for(const w of S.wires){
+  const a=g.nodes.find(x=>x.partId===w.a.p),b=g.nodes.find(x=>x.partId===w.b.p);
+  if(a&&b&&a.id!==b.id&&path(g,a.id,b.id)===null&&addSegment(g,a.id,b.id))n++;
+ }
+ return n;
 }
 function studioParts(){
  return '<aside class="ds-panel ds-palette"><div class="ds-panelhead"><h3>Place a part</h3>'+btn('dismiss','Close')+'</div>'+
@@ -992,8 +1070,10 @@ function makeWire(g,src,dst){
  return w;
 }
 function cavityGrid(p,face,run){
- const t=T[p.t];
- return '<div class="ds-cavs">'+t.pins.map((pin,i)=>{
+ const t=T[p.t];view.cavCtx={p,face,run};
+ const q=String(view.cavQ||'').toLowerCase().split(/\s+/).filter(Boolean);
+ return (t.pins.length>12?'<input id="dsCavQ" type="search" class="ds-cavq" placeholder="Find a cavity: J4, AIN 4, IGN 1" value="'+h(view.cavQ||'')+'" autocomplete="off">':'')+'<div class="ds-cavs" id="dsCavs">'+t.pins.map((pin,i)=>{
+  if(q.length&&!q.every(k=>(pin.p+' '+(plabel(p,i)||'')).toLowerCase().includes(k)))return '';
   const ws=cavOcc(p,i,face),fn=plabel(p,i)||'';
   const sel=view.cav&&view.cav.pid===p.id&&view.cav.i===i&&(view.cav.s||'')===(face||'');
   const st=ws.length?wireName(ws[0]):p.wfUnused?.[i]?'Unused':isLead(p,i)?'Loose lead':'Open';
@@ -1004,6 +1084,9 @@ function mateSel(p){
  const w=T[p.t]?.mateWith;if(!w)return '';
  const opts=S.parts.filter(q=>q.t===w&&(!q.mate||q.mate===p.id));
  return '<label class="ds-mate">Mated with<select id="dsMate"><option value="">Not mated</option>'+opts.map(q=>option(q.id,q.name,p.mate)).join('')+'</select></label>'+(p.mate?'<p class="muted">Cavity n joins cavity n. The mate adds no wire to the cut list.</p>':'');
+}
+function idRow(n,p){
+ return '<div class="ds-idrow"><label>Name<input id="dsName" value="'+h(n.label||p.name)+'" placeholder="INJ1"></label><label>Housing P/N<input id="dsPN" value="'+h(p.wfPN||'')+'" placeholder="'+h(pnOf(p)||'TBD')+'"></label>'+btn('partSave','Save')+btn('partDup','Duplicate')+'</div>';
 }
 function wirePanel(g,n){
  const p=part(n.partId),t=T[p.t],run=view.run,srcNode=run&&g.nodes.find(x=>x.id===run.nid),srcPart=part(srcNode?.partId);
@@ -1023,12 +1106,20 @@ function wirePanel(g,n){
  const here=S.wires.filter(w=>w.a.p===p.id||w.b.p===p.id);
  const list=here.length&&!run?'<div class="ds-wirelist"><h4>Wires on this connector</h4>'+here.map(w=>'<button type="button" data-fb="selWire" data-wire="'+w.id+'"><b>'+h(w.wid||'#'+w.id)+'</b> '+h(w.sig||'')+'<small>'+h(endWho(w.a))+' → '+h(endWho(w.b))+'</small></button>').join('')+'</div>':'';
  return '<aside class="ds-panel ds-wirepanel"><div class="ds-panelhead"><h3>'+h(n.label||p.name)+'</h3>'+btn('dismiss','Close')+'</div>'+
-  '<p class="ds-sub">'+h(t.name)+'</p>'+mateSel(p)+tabs+cavityGrid(p,face,run)+msg+list+
+  '<p class="ds-sub">'+h(t.name)+'</p>'+idRow(n,p)+mateSel(p)+tabs+cavityGrid(p,face,run)+msg+list+
   '<details class="ds-more"><summary>Component details</summary>'+nodeInspector(n)+'</details></aside>';
 }
 function pickPanel(g){
  const ws=(view.pick||[]).map(id=>S.wires.find(w=>w.id===id)).filter(Boolean);
- return '<aside class="ds-panel ds-wirepanel"><div class="ds-panelhead"><h3>'+ws.length+' wires here</h3>'+btn('dismiss','Close')+'</div><p class="ds-hint">Choose a wire.</p><div class="ds-wirelist">'+ws.map(w=>'<button type="button" data-fb="selWire" data-wire="'+w.id+'"><b>'+h(w.wid||'#'+w.id)+'</b> '+h(w.sig||'')+'<small>'+h(endWho(w.a))+' → '+h(endWho(w.b))+'</small></button>').join('')+'</div><div class="fb-actions">'+btn('loomEdit','Edit loom')+'</div></aside>';
+ return '<aside class="ds-panel ds-wirepanel"><div class="ds-panelhead"><h3>'+ws.length+' wires here</h3>'+btn('dismiss','Close')+'</div><p class="ds-hint">Choose a wire, or edit the cable run itself.</p><div class="fb-actions">'+btn('editRun','Cable run: length + breakout','fb-primary')+'</div><div class="ds-wirelist">'+ws.map(w=>'<button type="button" data-fb="selWire" data-wire="'+w.id+'"><b>'+h(w.wid||'#'+w.id)+'</b> '+h(w.sig||'')+'<small>'+h(endWho(w.a))+' → '+h(endWho(w.b))+'</small></button>').join('')+'</div><div class="fb-actions">'+btn('loomEdit','Edit loom')+'</div></aside>';
+}
+function contTarget(w){
+ for(const e of [w.b,w.a]){
+  const p=part(e.p),t=T[p?.t];if(!p)continue;
+  if(t.bulk){const s=(e.s||'L')==='L'?'R':'L';return{p,i:e.i,s};}
+  if(p.mate&&part(p.mate)){const q=part(p.mate);if(q.id!==w.a.p&&q.id!==w.b.p||true)return{p:q,i:e.i,s:''};}
+ }
+ return null;
 }
 function wireEditor(g,w){
  const d=view.wdraft&&view.wdraft.id===w.id?view.wdraft:(view.wdraft={id:w.id,a:{...w.a},b:{...w.b}});
@@ -1046,7 +1137,7 @@ function wireEditor(g,w){
  const ch=chain(w);
  const trace=ch.length>1?'<div class="ds-chain"><h4>Through the connector</h4>'+ch.map((x,k)=>'<div'+(x===w?' class="cur"':'')+'><b>'+h(x.wid||'#'+x.id)+'</b> '+h(endWho(x.a))+' → '+h(endWho(x.b))+'<small>'+(positive(x.len)?num(x.len)+' in':'length TBD')+'</small></div>').join('')+'<p class="muted">The mated connector joins these electrically and adds no wire to the cut list.</p></div>':'';
  return '<aside class="ds-panel ds-wireeditor"><div class="ds-panelhead"><h3>Wire '+h(w.wid||'#'+w.id)+'</h3>'+btn('wireDone','Done')+'</div>'+
-  '<div class="ds-ends"><div><small>From</small><b>'+h(endWho(w.a))+'</b></div><span aria-hidden="true">→</span><div><small>To</small><b>'+h(endWho(w.b))+'</b></div></div>'+(mateNote(w)?'<p class="ds-assume"><b>Mate assumption.</b> '+h(mateNote(w))+'</p>':'')+
+  '<div class="ds-ends"><div><small>From</small><b>'+h(endWho(w.a))+'</b></div><span aria-hidden="true">→</span><div><small>To</small><b>'+h(endWho(w.b))+'</b></div></div>'+'<div class="fb-actions">'+(contTarget(w)?btn('contMate','Continue from mate','fb-primary'):'')+(graph().segments.some(x=>x.id===view.chosen?.id)?btn('editRun','Cable run: length + breakout'):'')+'</div>'+(mateNote(w)?'<p class="ds-assume"><b>Mate assumption.</b> '+h(mateNote(w))+'</p>':'')+
   '<div class="fb-unit">'+input('Wire ID','weId',w.wid||'','W01')+input('Circuit','weSig',w.sig||'','Circuit name')+'</div>'+
   '<div class="fb-unit">'+'<label>Color<input id="weColor" list="weColors" value="'+h(baseOf(w.color))+'" placeholder="TBD"></label><datalist id="weColors">'+Object.keys(typeof COLORS!=='undefined'?COLORS:{}).filter(k=>k.length===3).map(k=>'<option value="'+k+'">').join('')+'</datalist>'+input('Stripe','weStripe',stripeOf(w.color),'None')+'</div>'+
   '<div class="fb-unit">'+field('Gauge (AWG)','weAwg',w.awg||'','TBD','1')+field('Measured length (in)','weLen',w.len||'','TBD')+'</div>'+
@@ -1096,15 +1187,15 @@ function studioRender(el,g,report){
  const n=g.nodes.find(n=>n.id===view.chosen?.id),seg=report.bundles.find(b=>b.s.id===view.chosen?.id);
  const selected=n||seg,empty=!g.nodes.length;
  const name=h(S.wfProjectName||S.projectName||'E90 LS');
- const toolbar='<div class="ds-modes" aria-label="Workspace views">'+btn('design','Design',page==='design'?'active':'')+btn('studioWiring','Wiring',page==='studioWiring'?'active':'')+btn('orbit','3D',page==='orbit'?'active':'')+btn('studioBom','BOM',page==='studioBom'?'active':'')+btn('studioCuts','Cut list',page==='studioCuts'?'active':'')+'</div>';
+ const toolbar='<div class="ds-modes" aria-label="Workspace views">'+btn('design','Design',page==='design'?'active':'')+btn('studioWiring','Wiring',page==='studioWiring'?'active':'')+btn('orbit','3D',page==='orbit'?'active':'')+btn('studioBom','BOM',page==='studioBom'?'active':'')+btn('studioCuts','Cut list',page==='studioCuts'?'active':'')+btn('studioShop','Export',page==='studioShop'?'active':'')+'</div>';
  const caption=view.run?'Tap the destination connector':view.placing?'Tap the canvas to place '+palette.find(p=>p[0]===view.placing)?.[1]:view.mode==='junction'?'Tap the split location':view.mode==='connect'?'Drag between connector ports':'';
  const tools='<div class="ds-rail">'+studioTool('parts','Parts',view.panel==='parts')+studioTool('select','Select',view.mode==='select')+studioTool('connect','Route',view.mode==='connect')+studioTool('pan','Pan',view.mode==='pan')+studioTool('flying','Wires')+'</div>';
  const wsel=view.wsel&&S.wires.find(w=>w.id===view.wsel);
  const inspector=wsel&&page==='design'?wireEditor(g,wsel):view.pick&&page==='design'?pickPanel(g):view.landing?landingPanel(g):page==='design'&&n?.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node?wirePanel(g,n):page==='design'&&selected?'<aside class="ds-panel ds-inspector"><div class="ds-panelhead"><h3>'+h(n?captionForNode(n):seg.s.label||'Cable run')+'</h3>'+btn('dismiss','Close')+'</div>'+(n?.partId&&['mxrace32','mxrace48'].includes(part(n.partId)?.t)?btn('landStart','Land a wire','fb-primary'):'')+(n?nodeInspector(n):branchInspector(seg))+'</aside>':'';
- const preview=empty&&page==='design'&&!view.placing&&view.mode==='select'?'<div class="ds-start">'+previewLoom()+'<div class="ds-start-actions"><span>Proposed E90 loom</span>'+btn('loom','Use this layout','fb-primary')+btn('parts','Place my own parts')+'</div></div>':'';
+ const preview=empty&&page==='design'&&!view.placing&&view.mode==='select'?'<div class="ds-start ds-start-first">'+firstCard()+'</div>':'';
  const controls='<div class="ds-look" role="group" aria-label="Harness view">'+btn('lookLoom','Loom',view.look!=='wires'?'active':'')+btn('lookWires','Individual wires',view.look==='wires'?'active':'')+'</div><div class="ds-zoom">'+btn('zoomOut','−')+btn('fit','Fit')+btn('zoomIn','+')+'</div>';
- el.innerHTML='<div class="ds-shell fb-workspace"><div class="ds-head"><strong>Harness Bench</strong><span class="ds-project">'+name+'</span><div>'+btn('advanced','Project tools')+'<button type="button" data-tab="project">Overview</button></div></div>'+
- '<div class="ds-desk">'+toolbar+(stage?canvas()+preview+(page==='design'?tools:'')+(caption?'<div class="ds-prompt">'+h(caption)+' '+btn('dismiss','Cancel')+'</div>':'')+
+ el.innerHTML='<div class="ds-shell fb-workspace"><div class="ds-head"><strong>Harness Bench</strong><span class="ds-project">'+name+'</span><div>'+btn('studioShop','Export for manufacturer','fb-primary')+btn('advanced','Project tools')+'<button type="button" data-tab="project">Overview</button></div></div>'+
+ '<div class="ds-desk">'+toolbar+(page==='design'&&!empty?stepsBar(g,report):'')+(page==='studioShop'?shopPanel(g,report):stage?canvas()+preview+(page==='design'?tools:'')+(caption?'<div class="ds-prompt">'+h(caption)+' '+btn('dismiss','Cancel')+'</div>':'')+
  (view.panel==='parts'&&page==='design'?studioParts():inspector)+controls:page==='studioWiring'?wiringSheet(g):'<div class="ds-report"><div class="ds-panelhead"><h3>'+(page==='studioBom'?'Bill of materials':'Wire cut list')+'</h3>'+btn(page==='studioBom'?'bom':'cut','Cut list CSV')+(page==='studioBom'?'':btn('schedule','Wire schedule CSV'))+'</div>'+studioReport(page,report,g)+'</div>')+
  '</div><div class="ds-foot"><b>Formboard</b><span>'+g.nodes.filter(n=>n.partId!=null).length+' parts &nbsp;·&nbsp; '+g.segments.length+' cable runs</span><span>'+ (page==='orbit'?'Drag to orbit':'Dimensions in inches')+'</span></div></div>';
  if(stage){renderScene(g,report);bindCanvas(g,report);}
@@ -1422,6 +1513,8 @@ function printPack(g,report){
  w.print();
 }
 
+document.addEventListener('input',e=>{if(e.target.id==='dsCavQ'&&view.cavCtx){view.cavQ=e.target.value;const c=view.cavCtx,tmp=document.createElement('div');tmp.innerHTML=cavityGrid(c.p,c.face,c.run);const g=tmp.querySelector('#dsCavs');if(g&&$('dsCavs'))$('dsCavs').replaceWith(g);}
+ if(e.target.id==='dsFirstQ'){view.firstQ=e.target.value;const r=$('dsFirstRes');if(r)r.innerHTML=firstResults();}});
 document.addEventListener('click',e=>{
  const wirepart=e.target.closest('#t-formboard [data-wirepart]');
  if(wirepart)return pinSchedule(part(wirepart.dataset.wirepart));
@@ -1438,14 +1531,45 @@ document.addEventListener('click',e=>{
  if(action==='advanced'||action==='studio'){view.advanced=action==='advanced';view.page='design';view.panel=null;view.placing=null;render();return;}
  if(action==='parts'){view.panel=view.panel==='parts'?null:'parts';view.placing=null;render();return;}
  if(action==='dismiss'){view.run=null;view.cav=null;view.wsel=null;view.wdraft=null;view.panel=null;view.chosen=null;view.placing=null;view.origin=null;view.mode='select';render();return;}
- if(action==='startPlace'&&palette.some(p=>p[0]===button.dataset.type)){view.placing=button.dataset.type;view.panel=null;view.chosen=null;view.mode='select';render();return;}
- if(action==='studioBom'||action==='studioCuts'||action==='studioWiring'){view.page=action;view.panel=null;view.placing=null;render();return;}
+ if(action==='startPlace'&&(palette.some(p=>p[0]===button.dataset.type)||T[button.dataset.type])){view.placing=button.dataset.type;view.panel=null;view.chosen=null;view.mode='select';render();return;}
+  if(action==='firstChip'){view.firstQ=button.dataset.q;const i=$('dsFirstQ');if(i)i.value=view.firstQ;const r=$('dsFirstRes');if(r)r.innerHTML=firstResults();return;}
+ if(action==='firstCustom'){view.firstCustom=!view.firstCustom;render();return;}
+ if(action==='firstMake'){
+  const pn=($('usrPN')?.value||'').trim(),labels=($('usrLabels')?.value||'').split(',').map(x=>x.trim()).filter(Boolean),nm=($('usrName')?.value||'').trim();
+  if(!pn||!labels.length||labels.length>60)return toast('Enter a part number and 1 to 60 cavity labels.');
+  const id='usr'+Date.now().toString(36);
+  S.wfCustom=S.wfCustom||{};S.wfCustom[id]={name:pn+' housing',pn,labels,short:nm||pn};makeCustom(id);save();
+  view.placing=id;view.firstCustom=false;render();return;
+ }
+ if(action==='editRun'){view.wsel=null;view.pick=null;view.wdraft=null;render();return;}
+ if(action==='contMate'){
+  const w=S.wires.find(x=>x.id===view.wsel),c=w&&contTarget(w),g0=graph(),nn=c&&g0.nodes.find(x=>x.partId===c.p.id);
+  if(!nn)return;
+  if(cavOcc(c.p,c.i,c.s).length){toast('The cavity on the other side is already used.');return;}
+  view.chosen={id:nn.id};view.wsel=null;view.wdraft=null;view.face=c.s||view.face;view.cav=null;view.run={nid:nn.id,i:c.i,s:c.s};render();return;
+ }
+ if(action==='bundle'){let c=0;mutate(g=>{c=bundleLoom(g);});toast(c?'Bundled '+c+' run'+(c===1?'':'s')+' into the loom. Enter each length.':'Nothing to bundle yet. Run a wire first.');return;}
+ if(action==='runHelp')return toast('Tap a connector, tap a cavity, then Run wire.');
+ if(action==='breakHelp')return toast('Tap a cable run, then Insert breakout. Enter its measured length.');
+ if(action==='shopPdf'){exportPdf(graph(),analyze(graph(),S.wires,S.parts));return;}
+ if(action==='shopCsv'){exportShopCsv(graph(),analyze(graph(),S.wires,S.parts));return;}
+ if(action==='partSave'||action==='partDup'){
+  const n=graph().nodes.find(x=>x.id===view.chosen?.id),p=part(n?.partId);if(!p)return;
+  const nm=($('dsName')?.value||'').trim(),pn=($('dsPN')?.value||'').trim();
+  mutate(g=>{const nn=g.nodes.find(x=>x.id===n.id);if(nm){p.name=nm;nn.label=nm;}p.wfPN=pn;
+   if(action==='partDup'){const d=placeHardware(g,p.t,incName(nm||p.name),Math.round(n.x+90),Math.round(n.y+70),Math.round(n.x+90),Math.round(n.y+70)),q=part(d.partId);q.name=d.label=incName(nm||p.name);q.wfPN=pn;if(p.wfFlying)q.wfFlying=true;view.chosen={id:d.id};}});
+  return;
+ }
+ if(action==='studioShop'){view.page='studioShop';view.panel=null;view.placing=null;render();return;}
+ if(action==='startPlace'&&(palette.some(p=>p[0]===button.dataset.type)||T[button.dataset.type])){view.placing=button.dataset.type;view.panel=null;view.chosen=null;view.mode='select';render();return;}
+ 
+if(action==='studioBom'||action==='studioCuts'||action==='studioWiring'){view.page=action;view.panel=null;view.placing=null;render();return;}
  if(['design','orbit','select','connect','pan','junction','loom'].includes(action)){view.panel=null;view.placing=null;}
  if(action==='bulkheadMockup')return openBulkheadMockup($('t-formboard'));
  const g=graph();
  if(action==='lookLoom'||action==='lookWires'){view.look=action==='lookWires'?'wires':'loom';render();return;}
  if(action==='face'){view.face=button.dataset.s;view.cav=null;render();return;}
- if(action==='cav'){
+ if(action==='cav'){view.cavQ='';
   const nn=g.nodes.find(x=>x.id===view.chosen?.id),p=part(nn?.partId);if(!p)return;
   const i=Number(button.dataset.i),sd=button.dataset.s||'',ws=cavOcc(p,i,sd);
   if(view.run&&view.run.nid!==nn.id){

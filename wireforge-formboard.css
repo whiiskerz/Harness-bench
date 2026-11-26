@@ -220,3 +220,14 @@ body:has(.ds-shell):has(#t-formboard:not([hidden])) {overflow:hidden}
 .ds-menu{position:fixed;z-index:2147483000;min-width:220px;padding:6px;border-radius:14px;background:#1b2327;border:1px solid #33424a;box-shadow:0 12px 32px #0008;display:grid}
 .ds-menu button{min-height:46px;text-align:left;padding:0 14px;border:0;border-radius:10px;background:transparent;color:#eef3f4;font-size:15px}
 .ds-menu button:hover,.ds-menu button:focus-visible{background:#26343a}
+
+.ds-first{max-width:560px;margin:auto;background:#10181b;border:1px solid #2c3a40;border-radius:14px;padding:18px;color:#e8efef}
+.ds-first h2{margin:0 0 4px;font-size:22px}.ds-first input[type=search]{width:100%;min-height:46px;font-size:16px;margin:8px 0}
+.ds-chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}.ds-chip{min-height:40px;padding:0 14px;border-radius:20px;border:1px solid #3d5058;background:#182226;color:inherit}
+.ds-firstres{display:grid;gap:8px;max-height:46vh;overflow:auto}.ds-customform{display:grid;gap:8px;margin:8px 0}.ds-customform input{min-height:44px;font-size:16px}
+.ds-first-or{margin-top:10px;text-align:center}
+.ds-steps{position:absolute;z-index:3;top:66px;left:50%;transform:translateX(-50%);display:flex;gap:6px;max-width:calc(100% - 24px);overflow-x:auto;padding:5px 8px;background:#242626;border-radius:24px;box-shadow:0 3px 14px #171b1b25}.ds-steps button{white-space:nowrap;min-height:40px;padding:0 12px;border-radius:20px;border:1px solid #3d5058;background:#182226;color:#e8efef}.ds-steps button.done{border-color:#4aa37a;color:#9be3c0}
+.ds-idrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0}.ds-idrow input{min-height:42px;font-size:16px;width:100%}.ds-idrow button{min-height:44px}
+.ds-shop{padding:16px;overflow:auto}.ds-shop .fb-actions button{min-height:48px;font-size:16px}.ds-shop li{margin:4px 0}
+.ds-start-first{pointer-events:auto!important}
+.ds-cavq{width:100%;min-height:44px;font-size:16px;margin:6px 0}
