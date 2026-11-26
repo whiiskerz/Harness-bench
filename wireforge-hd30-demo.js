@@ -18,5 +18,12 @@ function plan(input,parts,types,wires){
  function end(n,pin,side){const matches=parts.filter(p=>p.name===n);if(matches.length!==1)throw Error('Connector missing or ambiguous: '+n);const p=matches[0],t=types[p.t],i=t.pins.findIndex(x=>String(x.p)===pin);if(i<0)throw Error('Unknown cavity '+n+' '+pin);if(t.bulk&&!['L','R'].includes(side))throw Error('Bulk connector requires FromSide/ToSide L or R: '+n);const e={p:p.id,i};if(t.bulk)e.s=side;const k=e.p+':'+e.i+':'+(e.s||'');if(used.has(k))throw Error('Duplicate cavity '+n+' '+pin);used.add(k);return e;}
  return rows.map((r,i)=>{if(!r.WireID||ids.has(r.WireID))throw Error('Missing/duplicate wire ID on row '+(i+2));ids.add(r.WireID);const awg=Number(r.AWG),len=Number(r.LengthIn);if(!Number.isInteger(awg)||awg<1||awg>40||!(len>0)||!Number.isFinite(len))throw Error('Invalid AWG/length: '+r.WireID);const a=end(r.From,r.FromPin,r.FromSide),b=end(r.To,r.ToPin,r.ToSide);if(a.p===b.p)throw Error('Same connector: '+r.WireID);return{a,b,wid:r.WireID,sig:r.Circuit,color:r.Color.toUpperCase()+(/^(none)?$/i.test(r.Stripe)?'':'/'+r.Stripe.toUpperCase()),awg,len,measuredOnly:true,auditStatus:'unverified',auditNotes:notice};});
 }
-const api={demoCSV,name,notice,parse,plan};if(typeof module!=='undefined'&&module.exports)module.exports=api;root.WFHD30Demo=api;
+// Planning palette only. Main connector follows the supplied illustrative CSV.
+const auxSpecs={E1:[22,'BLK/WHT'],E2:[22,'WHT/GRN'],E3:[22,'WHT/BLU'],E4:[22,'VIO/GRN'],F1:[22,'VIO/YEL'],F2:[22,'VIO/BLU'],F3:[22,'PNK/RED'],F4:[22,'PNK/BLU'],G1:[20,'ORG/RED'],G2:[20,'ORG/BLK'],G3:[22,'VIO/ORG'],G4:[16,'BLK'],H1:[18,'ORG/WHT'],H2:[18,'ORG/BRN'],H3:[18,'ORG/GRY'],H4:[18,'ORG/BLU']};
+function suggestedSpec(t,cavity){
+ if(t==='mxrace48'||t==='mxpig48'){const r=parse(demoCSV).find(x=>x.FromPin===cavity);if(r)return{awg:Number(r.AWG),color:r.Color+(r.Stripe==='None'?'':'/'+r.Stripe)};}
+ if(t==='mxrace32'||t==='mxpig32'){const r=auxSpecs[cavity];if(r)return{awg:r[0],color:r[1]};}
+ return null;
+}
+const api={demoCSV,name,notice,parse,plan,suggestedSpec};if(typeof module!=='undefined'&&module.exports)module.exports=api;root.WFHD30Demo=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
