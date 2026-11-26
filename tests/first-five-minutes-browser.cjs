@@ -79,8 +79,10 @@ module.exports=async function testFirstFive(browser,url){
   const pb=fs.readFileSync(await pdf.path()),ct=fs.readFileSync(await csv.path(),'utf8');
   assert.equal(pb.slice(0,5).toString(),'%PDF-');
   assert.match(pb.toString('latin1'),/INJ1/);assert.match(pb.toString('latin1'),/42 in/);
+  const pdfText=pb.toString('latin1'),xref=Number(pdfText.match(/startxref\s+(\d+)/)[1]);
+  assert.equal(pdfText.slice(xref,xref+4),'xref','Cross-reference offset points to actual PDF table');
   const lines=ct.trim().split('\n');
-  assert.equal(lines[0],'Wire ID,AWG,Base color,Stripe color,From connector ID,From housing P/N,From cavity,To connector ID,To housing P/N,To cavity,Length in (user-entered),Wire source,Mate mapping,Circuit,Loom,Review status');
+  assert.equal(lines[0],'Wire ID,AWG,Base color,Stripe color,From connector ID,From housing P/N,From cavity,To connector ID,To housing P/N,To cavity,Length in (user-entered),Wire source,Mate mapping,Circuit,Loom,Review status,Conductor material,Insulation,From contact,To contact,Cut allowance in,Twist group,Shield part');
   assert.equal(lines.length,3);
   assert.match(ct,/INJ1/);assert.match(ct,/TBD/);
   if(OUT){fs.copyFileSync(await pdf.path(),OUT+'/harness-bench-manufacturer.pdf');fs.copyFileSync(await csv.path(),OUT+'/harness-bench-manufacturer.csv');fs.writeFileSync(OUT+'/tap-sequence.txt',T.map((s,i)=>(i+1)+'. '+s).join('\n')+'\n');}

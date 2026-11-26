@@ -46,7 +46,7 @@ module.exports=async function testWireWorkflow(browser,url){
   await tapPart('DT04-4P');
   await page.locator('.ds-cav').first().tap();
   await page.fill('#weId','RLY-30');await page.fill('#weColor','RED');await page.fill('#weStripe','WHT');
-  await page.fill('#weAwg','14');await page.fill('#weLen','18.5');
+  await page.selectOption('#weAwg','14');await page.fill('#weLen','18.5');
   await page.getByRole('button',{name:'Save wire'}).tap();
   await page.getByRole('button',{name:'Done'}).tap();
   // plug cavity 1 -> device +
@@ -55,7 +55,7 @@ module.exports=async function testWireWorkflow(browser,url){
   await page.getByRole('button',{name:'Run wire'}).tap();
   await tapPart('2-wire load');
   await page.locator('.ds-cav').first().tap();
-  await page.fill('#weId','DEV-PWR');await page.fill('#weAwg','16');await page.fill('#weLen','42');
+  await page.fill('#weId','DEV-PWR');await page.selectOption('#weAwg','16');await page.fill('#weLen','42');
   await page.getByRole('button',{name:'Save wire'}).tap();
   const trace=await page.locator('.ds-chain').textContent();
   assert.match(trace,/RLY-30/);assert.match(trace,/DEV-PWR/);assert.match(trace,/adds no wire/);

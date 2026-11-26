@@ -25,7 +25,7 @@ module.exports=async function testBranchHarness(browser,url){
   const run=async(from,cav,to,toCav,id,awg,len)=>{
    await tapPart(from);await page.locator('.ds-cav',{hasText:new RegExp('^'+cav)}).first().tap();await page.getByRole('button',{name:'Run wire'}).tap();
    await tapPart(to);await page.locator('.ds-cav').nth(toCav).tap();
-   await page.fill('#weId',id);await page.fill('#weAwg',awg);await page.fill('#weLen',len);
+   await page.fill('#weId',id);await page.selectOption('#weAwg',awg);await page.fill('#weLen',len);
    await page.getByRole('button',{name:'Save wire'}).tap();await page.getByRole('button',{name:'Done'}).tap();
   };
   await run('Relay pigtail','30','DT04-4P',0,'L30','12','20');
@@ -63,7 +63,7 @@ module.exports=async function testBranchHarness(browser,url){
   await tapPart('Relay pigtail');await page.locator('.ds-cav',{hasText:/^85/}).first().tap();await page.getByRole('button',{name:'Run wire'}).tap();
   const dn=await page.evaluate(()=>{const ps=S.parts.filter(p=>p.t==='load2');return S.wfFormboard.nodes.find(n=>n.partId===ps[1].id).id});
   await page.locator('[data-node="'+dn+'"]').first().tap();await page.locator('.ds-cav').first().tap();
-  await page.fill('#weId','L85');await page.fill('#weAwg','18');await page.getByRole('button',{name:'Save wire'}).tap();await page.getByRole('button',{name:'Done'}).tap();
+  await page.fill('#weId','L85');await page.selectOption('#weAwg','18');await page.getByRole('button',{name:'Save wire'}).tap();await page.getByRole('button',{name:'Done'}).tap();
   // lead 86 intentionally unused
   await tapPart('Relay pigtail');await page.locator('.ds-cav',{hasText:/^86/}).first().tap();await page.getByRole('button',{name:'Mark unused'}).tap();
   assert.equal(await page.evaluate(()=>Object.keys(S.parts.find(p=>p.t==='rp4').wfUnused||{}).length),1);

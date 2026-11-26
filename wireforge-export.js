@@ -15,7 +15,7 @@
   add('<< /Type /Catalog /Pages 2 0 R >>');add('');
   const f1=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'),f2=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
   const kids=[];
-  for(const p of pages){const body=p.o.join('\n');const c=add('<< /Length '+body.length+' >>\nstream\n'+body+'\nendstream');kids.push(add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+W+' '+H+'] /Contents '+c+' 0 R /Resources << /Font << /F1 '+f1+' 0 R /F2 '+f2+' 0 R >> >> >>'));}
+  for(const p of pages){const body=p.o.join('\n').replace(/\{N\}/g,String(pages.length));const c=add('<< /Length '+body.length+' >>\nstream\n'+body+'\nendstream');kids.push(add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+W+' '+H+'] /Contents '+c+' 0 R /Resources << /Font << /F1 '+f1+' 0 R /F2 '+f2+' 0 R >> >> >>'));}
   objs[1]='<< /Type /Pages /Kids ['+kids.map(k=>k+' 0 R').join(' ')+'] /Count '+kids.length+' >>';
   let out='%PDF-1.4\n';const off=[];
   objs.forEach((s,i)=>{off.push(out.length);out+=(i+1)+' 0 obj\n'+s+'\nendobj\n';});
@@ -72,10 +72,10 @@
   table(pages,m,'Wire schedule',['Wire','AWG','Color','From conn','From P/N','Cav','To conn','To P/N','Cav','Len (in)'],m.rows.map(r=>[r.id,r.awg,r.color,r.aConn,r.aPn,r.aCav,r.bConn,r.bPn,r.bCav,r.len]),[40,40,70,90,100,40,90,100,40,60]);
   const pn=Page();pages.push(pn);header(pn,m,'Open items for quote (TBD)',pages.length,'{N}');
   (m.notes.length?m.notes:['No open items recorded.']).slice(0,40).forEach((t,i)=>pn.text(36,80+i*13,'- '+trunc(t,170),8.5));
-  return build(pages).replace(/\{N\}/g,String(pages.length));
+  return build(pages);
  }
- const csvHeaders=['Wire ID','AWG','Base color','Stripe color','From connector ID','From housing P/N','From cavity','To connector ID','To housing P/N','To cavity','Length in (user-entered)','Wire source','Mate mapping','Circuit','Loom','Review status'];
- const csvRows=m=>m.rows.map(r=>[r.id,r.awg,r.base,r.stripe,r.aConn,r.aPn,r.aCav,r.bConn,r.bPn,r.bCav,r.len,r.source,r.mate,r.circuit||'',r.loom||'',m.notes.some(n=>n.includes('UNVERIFIED EXAMPLE'))?'UNVERIFIED EXAMPLE':'Review required']);
+ const csvHeaders=['Wire ID','AWG','Base color','Stripe color','From connector ID','From housing P/N','From cavity','To connector ID','To housing P/N','To cavity','Length in (user-entered)','Wire source','Mate mapping','Circuit','Loom','Review status','Conductor material','Insulation','From contact','To contact','Cut allowance in','Twist group','Shield part'];
+ const csvRows=m=>m.rows.map(r=>[r.id,r.awg,r.base,r.stripe,r.aConn,r.aPn,r.aCav,r.bConn,r.bPn,r.bCav,r.len,r.source,r.mate,r.circuit||'',r.loom||'',m.notes.some(n=>n.includes('UNVERIFIED EXAMPLE'))?'UNVERIFIED EXAMPLE':'Review required',r.material,r.insulation,r.contactA,r.contactB,r.allowance,r.twist,r.shield]);
  root.WF_EXPORT={pdf,csvHeaders,csvRows};
 })(typeof window!=='undefined'?window:globalThis);
 if(typeof module!=='undefined')module.exports=globalThis.WF_EXPORT;
