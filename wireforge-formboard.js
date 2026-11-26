@@ -146,7 +146,7 @@ function wiresMarkup(bundle,c,active){
   const col=cpart(w.color,0)||'#8e9ca3',stripe=cpart(w.color,1);
   const mid=line[Math.floor(N/2)+(n>12?(k%3-1)*4:0)];
   return `<g data-wire-hit="${h(w.id)}"><title>${h(wireName(w))} · ${h(w.color||'color TBD')} · ${h(endWho(w.a))} → ${h(endWho(w.b))}</title>
-  <path d="${d}" stroke="transparent" stroke-width="${gap+1}" fill="none" stroke-linecap="round"/>
+  <path d="${d}" stroke="transparent" stroke-width="${gap-1}" fill="none" stroke-linecap="round"/>
   ${on?`<path d="${d}" stroke="#4fd1c5" stroke-opacity=".55" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:''}
   <path d="${d}" stroke="#10181b" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="${d}" stroke="${col}" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -200,7 +200,7 @@ function nodeMarkup(n,p,neighbors,project,orbit){
   const wired=new Set(S.wires.flatMap(w=>[w.a,w.b]).filter(end=>end.p===p.id).map(end=>end.i));
   const count=type.pins.length;
   tails=type.pins.map((pin,i)=>{
-   if(wired.has(i)||!isLead(p,i)||(!spread&&!view.showLoose&&!p.wfLeadDrafts?.[i]))return '';
+   if(wired.has(i)||!isLead(p,i)||(!spread&&!view.showLoose&&!p.wfLeadDrafts?.[i]&&count>8))return '';
    const off=p.wfUnused?.[i];
    if(spread){
     // Four tips per cavity row. Leave a gap for the connector body.
@@ -1117,7 +1117,7 @@ function wirePanel(g,n){
   if(c){
    const ws=cavOcc(p,c.i,c.s);
    msg='<div class="ds-cavinfo"><b>'+h(t.pins[c.i].p)+'</b> '+h(plabel(p,c.i)||'No function set')+'<br><small>'+(ws.length?'Used by '+h(wireName(ws[0])):isLead(p,c.i)?'Loose lead · contact '+h(contactOf(p,c.i)):'Open · contact '+h(contactOf(p,c.i)))+'</small></div>'+
-    '<div class="fb-actions">'+(ws.length?btn('selWire','Edit wire','fb-primary').replace('<button','<button data-wire="'+ws[0].id+'"'):btn('runWire','Run wire','fb-primary')+(isLead(p,c.i)||p.wfUnused?.[c.i]?btn('unused',p.wfUnused?.[c.i]?'Restore lead':'Remove loose lead'):''))+'</div>';
+    '<div class="fb-actions">'+(ws.length?btn('selWire','Edit wire','fb-primary').replace('<button','<button data-wire="'+ws[0].id+'"'):btn('runWire','Run wire','fb-primary')+(isLead(p,c.i)||p.wfUnused?.[c.i]?btn('unused',p.wfUnused?.[c.i]?'Restore lead':'Mark unused'):''))+'</div>';
   }else msg='<p class="ds-hint">Tap a cavity to choose where the wire starts.</p>';
  }
  const here=S.wires.filter(w=>w.a.p===p.id||w.b.p===p.id);
