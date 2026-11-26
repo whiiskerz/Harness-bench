@@ -251,3 +251,6 @@ body:has(.ds-shell):has(#t-formboard:not([hidden])) {overflow:hidden}
 .ds-quick-pins button:disabled{opacity:.4}
 .ds-quick-pins button[hidden]{display:none}
 @media(max-width:650px){.ds-quick{width:auto;max-height:65%}.ds-quick-pins{max-height:28vh}#dsDemoSelect{max-width:110px}}
+
+.ds-pin rect{fill:#fbfcfc;stroke:#607481;stroke-width:1}.ds-pin text{fill:#213845;text-anchor:middle;font:600 12px system-ui;pointer-events:none}.ds-pin.busy rect{fill:#d6dde0}.ds-pin.busy text{fill:#657077}.ds-pin.source rect{fill:#00766c;stroke:#65e5cd;stroke-width:3}.ds-pin.source text{fill:white}.ds-pin-status{position:absolute;bottom:50px;left:50%;transform:translateX(-50%);max-width:85%;background:#202c33;color:white;border-radius:9px;padding:8px 12px;font-size:13px}.ds-pin-status button{margin-left:6px}
+.ds-swatches button{width:26px;height:26px;margin:2px;background:var(--swatch);border:1px solid #82909a;border-radius:50%}.ds-wireeditor details{margin:.5rem 0}.ds-wireeditor summary{cursor:pointer}

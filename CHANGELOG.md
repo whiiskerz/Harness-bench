@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.29 — Canvas cavity wiring
+
+- Tap **Wire pins**, then tap connector cavities to create routed wires. **Next source** advances to the next free cavity. Quick Wire remains available.
+- The E90 dual-HD30 vehicle demo includes the original vehicle circuits and editable engine-side planning interfaces. The ECU-only example remains available.
+- Edit colors, construction, contacts, cut allowances and lengths in inches or millimeters. Manufacturer CSV includes the construction fields.
+
 ## v0.28 — MaxxECU Gen1 RACE prewired pigtails
 - New C1 (48-pin) and C2 (32-pin) pigtail templates, lead search (J4, AIN 4), per-lead spec and provenance. Molex numbers are shown as owner-supplied until confirmed.
 
