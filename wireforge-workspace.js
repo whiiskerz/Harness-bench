@@ -111,12 +111,17 @@ function renameNamed(id){
   saveStatus();renderVault();showMessage('Project renamed');
  }catch(e){showMessage('Rename failed: '+e.message,'error')}
 }
-function startBlank(){
- if(!confirm('Start a blank harness? This replaces the active drawing. Save the current project in Project Vault first.'))return;
+function startBlank(fromDesign=false,resetView){
+ if(fromDesign){
+  if(!confirm('Start a new blank harness? Your current harness will be saved in Project Vault.'))return false;
+  if(!saveNamed())return false;
+ }else if(!confirm('Start a blank harness? This replaces the active drawing. Save the current project in Project Vault first.'))return;
  const keep=typeof e90ProjectStarter==='function'?e90ProjectStarter():{};
  S=Object.assign({},keep,{parts:[],wires:[],zones:[],looms:[],circuitBook:[],examples:false,view:null,tab:'draw',wfProjectName:'Untitled Harness',wfVaultId:null,pro:null,wfBranches:[],scale:4,strip:.5,def:{awg:20,color:'BLK'}});
  selection=null;pending=null;
- save();showTab('draw');saveStatus();showMessage('Blank harness ready. Add a connector to begin.');
+ if(resetView)resetView();
+ UNDO.length=0;REDO.length=0;syncUndo();
+ save();showTab(fromDesign?'formboard':'draw');saveStatus();showMessage('Blank harness ready. Add a connector to begin.');return true;
 }
 async function importFile(file){
  if(!file)return;
@@ -331,6 +336,6 @@ function init(){
  // Detect browser save failures in the underlying editor autosave.
  saveStatus();
 }
-window.WFPro={renderVault,renderLab,saveNamed,loadNamed,labReport,traceCavities,onAutosave,readSnapshot,snapshotList,importFile,exportCurrent,migrateLegacy};
+window.WFPro={startBlank,renderVault,renderLab,saveNamed,loadNamed,labReport,traceCavities,onAutosave,readSnapshot,snapshotList,importFile,exportCurrent,migrateLegacy};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
