@@ -36,10 +36,12 @@ module.exports=async function testFirstFive(browser,url){
   const c1=await page.evaluate(()=>S.parts.find(p=>p.t==='mxpig48').name);
   await page.locator('.ds-wirepanel [data-fb="dismiss"]').first().tap();
   await tapNode(c1);
-  await page.locator('#dsCavQ').fill('J4');
-  const j4=page.locator('.ds-cav',{hasText:'AIN 4'});
-  assert.equal(await j4.count(),1);
-  await j4.tap();step('Tap C1, type J4 in Find a cavity, tap the AIN 4 cavity');
+  const tips=page.locator('[data-spread-tip]');
+  assert.equal(await tips.count(),48);
+  assert.equal(new Set(await tips.allTextContents()).size,48);
+  await page.locator('[data-spread-tip="J4"]').tap();
+  assert.match(await page.locator('.ds-wirepanel').textContent(),/AIN 4/);
+  step('Tap C1 and tap its labeled J4 flying lead');
   await page.getByRole('button',{name:'Run wire'}).tap();step('Tap Run wire');
   assert.match(await page.locator('.ds-prompt, .ds-wirepanel').first().textContent(),/destination/i);
   await tapNode(await page.evaluate(()=>S.parts.find(p=>p.t==='hd30_47').name));
