@@ -12,7 +12,8 @@ module.exports=async function testStudio(browser,url){
    await act('parts').click();await page.locator('[data-type="'+type+'"]').click();
    await svg.click({position:{x,y}});
   }
-  await place('mxrace48',230,280);
+  await place('mxpig48',230,280);
+  await act('toggleLoose').click();
   await place('mxrace32',290,510);
   await place('hd30_47',750,280);
   await act('dismiss').click();

@@ -942,7 +942,7 @@ function shopModel(g,report){
  const bund=new Map(report.bundles.map(b=>[b.s.id,b.members.length]));
  const label=id=>{const n=g.nodes.find(n=>n.id===id);return n?String(n.label||part(n.partId)?.name||'Breakout'):'?';};
  const endC=e=>{const p=part(e.p);return p?{c:connLabel(g,p),pn:pnOf(p)||'TBD',cav:(T[p.t]?.pins[e.i]?.p||'TBD')+(e.s?' '+faceLabel(p,e.s):'')}:{c:'TBD',pn:'TBD',cav:'TBD'};};
- const notes=S.wires.some(w=>w.auditNotes?.includes('UNVERIFIED EXAMPLE'))?[root.WFHD30Demo.notice]:[],parts=g.nodes.filter(n=>n.partId!=null&&part(n.partId));
+ const notes=S.wires.some(w=>w.auditNotes?.includes('UNVERIFIED EXAMPLE'))?[S.wfDemoNotice||root.WFHD30Demo.notice]:[],parts=g.nodes.filter(n=>n.partId!=null&&part(n.partId));
  const noPn=parts.filter(n=>!pnOf(part(n.partId)));
  if(noPn.length)notes.push('Housing part number TBD: '+noPn.map(n=>n.label||part(n.partId).name).join(', '));
  const mated=parts.filter(n=>part(n.partId).mate);
@@ -1221,8 +1221,39 @@ function importWireCSV(){
  d.querySelector('#hdCsvFile').onchange=async e=>{const f=e.target.files[0];if(f)d.querySelector('#hdCsvText').value=await f.text();};
  d.querySelector('#hdCsvApply').onclick=()=>{try{const rows=root.WFHD30Demo.plan(d.querySelector('#hdCsvText').value,S.parts,T,S.wires);if(!rows.length)throw Error('No wire rows');if(!confirm('Import '+rows.length+' unverified wires?'))return;mutate(g=>{for(const r of rows){S.wires.push(mkW(r.a,r.b,{...r,id:nid()}));const a=g.nodes.find(n=>n.partId===r.a.p),b=g.nodes.find(n=>n.partId===r.b.p);if(a&&b&&path(g,a.id,b.id)===null)addSegment(g,a.id,b.id);}});d.close();}catch(e){d.querySelector('#hdCsvStatus').textContent=e.message;}};
 }
+function loadLSBulkheadDemo(){
+ if((S.parts.length||S.wires.length)&&!confirm('Load a separate LS bulkhead planning example? Save the current drawing first.'))return;
+ if((S.parts.length||S.wires.length)&&!root.WFPro?.saveNamed({asNew:false,name:S.wfProjectName||S.projectName||'Previous harness'}))return;
+ const name='E90 LS – Dual HD30 Bulkhead Planning Demo',notice='UNVERIFIED EXAMPLE — NOT FOR FABRICATION. Logical ECU-to-bulkhead planning only; contact assignments, ratings, shielding, lengths and vehicle-side destinations require verification.';
+ const p=(id,t,name,x,y,rotation)=>({id,t,name,x,y,rotation,pl:{}});
+ const parts=[p(1,'mxrace48','C1 · RACE main',140,180,180),p(2,'mxrace32','C2 · RACE auxiliary',140,490,180),p(3,'hd30_demo_socket','X1A · Main plug',720,180,0),p(4,'hd30_demo_pin','X1B · Main receptacle',870,180,180),p(5,'hd30_demo_socket','X2A · Aux plug',720,490,0),p(6,'hd30_demo_pin','X2B · Aux receptacle',870,490,180),p(7,'demo_fused12','F1 · Local ECU supply',350,720,0)];
+ parts[2].mate=4;parts[3].mate=3;parts[4].mate=6;parts[5].mate=5;
+ const g=fresh(),wires=[];let next=20;
+ for(const q of parts){const n=addNode(g,q.x,q.y,q.name,q.id);n.rotation=q.rotation;}
+ for(const [a,b,label] of [[0,2,'L01 · Main'],[1,4,'L02 · Auxiliary'],[0,6,'Local ECU power']]){addSegment(g,g.nodes[a].id,g.nodes[b].id);Object.assign(g.segments.at(-1),{label,sleeve:b===6?'':'DR-25'});}
+ for(const [ecu,plug,mate,loom] of [[parts[0],parts[2],parts[3],10],[parts[1],parts[4],parts[5],11]]){
+  let slot=0;
+  for(const [i,pin] of T[ecu.t].pins.entries()){
+   if(/EGT|GND|ground|12V/i.test(pin.l||'')||pin.l==='-')continue;
+   if(slot>=47)break;
+   plug.pl[slot]=mate.pl[slot]=pin.l;
+   wires.push(mkW({p:ecu.id,i},{p:plug.id,i:slot},{id:next++,wid:'W'+String(wires.length+1).padStart(2,'0'),sig:pin.l,awg:0,color:'',loom,measuredOnly:true,auditStatus:'unverified',auditNotes:notice}));slot++;
+  }
+ }
+ const i=T[parts[0].t].pins.findIndex(p=>p.p==='M4');wires.push(mkW({p:1,i},{p:7,i:0},{id:next++,wid:'P01',sig:'ECU fused supply (rating TBD)',awg:0,color:'',measuredOnly:true,auditStatus:'unverified',auditNotes:notice}));
+ UNDO.length=0;REDO.length=0;syncUndo();Object.assign(S,{parts,wires,looms:[{id:10,name:'Main bulkhead',cover:'DR-25',color:'#343b40'},{id:11,name:'Aux bulkhead',cover:'DR-25',color:'#343b40'}],nid:next,zones:[],circuitBook:[],wfBranches:[],examples:false,pro:null,wfFormboard:g,wfVaultId:null,wfProjectName:name,wfDemoNotice:notice,tab:'formboard'});
+ resetDesignSelection();view.cam=null;view.look='loom';view.page='design';view.advanced=false;save();root.WFPro?.saveNamed({asNew:true,name});render();
+}
+function quickWirePanel(g){
+ const ps=g.nodes.filter(n=>n.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node);
+ const src=ps.find(n=>n.id===view.quickSource)||ps[0],dst=ps.find(n=>n.id===view.quickDest&&n!==src)||ps.find(n=>n!==src);
+ if(!src||!dst)return '<aside class="ds-panel"><h3>Quick wire</h3><p>Place at least two connectors first.</p>'+btn('quickWire','Close')+'</aside>';
+ view.quickSource=src.id;view.quickDest=dst.id;
+ const col=(n,side)=>{const p=part(n.partId),t=T[p.t],face=t.bulk?(view['quickFace'+side]||'L'):'',q=(view['quickQuery'+side]||'').toLowerCase();return '<section><label>'+side+' connector<select data-quick-connector="'+side+'">'+ps.map(x=>option(x.id,part(x.partId).name,n.id)).join('')+'</select></label>'+(t.bulk?'<label>Face<select data-quick-face="'+side+'">'+['L','R'].map(x=>option(x,faceLabel(p,x),face)).join('')+'</select></label>':'')+'<input type="search" data-quick-query="'+side+'" placeholder="Find cavity" value="'+h(q)+'"><div class="ds-quick-pins">'+t.pins.map((pin,i)=>{const used=cavOcc(p,i,face).length,sel=view.quickStart?.nid===n.id&&view.quickStart.i===i&&view.quickStart.s===face;return '<button type="button" data-fb="quickPin" data-node-id="'+n.id+'" data-i="'+i+'" data-s="'+face+'" data-side="'+side+'" data-search="'+h((pin.p+' '+plabel(p,i)).toLowerCase())+'" '+(q&&!(pin.p+' '+plabel(p,i)).toLowerCase().includes(q)?'hidden ':'')+(used?'disabled':'')+' aria-pressed="'+!!sel+'"><b>'+h(pin.p)+'</b> '+h(plabel(p,i))+(used?' · used':'')+'</button>';}).join('')+'</div></section>';};
+ return '<aside class="ds-panel ds-quick"><div class="ds-panelhead"><h3>Quick wire · tap to tap</h3>'+btn('quickWire','Close')+'</div><p role="status">'+h(view.quickMessage||(view.quickStart?'Tap destination cavity':'Tap source cavity, then destination cavity'))+'</p><div class="ds-quick-columns">'+col(src,'Source')+col(dst,'Destination')+'</div><div class="fb-actions">'+btn('quickCancel','Cancel source')+btn('quickEdit','Edit last wire')+'</div></aside>';
+}
 function resetDesignSelection(){
- Object.assign(view,{chosen:null,origin:null,trace:null,wsel:null,wdraft:null,pick:null,cav:null,run:null,landing:null,placing:null,panel:null,drag:null,mode:'select',multi:[],multiMode:false});
+ Object.assign(view,{chosen:null,origin:null,trace:null,wsel:null,wdraft:null,pick:null,cav:null,run:null,landing:null,placing:null,panel:null,drag:null,mode:'select',multi:[],multiMode:false,quick:false,quickStart:null,quickMessage:'',quickSource:null,quickDest:null,quickLast:null});
 }
 function deleteDesignSelection(){
  const g=graph(),n=g.nodes.find(n=>n.id===view.chosen?.id),seg=g.segments.find(s=>s.id===view.chosen?.id);
@@ -1259,12 +1290,12 @@ function studioRender(el,g,report){
  const name=h(S.wfProjectName||S.projectName||'E90 LS');
  const toolbar='<div class="ds-modes" aria-label="Workspace views">'+btn('design','Design',page==='design'?'active':'')+btn('studioWiring','Wiring',page==='studioWiring'?'active':'')+btn('orbit','3D',page==='orbit'?'active':'')+btn('studioBom','BOM',page==='studioBom'?'active':'')+btn('studioCuts','Cut list',page==='studioCuts'?'active':'')+btn('studioShop','Export',page==='studioShop'?'active':'')+'</div>';
  const caption=view.run?'Tap the destination connector':view.placing?'Tap the canvas to place '+palette.find(p=>p[0]===view.placing)?.[1]:view.mode==='junction'?'Tap the split location':view.mode==='connect'?'Drag between connector ports':'';
- const tools='<div class="ds-rail">'+studioTool('parts','Parts',view.panel==='parts')+studioTool('select','Select',view.mode==='select')+studioTool('connect','Route',view.mode==='connect')+studioTool('pan','Pan',view.mode==='pan')+studioTool('flying','Wires')+'</div>';
+ const tools='<div class="ds-rail">'+studioTool('parts','Parts',view.panel==='parts')+studioTool('select','Select',view.mode==='select')+studioTool('connect','Route',view.mode==='connect')+studioTool('pan','Pan',view.mode==='pan')+studioTool('flying','Wires')+btn('quickWire','Quick wire',view.quick?'active':'')+'</div>';
  const wsel=view.wsel&&S.wires.find(w=>w.id===view.wsel);
- const inspector=view.multiMode&&page==='design'?'<aside class="ds-panel ds-wirepanel"><h3>Select wires</h3>'+btn('deleteSelected','Delete selected wires')+'<div class="ds-wirelist">'+S.wires.map(w=>'<button type="button" data-fb="multiWire" data-wire="'+w.id+'" aria-pressed="'+!!view.multi?.includes(w.id)+'">'+(view.multi?.includes(w.id)?'✓ ':'')+h(wireName(w))+'<small>'+h(endWho(w.a))+' → '+h(endWho(w.b))+'</small></button>').join('')+'</div></aside>':wsel&&page==='design'?wireEditor(g,wsel):view.pick&&page==='design'?pickPanel(g):view.landing?landingPanel(g):page==='design'&&n?.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node?wirePanel(g,n):page==='design'&&selected?'<aside class="ds-panel ds-inspector"><div class="ds-panelhead"><h3>'+h(n?captionForNode(n):seg.s.label||'Cable run')+'</h3>'+btn('dismiss','Close')+'</div>'+(n?.partId&&['mxrace32','mxrace48'].includes(part(n.partId)?.t)?btn('landStart','Land a wire','fb-primary'):'')+(n?nodeInspector(n):branchInspector(seg))+'</aside>':'';
+ const inspector=view.quick&&page==='design'?quickWirePanel(g):view.multiMode&&page==='design'?'<aside class="ds-panel ds-wirepanel"><h3>Select wires</h3>'+btn('deleteSelected','Delete selected wires')+'<div class="ds-wirelist">'+S.wires.map(w=>'<button type="button" data-fb="multiWire" data-wire="'+w.id+'" aria-pressed="'+!!view.multi?.includes(w.id)+'">'+(view.multi?.includes(w.id)?'✓ ':'')+h(wireName(w))+'<small>'+h(endWho(w.a))+' → '+h(endWho(w.b))+'</small></button>').join('')+'</div></aside>':wsel&&page==='design'?wireEditor(g,wsel):view.pick&&page==='design'?pickPanel(g):view.landing?landingPanel(g):page==='design'&&n?.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node?wirePanel(g,n):page==='design'&&selected?'<aside class="ds-panel ds-inspector"><div class="ds-panelhead"><h3>'+h(n?captionForNode(n):seg.s.label||'Cable run')+'</h3>'+btn('dismiss','Close')+'</div>'+(n?.partId&&['mxrace32','mxrace48'].includes(part(n.partId)?.t)?btn('landStart','Land a wire','fb-primary'):'')+(n?nodeInspector(n):branchInspector(seg))+'</aside>':'';
  const preview=empty&&page==='design'&&!view.placing&&view.mode==='select'?'<div class="ds-start ds-start-first">'+firstCard()+'</div>':'';
  const controls='<div class="ds-look" role="group" aria-label="Harness view">'+btn('lookLoom','Loom',view.look!=='wires'?'active':'')+btn('lookWires','Individual wires',view.look==='wires'?'active':'')+'</div><div class="ds-zoom">'+btn('zoomOut','−')+btn('fit','Fit')+btn('zoomIn','+')+'</div>';
- el.innerHTML='<div class="ds-shell fb-workspace"><div class="ds-head"><strong>Harness Bench</strong><span class="ds-project">'+name+'</span><div>'+btn('studioShop','Export for manufacturer','fb-primary')+(page==='design'?'<details class="ds-demomenu"><summary>Design actions</summary><div>'+btn('loadHD30Demo','Load Demo Harness → MaxxECU Race / HD30')+btn('importWireCSV','Import CSV')+btn('multiMode',view.multiMode?'Exit multi-select':'Multi-select')+btn('deleteSelected','Delete selected'+(view.multi?.length?' ('+view.multi.length+')':''))+btn('designUndo','Undo')+btn('designRedo','Redo')+btn('clearDesign','Clear Design')+'</div></details>':'')+btn('advanced','Project tools')+'<button type="button" data-tab="project">Overview</button></div></div>'+
+ el.innerHTML='<div class="ds-shell fb-workspace"><div class="ds-head"><strong>Harness Bench</strong><span class="ds-project">'+name+'</span><div><select id="dsDemoSelect" aria-label="Load demo harness"><option value="">Demo harnesses</option><option value="hd30">MaxxECU / HD30</option><option value="ls">E90 LS / dual HD30</option></select>'+btn('studioShop','Export for manufacturer','fb-primary')+(page==='design'?'<details class="ds-demomenu"><summary>Design actions</summary><div>'+btn('loadHD30Demo','Load Demo Harness → MaxxECU Race / HD30')+btn('loadLSBulkheadDemo','Load E90 LS / dual HD30')+btn('importWireCSV','Import CSV')+btn('multiMode',view.multiMode?'Exit multi-select':'Multi-select')+btn('deleteSelected','Delete selected'+(view.multi?.length?' ('+view.multi.length+')':''))+btn('designUndo','Undo')+btn('designRedo','Redo')+btn('clearDesign','Clear Design')+'</div></details>':'')+btn('advanced','Project tools')+'<button type="button" data-tab="project">Overview</button></div></div>'+
  '<div class="ds-desk">'+toolbar+(S.wires.some(w=>w.auditNotes?.includes('UNVERIFIED EXAMPLE'))?'<p role="note" class="ds-demo-warning">UNVERIFIED EXAMPLE — NOT FOR FABRICATION</p>':'')+(page==='design'&&!empty?stepsBar(g,report):'')+(page==='studioShop'?shopPanel(g,report):stage?canvas()+preview+(page==='design'?tools:'')+(caption?'<div class="ds-prompt">'+h(caption)+' '+btn('dismiss','Cancel')+'</div>':'')+
  (view.panel==='parts'&&page==='design'?studioParts():inspector)+controls:page==='studioWiring'?wiringSheet(g):'<div class="ds-report"><div class="ds-panelhead"><h3>'+(page==='studioBom'?'Bill of materials':'Wire cut list')+'</h3>'+btn(page==='studioBom'?'bom':'cut','Cut list CSV')+(page==='studioBom'?'':btn('schedule','Wire schedule CSV'))+'</div>'+studioReport(page,report,g)+'</div>')+
  '</div><div class="ds-foot"><b>Formboard</b><span>'+g.nodes.filter(n=>n.partId!=null).length+' parts &nbsp;·&nbsp; '+g.segments.length+' cable runs</span><span>'+ (page==='orbit'?'Drag to orbit':'Dimensions in inches')+'</span></div></div>';
@@ -1588,7 +1619,7 @@ function printPack(g,report){
  w.print();
 }
 
-document.addEventListener('input',e=>{if(e.target.id==='dsCavQ'&&view.cavCtx){view.cavQ=e.target.value;const c=view.cavCtx,tmp=document.createElement('div');tmp.innerHTML=cavityGrid(c.p,c.face,c.run);const g=tmp.querySelector('#dsCavs');if(g&&$('dsCavs'))$('dsCavs').replaceWith(g);}
+document.addEventListener('input',e=>{if(e.target.dataset.quickQuery){const side=e.target.dataset.quickQuery,q=e.target.value.toLowerCase();view['quickQuery'+side]=q;for(const b of e.target.parentElement.querySelectorAll('[data-search]'))b.hidden=!b.dataset.search.includes(q);return;}if(e.target.id==='dsCavQ'&&view.cavCtx){view.cavQ=e.target.value;const c=view.cavCtx,tmp=document.createElement('div');tmp.innerHTML=cavityGrid(c.p,c.face,c.run);const g=tmp.querySelector('#dsCavs');if(g&&$('dsCavs'))$('dsCavs').replaceWith(g);}
  if(e.target.id==='dsFirstQ'){view.firstQ=e.target.value;const r=$('dsFirstRes');if(r)r.innerHTML=firstResults();}});
 document.addEventListener('click',e=>{
  const wirepart=e.target.closest('#t-formboard [data-wirepart]');
@@ -1600,6 +1631,19 @@ document.addEventListener('click',e=>{
  const button=e.target.closest('#t-formboard [data-fb]');
  if(!button)return;
  const action=button.dataset.fb;
+ if(action==='quickWire'){view.quick=!view.quick;view.quickStart=null;view.quickMessage='';view.wsel=null;view.pick=null;view.panel=null;view.run=null;view.multiMode=false;render();return;}
+ if(action==='quickCancel'){view.quickStart=null;view.quickMessage='';render();return;}
+ if(action==='quickEdit'){if(!S.wires.some(w=>w.id===view.quickLast))return toast('Create a wire first.');view.quick=false;view.wsel=view.quickLast;view.wdraft=null;render();return;}
+ if(action==='quickPin'){
+  const e={nid:button.dataset.nodeId,i:Number(button.dataset.i),s:button.dataset.s||''};
+  const scrolls=[...document.querySelectorAll('.ds-quick-pins')].map(x=>x.scrollTop);const repaint=()=>{render();document.querySelectorAll('.ds-quick-pins').forEach((x,i)=>x.scrollTop=scrolls[i]||0);};
+  if(button.dataset.side==='Source'){view.quickStart=e;view.quickMessage='Source selected. Tap destination cavity.';repaint();return;}
+  if(!view.quickStart){view.quickMessage='Tap source cavity first.';render();return;}
+  if(view.quickStart.nid===e.nid)return toast('Choose different connectors.');
+  const g=graph(),src=view.quickStart;commit();const w=makeWire(g,src,e);
+  if(w){const p=part(w.a.p);if(!w.sig)w.sig=plabel(p,w.a.i);view.quickLast=w.id;view.quickStart=null;view.quickMessage=w.wid+' created. Tap next source.';save();repaint();}return;
+ }
+ if(action==='loadLSBulkheadDemo')return loadLSBulkheadDemo();
  if(action==='loadHD30Demo')return loadHD30Demo();
  if(action==='importWireCSV')return importWireCSV();
  if(action==='multiMode'){view.multiMode=!view.multiMode;view.multi=[];view.wsel=null;render();return;}
@@ -1778,7 +1822,7 @@ document.addEventListener('pointerup',e=>{
  if(!tn||tn.partId==null||tn.id===src)return;
  view.run={nid:src,i:Number(d.b.dataset.i),s:d.b.dataset.s||''};view.cav=null;view.chosen={id:tn.id};render();
 });
-document.addEventListener('change',e=>{
+document.addEventListener('change',e=>{if(e.target.dataset.quickConnector){const side=e.target.dataset.quickConnector;view['quick'+side]=e.target.value;view['quickQuery'+side]='';view.quickStart=null;view.quickMessage='';render();return;}if(e.target.dataset.quickFace){view['quickFace'+e.target.dataset.quickFace]=e.target.value;view.quickStart=null;render();return;}if(e.target.id==='dsDemoSelect'){const v=e.target.value;e.target.value='';if(v==='hd30')loadHD30Demo();if(v==='ls')loadLSBulkheadDemo();return;}
  if(e.target.id==='dsMate'){
   const n=graph().nodes.find(x=>x.id===view.chosen?.id),p=part(n?.partId);if(!p)return;
   commit();

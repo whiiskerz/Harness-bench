@@ -5,7 +5,18 @@ module.exports=async function(browser,url){
  const action=async id=>{const b=page.locator('[data-fb="'+id+'"]').first();if(!await b.isVisible())await page.locator('.ds-demomenu summary').tap();await b.tap();};
  const count=()=>page.evaluate(()=>S.wires.length);
  try{
- await page.goto(url.split('#')[0]+'#studio');await page.waitForSelector('.ds-shell');await action('loadHD30Demo');
+ await page.goto(url.split('#')[0]+'#studio');await page.waitForSelector('.ds-shell');
+ await page.locator('#dsDemoSelect').selectOption('ls');
+ assert.deepEqual(await page.evaluate(()=>[S.parts.length,S.parts.filter(p=>p.mate).length,S.looms.length]),[7,4,2]);
+ await action('quickWire');
+ await page.locator('[data-quick-connector="Source"]').selectOption(await page.evaluate(()=>S.wfFormboard.nodes.find(n=>n.partId===4).id));
+ await page.locator('[data-quick-connector="Destination"]').selectOption(await page.evaluate(()=>S.wfFormboard.nodes.find(n=>n.partId===6).id));
+ const before=await count();
+ await page.locator('[data-fb="quickPin"][data-side="Source"]').first().tap();
+ await page.locator('[data-fb="quickPin"][data-side="Destination"]').first().tap();
+ assert.equal(await count(),before+1);
+ await action('quickEdit');await page.waitForSelector('#weId');
+ await page.locator('#dsDemoSelect').selectOption('hd30');
  assert.deepEqual(await page.evaluate(()=>[S.parts.length,S.wires.length,T[S.parts[0].t].pins.length,S.wires.filter(w=>w.loom).length,S.parts[1].mate,S.parts[2].mate]),[4,48,48,47,3,2]);
  await action('lookWires');assert.equal(await page.locator('[data-wire-hit]').count(),48);
  const pt=await page.locator('[data-wire-hit="10"] path').first().evaluate(p=>{const m=p.getScreenCTM();for(let f=.3;f<=.8;f+=.025){const q=p.getPointAtLength(p.getTotalLength()*f),x=m.a*q.x+m.c*q.y+m.e,y=m.b*q.x+m.d*q.y+m.f;if(document.elementFromPoint(x,y)?.closest('[data-wire-hit]')===p.closest('[data-wire-hit]'))return {x,y};}throw Error('No unobstructed W01 hit target');});await page.touchscreen.tap(pt.x,pt.y);await page.waitForSelector('#weId');
