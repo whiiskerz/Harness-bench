@@ -12,3 +12,9 @@ Existing working projects are saved separately after confirmation; the new demo 
 
 ## Tests
 Run node tests/hd30-demo.cjs and the touch-emulation browser suite tests/hd30-demo-browser.cjs. Real iPad Safari still requires manual validation.
+
+## v0.29 audit (2026-11-26)
+- LS demo now continues past the bulkhead: vehicle-side devices from the owner E90 circuit list (oil/fuel/nitrous pressure, CLT, IAT, flex fuel, A/C relay, nitrous SSR, CAN splitter, BMW X60001 brake/fan) hang off two "Vehicle breakout" nodes in loom L03. Destination pins, colors and gauges are SUGGESTED, not verified; the editor and exports say so.
+- 22 AWG or finer on HD30 cavities is flagged in the manufacturer TBD list (contact size per cavity unverified).
+- Cache tag and app version bumped to 029-audit / 0.29.0-audit so iPad Safari loads the new scripts.
+- node tests/hd30-demo-browser.cjs now runs standalone and prints the assertion count.
