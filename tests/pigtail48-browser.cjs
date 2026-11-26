@@ -24,8 +24,8 @@ module.exports=async function testPigtail48(browser,url){
   const bh=await page.evaluate(()=>{const p=S.parts.find(p=>p.t==='hd30_47');return S.wfFormboard.nodes.find(x=>x.partId===p.id).id});
   for(const [lead,cav] of [[3,'6'],[0,'7'],[47,'8']]){
    await page.locator('[data-node="'+ecu+'"]').first().tap();
-   await page.locator('[data-lead-tip="'+lead+'"]').tap();
-   await page.locator('[data-node="'+bh+'"]').first().tap();
+   await page.locator('[data-lead-tip="'+lead+'"]').tap();await page.waitForTimeout(400);
+   await page.locator('[data-node="'+bh+'"]').first().tap();await page.waitForTimeout(400);
    await page.locator('#dsFace').selectOption('R');
    await page.locator('#dsCavity').selectOption({label:new RegExp('^'+cav+'\\b')}).catch(async()=>{await page.locator('#dsCavity').selectOption({index:Number(cav)})});
    await page.locator('[data-fb="land"]').tap();await page.waitForTimeout(200);
