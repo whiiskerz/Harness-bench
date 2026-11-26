@@ -39,7 +39,7 @@ function hardware(family,type){
    :'<path d="M14-14H46L58-10V10L46 14H14Z" fill="url(#fb-shell)" stroke="#3f4d55" stroke-width="1.5"/><rect x="26" y="-19" width="14" height="6" rx="2" fill="'+tone+'" stroke="#1c5f59"/><rect x="38" y="-12" width="20" height="24" rx="3" fill="#161d21" stroke="'+tone+'" stroke-width="1.5"/>';
   return '<path d="M0-6H10L16-12H20V12H16L10 6H0Z" fill="url(#fb-rubber)" stroke="#161b1d"/><path d="M4-6V6M8-8V8" stroke="#7c8a90" stroke-opacity=".6"/>'+body+holes+'<text x="34" y="30" text-anchor="middle" font-size="8" font-weight="700" fill="'+tone+'" transform="rotate(0 34 30)" pointer-events="none"></text>';
  }
- if(type==='hd30_47'){
+ if(type==='hd30_47'||type==='hd30_demo_socket'||type==='hd30_demo_pin'){
   const grip=Array.from({length:8},(_,i)=>'<path d="M'+(30+i*3)+' -17l-2 34" stroke="#697177" stroke-width="1.2"/>').join('');
   return '<path d="M0-9H12L16-16H30V16H16L12 9H0Z" fill="url(#fb-rubber)" stroke="#161b1d"/><rect x="24" y="-20" width="38" height="40" rx="5" fill="url(#fb-shell)" stroke="#41464a"/>'+grip+'<path d="M52-23H60L65-16V16L60 23H52Z" fill="url(#fb-shell)" stroke="#3b4348"/><rect x="63" y="-17" width="12" height="34" rx="2" fill="#737d85" stroke="#394247"/><path d="M65-14v28m3-29v30m3-30v30" stroke="#bdc2c3"/><path d="M20-16v32" stroke="#a48860" stroke-width="3"/>';
  }
