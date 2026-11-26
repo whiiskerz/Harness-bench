@@ -1224,7 +1224,7 @@ function importWireCSV(){
 function loadLSBulkheadDemo(){
  if((S.parts.length||S.wires.length)&&!confirm('Load a separate LS bulkhead planning example? Save the current drawing first.'))return;
  if((S.parts.length||S.wires.length)&&!root.WFPro?.saveNamed({asNew:false,name:S.wfProjectName||S.projectName||'Previous harness'}))return;
- const name='E90 LS – Dual HD30 Bulkhead Planning Demo',notice='UNVERIFIED EXAMPLE — NOT FOR FABRICATION. Logical ECU-to-bulkhead planning only; contact assignments, ratings, shielding, lengths and vehicle-side destinations require verification.';
+ const name='E90 LS – Dual HD30 Bulkhead Planning Demo',notice='UNVERIFIED EXAMPLE — NOT FOR FABRICATION. Logical ECU-to-bulkhead planning only; colors and AWG are suggested planning values, not approved sizes; per-cavity contact assignments, ratings, shielding, lengths and vehicle-side destinations require verification. Engine grounds and thermocouples intentionally remain unrouted.';
  const p=(id,t,name,x,y,rotation)=>({id,t,name,x,y,rotation,pl:{}});
  const parts=[p(1,'mxrace48','C1 · RACE main',140,180,180),p(2,'mxrace32','C2 · RACE auxiliary',140,490,180),p(3,'hd30_demo_socket','X1A · Main plug',720,180,0),p(4,'hd30_demo_pin','X1B · Main receptacle',870,180,180),p(5,'hd30_demo_socket','X2A · Aux plug',720,490,0),p(6,'hd30_demo_pin','X2B · Aux receptacle',870,490,180),p(7,'demo_fused12','F1 · Local ECU supply',350,720,0)];
  parts[2].mate=4;parts[3].mate=3;parts[4].mate=6;parts[5].mate=5;
@@ -1234,13 +1234,14 @@ function loadLSBulkheadDemo(){
  for(const [ecu,plug,mate,loom] of [[parts[0],parts[2],parts[3],10],[parts[1],parts[4],parts[5],11]]){
   let slot=0;
   for(const [i,pin] of T[ecu.t].pins.entries()){
-   if(/EGT|GND|ground|12V/i.test(pin.l||'')||pin.l==='-')continue;
+   if(/^EGT|^Engine GND|^Engine Ground|^\+12V ECU/i.test(pin.l||'')||pin.p==='M4'&&ecu.id===1||pin.l==='-')continue;
    if(slot>=47)break;
    plug.pl[slot]=mate.pl[slot]=pin.l;
-   wires.push(mkW({p:ecu.id,i},{p:plug.id,i:slot},{id:next++,wid:'W'+String(wires.length+1).padStart(2,'0'),sig:pin.l,awg:0,color:'',loom,measuredOnly:true,auditStatus:'unverified',auditNotes:notice}));slot++;
+   wires.push(mkW({p:ecu.id,i},{p:plug.id,i:slot},{id:next++,wid:'W'+String(wires.length+1).padStart(2,'0'),sig:pin.l,...(root.WFHD30Demo.suggestedSpec(ecu.t,pin.p)||{awg:0,color:''}),loom,measuredOnly:true,auditStatus:'unverified',auditNotes:notice}));slot++;
   }
  }
- const i=T[parts[0].t].pins.findIndex(p=>p.p==='M4');wires.push(mkW({p:1,i},{p:7,i:0},{id:next++,wid:'P01',sig:'ECU fused supply (rating TBD)',awg:0,color:'',measuredOnly:true,auditStatus:'unverified',auditNotes:notice}));
+ const can=wires.filter(w=>/^CAN [HL]$/.test(w.sig));if(can.length===2){const pair=next++;can.forEach(w=>w.tw=pair);} const shield=next++;for(const w of wires.filter(w=>w.a.p===1&&['E3','H2','H3','H4'].includes(T[parts[0].t].pins[w.a.i].p)))w.wfShield={id:shield,part:'Trigger shielding example · verify cable and termination',from:'ECU',to:'Remote end TBD'};
+ const i=T[parts[0].t].pins.findIndex(p=>p.p==='M4');wires.push(mkW({p:1,i},{p:7,i:0},{id:next++,wid:'P01',sig:'ECU fused supply (rating TBD)',awg:16,color:'RED',measuredOnly:true,auditStatus:'unverified',auditNotes:notice}));
  UNDO.length=0;REDO.length=0;syncUndo();Object.assign(S,{parts,wires,looms:[{id:10,name:'Main bulkhead',cover:'DR-25',color:'#343b40'},{id:11,name:'Aux bulkhead',cover:'DR-25',color:'#343b40'}],nid:next,zones:[],circuitBook:[],wfBranches:[],examples:false,pro:null,wfFormboard:g,wfVaultId:null,wfProjectName:name,wfDemoNotice:notice,tab:'formboard'});
  resetDesignSelection();view.cam=null;view.look='loom';view.page='design';view.advanced=false;save();root.WFPro?.saveNamed({asNew:true,name});render();
 }
@@ -1641,7 +1642,7 @@ document.addEventListener('click',e=>{
   if(!view.quickStart){view.quickMessage='Tap source cavity first.';render();return;}
   if(view.quickStart.nid===e.nid)return toast('Choose different connectors.');
   const g=graph(),src=view.quickStart;commit();const w=makeWire(g,src,e);
-  if(w){const p=part(w.a.p);if(!w.sig)w.sig=plabel(p,w.a.i);view.quickLast=w.id;view.quickStart=null;view.quickMessage=w.wid+' created. Tap next source.';save();repaint();}return;
+  if(w){const p=part(w.a.p),q=part(w.b.p);if(!w.sig)w.sig=plabel(p,w.a.i);const spec=root.WFHD30Demo?.suggestedSpec(p.t,T[p.t].pins[w.a.i].p)||root.WFHD30Demo?.suggestedSpec(q.t,T[q.t].pins[w.b.i].p);if(spec){if(!w.awg)w.awg=spec.awg;if(!w.color)w.color=spec.color;w.auditStatus='unverified';w.auditNotes=root.WFHD30Demo.notice;}view.quickLast=w.id;view.quickStart=null;view.quickMessage=w.wid+' created. Tap next source.';save();repaint();}return;
  }
  if(action==='loadLSBulkheadDemo')return loadLSBulkheadDemo();
  if(action==='loadHD30Demo')return loadHD30Demo();
