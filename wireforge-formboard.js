@@ -378,7 +378,7 @@ function nodeInspector(n){
  input('Canvas label','fbLabel',n.label)+(hardware?input('Cable boot part / label','fbBoot',n.boot,'Unspecified'):'')+
  '<div class="fb-unit"><label>Preview depth<input id="fbElevation" type="number" step="1" value="'+h(n.elevation??'')+'" placeholder="0"></label>'+
  (hardware?'<label>Rotation (°)<input id="fbRotation" type="number" step="1" value="'+h(n.rotation??'')+'" placeholder="Auto"></label>':'')+'</div>'+
- '<div class="fb-actions">'+btn('nodeSave','Save component','fb-primary')+btn('delete','Remove')+'</div>'+(hardware?btn('pinSchedule','Pin configuration')+(p.wfFlying||p.t==='mxrace32'||p.t==='mxrace48'?btn('flyingPart','Show flying leads'):'')+pins(n):'');
+ '<div class="fb-actions">'+btn('nodeSave','Save component','fb-primary')+btn('delete',hardware?'Remove from layout':'Remove breakout')+(hardware&&t?.node?btn('partDelete','Delete part','danger'):'')+'</div>'+(hardware?btn('pinSchedule','Pin configuration')+(p.wfFlying||p.t==='mxrace32'||p.t==='mxrace48'?btn('flyingPart','Show flying leads'):'')+pins(n):'');
 }
 function bulkheadSelection(w){
  const choices=S.parts.filter(p=>T[p.t]?.bulk&&key(w.a.p)!==key(p.id)&&key(w.b.p)!==key(p.id));
@@ -1101,7 +1101,7 @@ function mateSel(p){
  return '<label class="ds-mate">Mated with<select id="dsMate"><option value="">Not mated</option>'+opts.map(q=>option(q.id,q.name,p.mate)).join('')+'</select></label>'+(p.mate?'<p class="muted">Cavity n joins cavity n. The mate adds no wire to the cut list.</p>':'');
 }
 function idRow(n,p){
- return '<div class="ds-idrow"><label>Name<input id="dsName" value="'+h(n.label||p.name)+'" placeholder="INJ1"></label><label>Housing P/N<input id="dsPN" value="'+h(p.wfPN||'')+'" placeholder="'+h(pnOf(p)||'TBD')+'"></label>'+btn('partSave','Save')+btn('partDup','Duplicate')+'</div>';
+ return '<div class="ds-idrow"><label>Name<input id="dsName" value="'+h(n.label||p.name)+'" placeholder="INJ1"></label><label>Housing P/N<input id="dsPN" value="'+h(p.wfPN||'')+'" placeholder="'+h(pnOf(p)||'TBD')+'"></label>'+btn('partSave','Save')+btn('partDup','Duplicate')+btn('partDelete','Delete part','danger')+'</div>';
 }
 function wirePanel(g,n){
  const p=part(n.partId),t=T[p.t],run=view.run,srcNode=run&&g.nodes.find(x=>x.id===run.nid),srcPart=part(srcNode?.partId);
@@ -1209,7 +1209,7 @@ function studioRender(el,g,report){
  const inspector=wsel&&page==='design'?wireEditor(g,wsel):view.pick&&page==='design'?pickPanel(g):view.landing?landingPanel(g):page==='design'&&n?.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node?wirePanel(g,n):page==='design'&&selected?'<aside class="ds-panel ds-inspector"><div class="ds-panelhead"><h3>'+h(n?captionForNode(n):seg.s.label||'Cable run')+'</h3>'+btn('dismiss','Close')+'</div>'+(n?.partId&&['mxrace32','mxrace48'].includes(part(n.partId)?.t)?btn('landStart','Land a wire','fb-primary'):'')+(n?nodeInspector(n):branchInspector(seg))+'</aside>':'';
  const preview=empty&&page==='design'&&!view.placing&&view.mode==='select'?'<div class="ds-start ds-start-first">'+firstCard()+'</div>':'';
  const controls='<div class="ds-look" role="group" aria-label="Harness view">'+btn('lookLoom','Loom',view.look!=='wires'?'active':'')+btn('lookWires','Individual wires',view.look==='wires'?'active':'')+'</div><div class="ds-zoom">'+btn('zoomOut','−')+btn('fit','Fit')+btn('zoomIn','+')+'</div>';
- el.innerHTML='<div class="ds-shell fb-workspace"><div class="ds-head"><strong>Harness Bench</strong><span class="ds-project">'+name+'</span><div>'+btn('studioShop','Export for manufacturer','fb-primary')+btn('advanced','Project tools')+'<button type="button" data-tab="project">Overview</button></div></div>'+
+ el.innerHTML='<div class="ds-shell fb-workspace"><div class="ds-head"><strong>Harness Bench</strong><span class="ds-project">'+name+'</span><div>'+(page==='design'?btn('newHarness','New blank harness'):'')+btn('studioShop','Export for manufacturer','fb-primary')+btn('advanced','Project tools')+'<button type="button" data-tab="project">Overview</button></div></div>'+
  '<div class="ds-desk">'+toolbar+(page==='design'&&!empty?stepsBar(g,report):'')+(page==='studioShop'?shopPanel(g,report):stage?canvas()+preview+(page==='design'?tools:'')+(caption?'<div class="ds-prompt">'+h(caption)+' '+btn('dismiss','Cancel')+'</div>':'')+
  (view.panel==='parts'&&page==='design'?studioParts():inspector)+controls:page==='studioWiring'?wiringSheet(g):'<div class="ds-report"><div class="ds-panelhead"><h3>'+(page==='studioBom'?'Bill of materials':'Wire cut list')+'</h3>'+btn(page==='studioBom'?'bom':'cut','Cut list CSV')+(page==='studioBom'?'':btn('schedule','Wire schedule CSV'))+'</div>'+studioReport(page,report,g)+'</div>')+
  '</div><div class="ds-foot"><b>Formboard</b><span>'+g.nodes.filter(n=>n.partId!=null).length+' parts &nbsp;·&nbsp; '+g.segments.length+' cable runs</span><span>'+ (page==='orbit'?'Drag to orbit':'Dimensions in inches')+'</span></div></div>';
@@ -1447,13 +1447,28 @@ function splitAt(g,s,pt){
  });
  toast('Breakout added. Measure both new branches.');
 }
+function deleteDesignPart(node){
+ const p=part(node?.partId);
+ if(!p)return;
+ const attached=S.wires.filter(w=>w.a.p===p.id||w.b.p===p.id);
+ if(!confirm('Delete '+p.name+' from the harness? This removes its attached cable runs and '+attached.length+' connected wire'+(attached.length===1?'':'s')+'.'))return;
+ mutate(g=>{
+  const nodes=new Set(g.nodes.filter(n=>n.partId===p.id).map(n=>n.id));
+  g.nodes=g.nodes.filter(n=>!nodes.has(n.id));
+  g.segments=g.segments.filter(s=>!nodes.has(s.a)&&!nodes.has(s.b));
+  for(const w of attached)delete g.od[key(w.id)];
+  for(const q of S.parts)if(q.mate===p.id)delete q.mate;
+  delPart(p.id);
+  Object.assign(view,{chosen:null,cav:null,run:null,wsel:null,wdraft:null,pick:null,trace:null,origin:null,landing:null,mode:'select'});
+ });
+}
 function closeMenu(){document.getElementById('dsMenu')?.remove();}
 function showMenu(cx,cy,t){
  closeMenu();
  const g=graph(),node=t.node&&g.nodes.find(n=>n.id===t.node),p=node&&part(node.partId);
  const items=t.seg?[['breakout','Add breakout here'],['wires','Choose wires for branch'],['covering','Set covering'],['label','Label'],['length','Enter measured length']]
-  :p&&!T[p.t]?.node?[['cavities','Inspect cavities'],['run','Run wire'],['mate','Show mate']]
-  :[['delnode','Delete breakout']];
+  :p&&!T[p.t]?.node?[['cavities','Inspect cavities'],['run','Run wire'],['mate','Show mate'],['partDelete','Delete part']]
+  :p?[['partDelete','Delete part']]:[['delnode','Delete breakout']];
  const m=document.createElement('div');m.id='dsMenu';m.className='ds-menu';m.setAttribute('role','menu');
  m.innerHTML=items.map(([k,l])=>'<button type="button" role="menuitem" data-menu="'+k+'">'+l+'</button>').join('');
  document.body.appendChild(m);
@@ -1471,6 +1486,7 @@ function showMenu(cx,cy,t){
   }
   if(node){
    view.chosen={id:node.id};
+   if(k==='partDelete')return deleteDesignPart(node);
    if(k==='mate'){const q=p?.mate&&part(p.mate),qn=q&&g.nodes.find(x=>x.partId===q.id);if(!qn)return toast(p?.mate?'The mated half is not on the formboard.':'This connector is not mated.');view.chosen={id:qn.id};render();return;}
    if(k==='delnode'){mutate(g=>{g.segments=g.segments.filter(x=>x.a!==node.id&&x.b!==node.id);g.nodes=g.nodes.filter(x=>x!==node);});view.chosen=null;return;}
    if(k==='run')toast('Tap a cavity, then Run wire.');
@@ -1545,6 +1561,14 @@ document.addEventListener('click',e=>{
  const button=e.target.closest('#t-formboard [data-fb]');
  if(!button)return;
  const action=button.dataset.fb;
+ if(action==='newHarness'){
+  root.WFPro.startBlank(true,()=>{
+   for(const prop of Object.keys(view))delete view[prop];
+   Object.assign(view,{mode:'select',page:'design',details:true,query:'',yaw:.32,pitch:.51});
+  });
+  return;
+ }
+ if(action==='partDelete')return deleteDesignPart(graph().nodes.find(n=>n.id===view.chosen?.id));
  if(!['land','landStart'].includes(action))view.landing=null;
  if(action==='landStart'){const src=graph().nodes.find(n=>n.id===view.chosen?.id);if(src){view.landing={src:src.id,i:T[part(src.partId).t].pins.findIndex((_,i)=>!usedOn(src.partId,i).length)};view.panel=null;render();}return;}
  if(action==='land')return finishLanding(graph());

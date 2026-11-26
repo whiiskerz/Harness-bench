@@ -84,6 +84,16 @@ module.exports=async function testFirstFive(browser,url){
   assert.equal(lines.length,3);
   assert.match(ct,/INJ1/);assert.match(ct,/TBD/);
   if(OUT){fs.copyFileSync(await pdf.path(),OUT+'/harness-bench-manufacturer.pdf');fs.copyFileSync(await csv.path(),OUT+'/harness-bench-manufacturer.csv');fs.writeFileSync(OUT+'/tap-sequence.txt',T.map((s,i)=>(i+1)+'. '+s).join('\n')+'\n');}
+  await page.getByRole('button',{name:'Design',exact:true}).tap();
+  await tapNode('INJ1');
+  await page.getByRole('button',{name:'Delete part',exact:true}).tap();
+  assert.equal(await page.evaluate(()=>S.wires.length),1);
+  assert.equal(await page.evaluate(()=>S.parts.some(p=>p.name==='INJ1')),false);
+  await page.getByRole('button',{name:'New blank harness'}).tap();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForSelector('.ds-start-first');
+  assert.deepEqual(await page.evaluate(()=>[S.parts.length,S.wires.length,S.wfFormboard.nodes.length,S.wfFormboard.segments.length]),[0,0,0,0]);
+  assert.equal(await page.evaluate(()=>WFPro.readSnapshot(WFPro.snapshotList()[0].id).project.wires.length),1);
   assert.deepEqual(errs,[]);
  }finally{await ctx.close();}
 };
