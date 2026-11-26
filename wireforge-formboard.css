@@ -231,3 +231,11 @@ body:has(.ds-shell):has(#t-formboard:not([hidden])) {overflow:hidden}
 .ds-shop{padding:16px;overflow:auto}.ds-shop .fb-actions button{min-height:48px;font-size:16px}.ds-shop li{margin:4px 0}
 .ds-start-first{pointer-events:auto!important}
 .ds-cavq{width:100%;min-height:44px;font-size:16px;margin:6px 0}
+
+/* Touch-accessible Design actions. Keep the project header from overflowing. */
+.ds-demomenu{position:relative;align-self:center;color:#fff}
+.ds-demomenu summary{cursor:pointer;min-height:36px;display:flex;align-items:center;padding:0 7px;white-space:nowrap}
+.ds-demomenu>div{position:absolute;right:0;top:100%;z-index:20;display:grid;gap:4px;width:min(300px,88vw);padding:8px;background:#242626;border-radius:8px;box-shadow:0 4px 16px #0005}
+.ds-demomenu button{min-height:44px;text-align:left}
+.ds-demo-warning{position:absolute;z-index:2;bottom:6px;left:50%;transform:translateX(-50%);padding:4px 8px;background:#fff4df;color:#7d430a;font-size:11px;font-weight:700;pointer-events:none;text-align:center;margin:0}
+.ds-wirelist button[aria-pressed=true]{border-color:#4fd1c5;background:#163f3d}
