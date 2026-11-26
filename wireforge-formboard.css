@@ -239,3 +239,15 @@ body:has(.ds-shell):has(#t-formboard:not([hidden])) {overflow:hidden}
 .ds-demomenu button{min-height:44px;text-align:left}
 .ds-demo-warning{position:absolute;z-index:2;bottom:6px;left:50%;transform:translateX(-50%);padding:4px 8px;background:#fff4df;color:#7d430a;font-size:11px;font-weight:700;pointer-events:none;text-align:center;margin:0}
 .ds-wirelist button[aria-pressed=true]{border-color:#4fd1c5;background:#163f3d}
+
+#dsDemoSelect{max-width:170px;min-height:36px;color:inherit;background:#303535;border:1px solid #616969;border-radius:6px}
+.ds-quick{width:min(570px,calc(100% - 100px));}
+.ds-quick-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ds-quick-columns section{min-width:0}
+.ds-quick-columns select,.ds-quick-columns input{width:100%;min-height:40px}
+.ds-quick-pins{display:grid;gap:4px;max-height:43vh;overflow:auto}
+.ds-quick-pins button{min-height:44px;text-align:left;border:1px solid #46555a;border-radius:6px;padding:7px;color:inherit;background:#303b40}
+.ds-quick-pins button[aria-pressed=true]{background:#006c62;border-color:#62e1d1}
+.ds-quick-pins button:disabled{opacity:.4}
+.ds-quick-pins button[hidden]{display:none}
+@media(max-width:650px){.ds-quick{width:auto;max-height:65%}.ds-quick-pins{max-height:28vh}#dsDemoSelect{max-width:110px}}
