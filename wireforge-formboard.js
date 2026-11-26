@@ -192,6 +192,8 @@ function nodeMarkup(n,p,neighbors,project,orbit){
  const shellLength=family==='mxecu'?(p.t==='mxrace48'||p.t==='mxpig48'?94:76):family==='mx'?110:family==='term'?47:family==='bulk'||family==='maven'?72:family==='dt'||family==='pwr'?64:51;
  const center=point(target.x+Math.cos(bodyAngle*Math.PI/180)*shellLength*.54,target.y+Math.sin(bodyAngle*Math.PI/180)*shellLength*.54);
  const boot=n.boot?`<path d="M-26-5H-16L-8-11H4V11H-8L-16 5H-26Z" fill="url(#fb-rubber)" stroke="#1c282d"/><path d="M-19-5V5M-11-8V8M-4-10V10" stroke="#65767c" stroke-opacity=".5"/>`:'';
+ const spread=view.chosen?.id===n.id && !view.advanced && !orbit && view.page==='design'
+  && !view.run && !view.landing && (p?.t==='mxpig48'||p?.t==='mxpig32');
  let tails='';
  if(p?.wfFlying||p?.wfLeadDrafts||T[p?.t]?.pigtail){
   const wired=new Set(S.wires.flatMap(w=>[w.a,w.b]).filter(end=>end.p===p.id).map(end=>end.i));
@@ -199,6 +201,19 @@ function nodeMarkup(n,p,neighbors,project,orbit){
   tails=type.pins.map((pin,i)=>{
    if(wired.has(i)||(!p.wfFlying&&!T[p.t]?.pigtail&&!p.wfLeadDrafts?.[i]))return '';
    const off=p.wfUnused?.[i];
+   if(spread){
+    // Four tips per cavity row. Leave a gap for the connector body.
+    const row=Math.floor(i/4), half=count/8;
+    const x=(i%4-1.5)*42, y=(row-half+(row<half?-1:2))*30;
+    const pinLabel=h(pin.p);
+    return `<g transform="rotate(${-bodyAngle})" pointer-events="none">
+     <path d="M0 0 Q${x} 0 ${x} ${y}" fill="none" stroke="#70838a" stroke-width="1.2"/>
+     <g data-lead-tip="${i}" data-spread-tip="${pinLabel}" pointer-events="all">
+      <title>${pinLabel} · ${h(plabel(p,i))}${off?' · unused':''}</title>
+      <rect x="${x-19}" y="${y-14}" width="38" height="28" rx="7" fill="${off?'#eee':'#f4faf9'}" stroke="#52716e"/>
+      <text x="${x}" y="${y+4}" text-anchor="middle" font-size="12" font-weight="700" fill="#193936">${pinLabel}</text>
+     </g></g>`;
+   }
    if(count<=8){
     const dy=(i-(count-1)/2)*8,dx=-46-(i%2)*8,draft=p.wfLeadDrafts?.[i]||{},col=(typeof cpart==='function'&&cpart(draft.color,0))||'#8e9ca3',labelOf=h(pin.p);
     return `<g><title>${labelOf} · ${off?'unused lead':'flying lead'}${draft.sig?' · '+h(draft.sig):''}</title><path d="M0 ${dy*.35} C-16 ${dy*.35} -18 ${dy} ${dx} ${dy}" fill="none" stroke="#10181b" stroke-width="3.6" stroke-linecap="round"/><path d="M0 ${dy*.35} C-16 ${dy*.35} -18 ${dy} ${dx} ${dy}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linecap="round"/>${off?`<path d="M${dx-2} ${dy-3}l-6 6M${dx-8} ${dy-3}l6 6" stroke="#c4564f" stroke-width="1.6"/>`:`<rect x="${dx-7}" y="${dy-2.2}" width="7" height="4.4" rx="1" fill="#d5bb87" stroke="#756448" stroke-width=".8"/>`}<text x="${dx-12}" y="${dy+2.6}" text-anchor="end" font-size="7.5" font-weight="700" fill="#1b3440" stroke="#edf2f3" stroke-width="2.4" paint-order="stroke" transform="rotate(${-bodyAngle} ${dx-12} ${dy})" pointer-events="none">${labelOf}</text>${!view.advanced&&!orbit?`<circle data-lead-tip="${i}" cx="${dx-6}" cy="${dy}" r="7" fill="transparent" pointer-events="all"/>`:''}</g>`;
@@ -1297,7 +1312,7 @@ function bindCanvas(g,report){
    if(dst&&T[dst.t].bulk){view.landing.dst=node;render();}return;
   }
   if(tip&&!view.advanced&&view.page==='design'){
-   view.drag={type:'lead',id:node,i:Number(tip.dataset.leadTip),start:p,...xyStart};
+   view.drag={type:'lead',spread:tip.hasAttribute('data-spread-tip'),id:node,i:Number(tip.dataset.leadTip),start:p,...xyStart};
   }else if(view.page==='orbit'){
    view.drag={type:e.button===1?'pan':'orbit',cam:{...view.cam},yaw:view.yaw,pitch:view.pitch,...xyStart};
   }else if(e.button===1||view.mode==='pan'||(!node&&!segment&&view.mode==='select')){
@@ -1371,6 +1386,11 @@ function bindCanvas(g,report){
    return;
   }
   if(d.type==='lead'){
+   if(!d.moved && d.spread){
+    const src=g.nodes.find(n=>n.id===d.id);
+    view.chosen={id:src.id};view.cav={pid:src.partId,i:d.i,s:''};
+    view.cavQ='';view.wsel=null;view.panel=null;render();return;
+   }
    const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-node]')?.dataset.node;
    const dst=part(g.nodes.find(n=>n.id===target)?.partId);
    view.landing={src:d.id,i:d.i,dst:dst&&T[dst.t].bulk?target:null};view.panel=null;render();return;
