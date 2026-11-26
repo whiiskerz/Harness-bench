@@ -1636,11 +1636,12 @@ document.addEventListener('click',e=>{
  if(action==='quickEdit'){if(!S.wires.some(w=>w.id===view.quickLast))return toast('Create a wire first.');view.quick=false;view.wsel=view.quickLast;view.wdraft=null;render();return;}
  if(action==='quickPin'){
   const e={nid:button.dataset.nodeId,i:Number(button.dataset.i),s:button.dataset.s||''};
-  if(button.dataset.side==='Source'){view.quickStart=e;view.quickMessage='Source selected. Tap destination cavity.';render();return;}
+  const scrolls=[...document.querySelectorAll('.ds-quick-pins')].map(x=>x.scrollTop);const repaint=()=>{render();document.querySelectorAll('.ds-quick-pins').forEach((x,i)=>x.scrollTop=scrolls[i]||0);};
+  if(button.dataset.side==='Source'){view.quickStart=e;view.quickMessage='Source selected. Tap destination cavity.';repaint();return;}
   if(!view.quickStart){view.quickMessage='Tap source cavity first.';render();return;}
   if(view.quickStart.nid===e.nid)return toast('Choose different connectors.');
   const g=graph(),src=view.quickStart;commit();const w=makeWire(g,src,e);
-  if(w){const p=part(w.a.p);if(!w.sig)w.sig=plabel(p,w.a.i);view.quickLast=w.id;view.quickStart=null;view.quickMessage=w.wid+' created. Tap next source.';save();render();}return;
+  if(w){const p=part(w.a.p);if(!w.sig)w.sig=plabel(p,w.a.i);view.quickLast=w.id;view.quickStart=null;view.quickMessage=w.wid+' created. Tap next source.';save();repaint();}return;
  }
  if(action==='loadLSBulkheadDemo')return loadLSBulkheadDemo();
  if(action==='loadHD30Demo')return loadHD30Demo();
