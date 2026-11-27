@@ -1262,9 +1262,31 @@ function loadLSBulkheadDemo(){
    wires.push(mkW({p:mate.id,i:w.b.i},{p:d.id,i:pi},{id:next++,wid:'V'+String(vn++).padStart(2,'0'),sig:w.sig,awg:w.awg,color:w.color,loom:loomV,measuredOnly:true,wfSuggested:true,auditStatus:'unverified',auditNotes:'Vehicle-side destination taken from the owner E90 circuit list; pin, color and gauge are suggested, not verified.'}));
   }
  }
+ /* Engine-bay power and ground studs. Which circuits land on which stud is SUGGESTED from the owner's description, not verified. */
+ {
+  const sp=(name,x,y)=>{const part={id:parts.length+1,t:'stud',name,x,y,rotation:0,pl:{}};parts.push(part);addNode(g,x,y,name,part.id);return part;};
+  const nd=id=>g.nodes.find(n=>n.partId===id),link=(a,b,label,sleeve)=>{addSegment(g,a.id,b.id);Object.assign(g.segments.at(-1),{label:label||'',sleeve:sleeve||''});};
+  const pbo=addNode(g,1040,1000,'Engine bay power branch'),gbo=addNode(g,1040,1190,'Engine bay ground branch');
+  const big=sp('Engine bay +12V large stud (unfused)',1260,950),small=sp('Engine bay +12V small stud (OEM fused constant 12V)',1260,1050),chassis=sp('Engine bay chassis ground stud',1260,1160),ehead=sp('ECU ground – back of head',1260,1260);
+  const starter=sp('Starter B+ terminal (feed wire TBD)',1480,910),alt=sp('Alternator B+ terminal (feed wire TBD)',1480,990);
+  link(nd(7),pbo,'Engine bay power feed · routing TBD');link(pbo,gbo,'Engine bay power/ground trunk · length TBD','DR-25');link(g.nodes.find(n=>n.partId===4)&&g.nodes.find(n=>n.partId===4),g.nodes.find(n=>/ground branch/.test(n.label)),'Vehicle ground drop · routing TBD');
+  link(pbo,big,'Large stud lead');link(pbo,small,'Small stud lead');link(gbo,chassis,'Chassis ground lead');link(gbo,ehead,'ECU head ground lead');link(nd(big.id),nd(starter.id),'Starter feed · TBD');link(nd(big.id),nd(alt.id),'Alternator feed · TBD');
+  const note='Suggested from the owner description of the engine bay. Gauge, color and termination are not verified.';
+  const mk=(a,b,wid,sig,awg,color,loom)=>wires.push(mkW(a,b,{id:next++,wid,sig,awg,color,loom,measuredOnly:true,wfSuggested:true,auditStatus:'unverified',auditNotes:note}));
+  mk({p:1,i:T.mxrace48.pins.findIndex(q=>q.p==='L4')},{p:ehead.id,i:0},'G01','Engine GND to ECU ground – back of head',16,'BLK',14);
+  let gi=1;
+  for(const w of [...wires]){
+   const lab=String(w.sig||'');if(!/^(Sensor GND|VR GND|Shield GND)$/.test(lab)||/^[VGP]/.test(w.wid||''))continue;
+   const mate=w.a.p===1?parts[3]:parts[5];
+   mk({p:mate.id,i:w.b.i},{p:ehead.id,i:gi++},'G'+String(gi).padStart(2,'0'),lab+' to ECU ground – back of head',w.awg,w.color,14);
+  }
+  mk({p:big.id,i:0},{p:starter.id,i:0},'P02','Starter B+ feed',0,'RED',13);
+  mk({p:big.id,i:1},{p:alt.id,i:0},'P03','Alternator B+ feed',0,'RED',13);
+  mk({p:small.id,i:0},{p:7,i:1},'P04','ECU 12V constant (OEM fused stud) to F1',16,'RED',13);
+ }
  {const vc=wires.filter(w=>/^V/.test(w.wid||'')&&/^CAN [HL]$/.test(w.sig));if(vc.length===2){const t=next++;vc.forEach(w=>w.tw=t);}}
  const i=T[parts[0].t].pins.findIndex(p=>p.p==='M4');wires.push(mkW({p:1,i},{p:7,i:0},{id:next++,wid:'P01',sig:'ECU fused supply (rating TBD)',awg:16,color:'RED',measuredOnly:true,auditStatus:'unverified',auditNotes:notice}));
- UNDO.length=0;REDO.length=0;syncUndo();Object.assign(S,{parts,wires,looms:[{id:10,name:'Main bulkhead',cover:'DR-25',color:'#343b40'},{id:11,name:'Aux bulkhead',cover:'DR-25',color:'#343b40'},{id:12,name:'Vehicle side · E90 LS',cover:'DR-25',color:'#2f4650'}],nid:next,zones:[],circuitBook:[],wfBranches:[],examples:false,pro:null,wfFormboard:g,wfVaultId:null,wfProjectName:name,wfDemoNotice:notice,tab:'formboard'});
+ UNDO.length=0;REDO.length=0;syncUndo();Object.assign(S,{parts,wires,looms:[{id:10,name:'Main bulkhead',cover:'DR-25',color:'#343b40'},{id:11,name:'Aux bulkhead',cover:'DR-25',color:'#343b40'},{id:12,name:'Vehicle side · E90 LS',cover:'DR-25',color:'#2f4650'},{id:13,name:'Engine bay power',cover:'DR-25',color:'#7a2b2b'},{id:14,name:'Engine bay ground',cover:'DR-25',color:'#262b2e'}],nid:next,zones:[],circuitBook:[],wfBranches:[],examples:false,pro:null,wfFormboard:g,wfVaultId:null,wfProjectName:name,wfDemoNotice:notice,tab:'formboard'});
  resetDesignSelection();view.demoFit=true;view.cam=null;view.look='loom';view.page='design';view.advanced=false;save();root.WFPro?.saveNamed({asNew:true,name});render();
 }
 function quickWirePanel(g){

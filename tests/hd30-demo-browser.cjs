@@ -8,7 +8,7 @@ module.exports=async function(browser,url){
  try{
  await page.goto(url.split('#')[0]+'#studio');await page.waitForSelector('.ds-shell');
  await page.locator('#dsDemoSelect').selectOption('ls');
- assert.deepEqual(await page.evaluate(()=>[S.parts.length>7,S.parts.filter(p=>p.mate).length,S.looms.length,S.wires.filter(w=>/^V/.test(w.wid||'')).length>8]),[true,4,3,true]);
+ assert.deepEqual(await page.evaluate(()=>[S.parts.length>7,S.parts.filter(p=>p.mate).length,S.looms.length,S.wires.filter(w=>/^V/.test(w.wid||'')).length>8]),[true,4,5,true]);
  await action('quickWire');
  await page.locator('[data-quick-connector="Source"]').selectOption(await page.evaluate(()=>S.wfFormboard.nodes.find(n=>n.partId===4).id));
  await page.locator('[data-quick-connector="Destination"]').selectOption(await page.evaluate(()=>S.wfFormboard.nodes.find(n=>n.partId===6).id));
@@ -36,6 +36,11 @@ module.exports=async function(browser,url){
  await page.reload();await page.waitForSelector('.ds-shell');
  assert.ok(await page.evaluate(()=>S.wires.filter(w=>/^V/.test(w.wid||'')&&w.awg&&w.color).length>8),'vehicle-side wires keep gauge and color after reload');
  assert.equal(await page.evaluate(()=>S.wires.filter(w=>!w.color).length),0);
+ const studs=await page.evaluate(()=>({names:S.parts.filter(p=>p.t==='stud').map(p=>p.name),wires:Object.fromEntries(S.wires.filter(w=>/^[GP]\d\d$/.test(w.wid||'')).map(w=>[w.wid,[S.parts.find(p=>p.id===w.a.p).name,S.parts.find(p=>p.id===w.b.p).name,w.auditStatus,w.loom]]))}));
+ for(const n of ['Engine bay +12V large stud (unfused)','Engine bay +12V small stud (OEM fused constant 12V)','Engine bay chassis ground stud','ECU ground – back of head'])assert.ok(studs.names.includes(n),'stud '+n);
+ assert.equal(studs.wires.G01[1],'ECU ground – back of head');assert.equal(studs.wires.P04[0],'Engine bay +12V small stud (OEM fused constant 12V)');
+ assert.equal(studs.wires.P02[0],'Engine bay +12V large stud (unfused)');assert.ok(Object.values(studs.wires).every(w=>w[2]==='unverified'),'stud circuits are flagged unverified');
+ assert.equal(await page.evaluate(()=>S.wires.filter(w=>w.b.p===S.parts.find(p=>p.name==='Engine bay chassis ground stud').id||w.a.p===S.parts.find(p=>p.name==='Engine bay chassis ground stud').id).length),0,'no invented chassis ground connections');
  await action('studioShop');for(const id of ['shopPdf','shopCsv','bom']){const [dl]=await Promise.all([page.waitForEvent('download'),action(id)]);assert.ok(await dl.path());}
  assert.deepEqual(errors,[]);
  }finally{await ctx.close();}

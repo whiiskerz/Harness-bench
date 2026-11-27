@@ -18,3 +18,6 @@ Run node tests/hd30-demo.cjs and the touch-emulation browser suite tests/hd30-de
 - 22 AWG or finer on HD30 cavities is flagged in the manufacturer TBD list (contact size per cavity unverified).
 - Cache tag and app version bumped to 029-audit / 0.29.0-audit so iPad Safari loads the new scripts.
 - node tests/hd30-demo-browser.cjs now runs standalone and prints the assertion count.
+
+## v0.30 engine-bay studs
+LS demo adds four placeable `stud` parts: Engine bay +12V large stud (unfused), Engine bay +12V small stud (OEM fused constant 12V), Engine bay chassis ground stud, ECU ground – back of head. Circuits G01-G04 (Engine/Sensor/VR/Shield GND to the head ground), P02/P03 (starter/alternator feeds from the large stud, gauge TBD) and P04 (small stud to F1 input) are SUGGESTED, not verified. The chassis ground stud has no wires because no source circuit is confirmed. Looms 13 (power) and 14 (ground).
