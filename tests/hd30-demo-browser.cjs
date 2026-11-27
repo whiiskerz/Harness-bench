@@ -8,7 +8,7 @@ module.exports=async function(browser,url){
  try{
  await page.goto(url.split('#')[0]+'#studio');await page.waitForSelector('.ds-shell');
  await page.locator('#dsDemoSelect').selectOption('ls');
- assert.deepEqual(await page.evaluate(()=>[S.parts.length>7,S.parts.filter(p=>p.mate).length,S.looms.length,S.wires.filter(w=>/^V/.test(w.wid||'')).length>8]),[true,4,5,true]);
+ assert.deepEqual(await page.evaluate(()=>[S.parts.length>7,S.parts.filter(p=>p.mate).length,S.looms.length,S.wires.filter(w=>/^V/.test(w.wid||'')).length>8]),[true,4,12,true]);
  await action('quickWire');
  await page.locator('[data-quick-connector="Source"]').selectOption(await page.evaluate(()=>S.wfFormboard.nodes.find(n=>n.partId===4).id));
  await page.locator('[data-quick-connector="Destination"]').selectOption(await page.evaluate(()=>S.wfFormboard.nodes.find(n=>n.partId===6).id));
@@ -36,6 +36,20 @@ module.exports=async function(browser,url){
  await page.reload();await page.waitForSelector('.ds-shell');
  assert.ok(await page.evaluate(()=>S.wires.filter(w=>/^V/.test(w.wid||'')&&w.awg&&w.color).length>8),'vehicle-side wires keep gauge and color after reload');
  assert.equal(await page.evaluate(()=>S.wires.filter(w=>!w.color).length),0);
+ const topo=await page.evaluate(()=>{const nm=id=>S.parts.find(p=>p.id===id)?.name||'';const ecuPins=w=>[w.a,w.b].map(e=>S.parts.find(p=>p.id===e.p)).filter(Boolean).map(p=>p.name);return{
+  g:Object.fromEntries(S.wires.filter(w=>/^G0/.test(w.wid||'')).map(w=>[w.wid,[nm(w.a.p),nm(w.b.p)]])),
+  trig:S.wires.filter(w=>/Trigger GND|Sensor GND/.test(w.sig||'')).map(w=>[w.sig,nm(w.a.p),nm(w.b.p)]),
+  shieldOnBulkhead:S.wires.filter(w=>/GND Shield/.test(w.sig||'')).length,
+  counts:{coils:S.parts.filter(p=>/^Ignition coil/.test(p.name)).length,inj:S.parts.filter(p=>/^Injector \d/.test(p.name)).length},
+  h01:S.wires.find(w=>w.wid==='H01')&&[nm(S.wires.find(w=>w.wid==='H01').a.p),nm(S.wires.find(w=>w.wid==='H01').b.p)],
+  chassis:S.wires.filter(w=>[w.a.p,w.b.p].includes(S.parts.find(p=>p.name==='Engine bay chassis ground stud').id)).length,
+  looms:S.looms.map(l=>l.name)}});
+ assert.equal(topo.g.G01[1],'ECU ground – back of head');assert.equal(topo.g.G02[1],'ECU ground – back of head');
+ assert.ok(topo.trig.every(t=>!/ground stud|ECU ground|back of head/.test(t[1]+t[2])),'Sensor/Trigger GND never go to head or chassis');
+ assert.ok(topo.trig.some(t=>/Sensor GND return junction/.test(t[2])),'sensor return junction');assert.ok(topo.trig.some(t=>/Trigger GND return junction/.test(t[2])),'trigger return junction');
+ assert.equal(topo.shieldOnBulkhead,0,'shield drains stay at the ECU (MaxxECU: shields grounded only through the ECU)');
+ assert.deepEqual([topo.counts.coils,topo.counts.inj,topo.chassis],[8,8,0]);assert.equal(topo.h01[1],'8HP harness (6-position, owner map)');
+ for(const n of ['5 · Engine sensors','6 · DBW throttle + pedal','7 · ZF 8HP','4 · Injectors'])assert.ok(topo.looms.includes(n),n);
  const studs=await page.evaluate(()=>({names:S.parts.filter(p=>p.t==='stud').map(p=>p.name),wires:Object.fromEntries(S.wires.filter(w=>/^[GP]\d\d$/.test(w.wid||'')).map(w=>[w.wid,[S.parts.find(p=>p.id===w.a.p).name,S.parts.find(p=>p.id===w.b.p).name,w.auditStatus,w.loom]]))}));
  for(const n of ['Engine bay +12V large stud (unfused)','Engine bay +12V small stud (OEM fused constant 12V)','Engine bay chassis ground stud','ECU ground – back of head'])assert.ok(studs.names.includes(n),'stud '+n);
  assert.equal(studs.wires.G01[1],'ECU ground – back of head');assert.equal(studs.wires.P04[0],'Engine bay +12V small stud (OEM fused constant 12V)');
