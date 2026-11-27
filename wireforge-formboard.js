@@ -172,8 +172,8 @@ function branchMarkup(bundle,c,active,orbit){
  const textAngle=Math.abs(labelAngle)>63?0:labelAngle;
  const studioLabel=!view.advanced&&view.details&&!orbit;
  const band=s.label||s.sleeve||'';
- const widthLabel=Math.max(26,Math.min(140,band.length*6+12));
- const labels=studioLabel?`<g transform="translate(${xy(mid)}) rotate(${textAngle})">${band?`<rect x="${-widthLabel/2}" y="-7" width="${widthLabel}" height="14" rx="2" fill="#f4d452"/><text text-anchor="middle" y="3.5" fill="#17191a" font-size="10" font-weight="800">${h(band.slice(0,21))}</text>`:''}${positive(s.length)?`<text text-anchor="middle" y="24" fill="#333" font-size="10">${h(dim)}</text>`:''}</g>`:view.details&&!orbit?`<g transform="translate(${xy(mid)}) rotate(${textAngle})"><rect x="-23" y="-29" width="46" height="15" rx="3" fill="#f9fbfa" stroke="${selected?'#008d82':'#a6b8bd'}"/><text y="-18.5" fill="#253a43" text-anchor="middle" font-size="9" font-weight="700">${h(dim)}</text><text y="22" stroke="#edf2f3" stroke-width="3" paint-order="stroke" text-anchor="middle" fill="#354c55" font-size="10" font-weight="700">${h(belt+(sleeve?' · '+sleeve+(positive(s.size)?' '+num(s.size)+' mm':''):''))}</text></g>`:'';
+ const bandText=band.length>44?band.slice(0,43)+'…':band;const widthLabel=Math.max(26,Math.min(300,bandText.length*5.6+14));
+ const labels=studioLabel?`<g transform="translate(${xy(mid)}) rotate(${textAngle})">${band?`<rect x="${-widthLabel/2}" y="-7" width="${widthLabel}" height="14" rx="2" fill="#f4d452"/><text text-anchor="middle" y="3.5" fill="#17191a" font-size="10" font-weight="800">${h(bandText)}</text>`:''}${positive(s.length)?`<text text-anchor="middle" y="24" fill="#333" font-size="10">${h(dim)}</text>`:''}</g>`:view.details&&!orbit?`<g transform="translate(${xy(mid)}) rotate(${textAngle})"><rect x="-23" y="-29" width="46" height="15" rx="3" fill="#f9fbfa" stroke="${selected?'#008d82':'#a6b8bd'}"/><text y="-18.5" fill="#253a43" text-anchor="middle" font-size="9" font-weight="700">${h(dim)}</text><text y="22" stroke="#edf2f3" stroke-width="3" paint-order="stroke" text-anchor="middle" fill="#354c55" font-size="10" font-weight="700">${h(belt+(sleeve?' · '+sleeve+(positive(s.size)?' '+num(s.size)+' mm':''):''))}</text></g>`:'';
  const handle=selected&&!orbit?`<circle data-bend="${h(s.id)}" cx="${mid.x}" cy="${mid.y}" r="7" fill="#eafff8" stroke="#007f77" stroke-width="2"><title>Drag to reshape branch</title></circle>`:'';
  return `<g data-seg="${h(s.id)}" ${view.trace&&!traced&&!selected?'opacity=".47"':''}><title>${h(belt)} · ${h(dim)} · ${members.length} wires</title>
  <path d="${d}" stroke="transparent" stroke-width="${Math.max(26,width+8)}" fill="none"/>
@@ -1237,7 +1237,7 @@ function loadLSBulkheadDemo(){
  for(const [ecu,plug,mate,loom] of [[parts[0],parts[2],parts[3],10],[parts[1],parts[4],parts[5],11]]){
   let slot=0;
   for(const [i,pin] of T[ecu.t].pins.entries()){
-   if(/^EGT|^Engine GND|^Engine Ground|^\+12V ECU/i.test(pin.l||'')||pin.p==='M4'&&ecu.id===1||pin.l==='-')continue;
+   if(/^EGT|^Engine GND|^Engine Ground|^GND Shield|^\+12V ECU/i.test(pin.l||'')||pin.p==='M4'&&ecu.id===1||pin.l==='-')continue;
    if(slot>=47)break;
    plug.pl[slot]=mate.pl[slot]=pin.l;
    wires.push(mkW({p:ecu.id,i},{p:plug.id,i:slot},{id:next++,wid:'W'+String(wires.length+1).padStart(2,'0'),sig:pin.l,...(root.WFHD30Demo.suggestedSpec(ecu.t,pin.p)||{awg:0,color:''}),loom,measuredOnly:true,auditStatus:'unverified',auditNotes:notice}));slot++;
@@ -1245,9 +1245,10 @@ function loadLSBulkheadDemo(){
  }
  const can=wires.filter(w=>/^CAN [HL]$/.test(w.sig));if(can.length===2){const pair=next++;can.forEach(w=>w.tw=pair);} const shield=next++;for(const w of wires.filter(w=>w.a.p===1&&['E3','H2','H3','H4'].includes(T[parts[0].t].pins[w.a.i].p)))w.wfShield={id:shield,part:'Trigger shielding example · verify cable and termination',from:'ECU',to:'Remote end TBD'};
  /* Vehicle side from the owner's E90 LS circuit names. Pins/colors/gauges are SUGGESTED; destinations beyond the bulkhead are examples. */
- const VEH=[[/^CLT/,'clt','sens2','Coolant temp sensor (CLT)','SIG'],[/^IAT/,'iat','sens2','Intake air temp sensor (IAT)','SIG'],[/^AIN 4/,'oil','sens3','Oil pressure sensor (AIN4)','SIG'],[/^AIN 2/,'ntp','sens3','Nitrous pressure sensor (AIN2)','SIG'],[/^AIN 6/,'fpr','sens3','Fuel pressure sensor (AIN6)','SIG'],[/^DIN 5/,'flex','flex','Flex fuel sensor (DIN5)','SIG'],[/^DIN 1/,'brk','bmwx60001if','BMW X60001 DME box (brake, fan)','38'],[/^GPO 5/,'fan','bmwx60001if','BMW X60001 DME box (brake, fan)','20'],[/^GPO 6/,'ac','relay','A/C compressor relay','85'],[/^GPO 4/,'ssr','ssr','Nitrous SSR (GPO4 trigger)','3'],[/^CAN H/,'canh','cansplit','Installed CAN1 DT splitter','H-IN'],[/^CAN L/,'canl','cansplit','Installed CAN1 DT splitter','L-IN']];
+ const devs=new Map(),extraLooms=[];
+ const VEH=[[/^CLT/,'clt','sens2','Coolant temp sensor (CLT)','SIG'],[/^IAT/,'iat','sens2','Intake air temp sensor (IAT)','SIG'],[/^AIN 4/,'oil','sens3','Oil pressure sensor (AIN4)','SIG'],[/^AIN 2/,'ntp','sens3','Nitrous pressure sensor (AIN2)','SIG'],[/^AIN 6/,'fpr','sens3','Fuel pressure sensor (AIN6)','SIG'],[/^DIN 5/,'flex','flex','Flex fuel sensor (DIN5)','SIG'],[/^DIN 1/,'brk','bmwx60001if','BMW X60001 DME box (brake, fan)','38'],[/^GPO 5/,'fan','bmwx60001if','BMW X60001 DME box (brake, fan)','20'],[/^GPO 6/,'ac','relay','A/C compressor relay','85'],[/^GPO 4/,'ssr','ssr','Nitrous SSR (GPO4 trigger)','3'],[/^CAN H/,'can','cansplit','Installed CAN1 DT splitter','H-IN'],[/^CAN L/,'can','cansplit','Installed CAN1 DT splitter','L-IN']];
  {
-  const devs=new Map(),loomV=12,nodeOf=id=>g.nodes.find(n=>n.partId===id);
+  const loomV=12,nodeOf=id=>g.nodes.find(n=>n.partId===id);
   const bo=[addNode(g,1040,180,'Vehicle breakout · main'),addNode(g,1040,490,'Vehicle breakout · aux')];
   addSegment(g,nodeOf(4).id,bo[0].id);Object.assign(g.segments.at(-1),{label:'L03 · Vehicle side (main)',sleeve:'DR-25'});
   addSegment(g,nodeOf(6).id,bo[1].id);Object.assign(g.segments.at(-1),{label:'L03 · Vehicle side (aux)',sleeve:'DR-25'});
@@ -1274,19 +1275,58 @@ function loadLSBulkheadDemo(){
   const note='Suggested from the owner description of the engine bay. Gauge, color and termination are not verified.';
   const mk=(a,b,wid,sig,awg,color,loom)=>wires.push(mkW(a,b,{id:next++,wid,sig,awg,color,loom,measuredOnly:true,wfSuggested:true,auditStatus:'unverified',auditNotes:note}));
   mk({p:1,i:T.mxrace48.pins.findIndex(q=>q.p==='L4')},{p:ehead.id,i:0},'G01','Engine GND to ECU ground – back of head',16,'BLK',14);
-  let gi=1;
-  for(const w of [...wires]){
-   const lab=String(w.sig||'');if(!/^(Sensor GND|VR GND|Shield GND)$/.test(lab)||/^[VGP]/.test(w.wid||''))continue;
-   const mate=w.a.p===1?parts[3]:parts[5];
-   mk({p:mate.id,i:w.b.i},{p:ehead.id,i:gi++},'G'+String(gi).padStart(2,'0'),lab+' to ECU ground – back of head',w.awg,w.color,14);
-  }
+  mk({p:2,i:T.mxrace32.pins.findIndex(q=>q.p==='G4')},{p:ehead.id,i:1},'G02','Engine Ground 2 to ECU ground – back of head (MaxxECU: same spot as Engine GND)',16,'BLK',14);
   mk({p:big.id,i:0},{p:starter.id,i:0},'P02','Starter B+ feed',0,'RED',13);
   mk({p:big.id,i:1},{p:alt.id,i:0},'P03','Alternator B+ feed',0,'RED',13);
   mk({p:small.id,i:0},{p:7,i:1},'P04','ECU 12V constant (OEM fused stud) to F1',16,'RED',13);
  }
+ /* Harness sections laid out from the owner E90 project. Anything not in that project stays TBD. */
+ {
+  const nd=id=>g.nodes.find(n=>n.partId===id),mateOf=w=>w.a.p===1?parts[3]:parts[5];
+  const eW=fn=>wires.find(w=>(w.a.p===1||w.a.p===2)&&!/^[VGPHS]/.test(w.wid||'')&&String(T[parts[w.a.p-1].t].pins[w.a.i].l||'')===fn);
+  const dev=(t,name,x,y)=>{const part={id:parts.length+1,t,name,x,y,rotation:0,pl:{}};parts.push(part);addNode(g,x,y,name,part.id);return part;};
+  const bn=(label,x,y)=>addNode(g,x,y,label),lk=(a,b,label,sleeve)=>{addSegment(g,a.id,b.id);Object.assign(g.segments.at(-1),{label:label||'',sleeve:sleeve||''});};
+  const LM=[[15,'4 · Ignition coils'],[16,'4 · Injectors'],[17,'5 · Engine sensors'],[18,'6 · DBW throttle + pedal'],[19,'7 · ZF 8HP'],[20,'8 · BMW chassis'],[21,'9 · Cabin + trunk']];
+  const sug='Suggested from ECU labels and the owner E90 project. Pin polarity, color, gauge and termination are not verified.',own='Assignment from the owner E90 project. Gauge/fuse details not confirmed (TBD).';
+  const wv=(A,B,wid,sig,awg,color,loom,note,suggested)=>wires.push(mkW(A,B,{id:next++,wid,sig,awg,color,loom,measuredOnly:true,wfSuggested:!!suggested,auditStatus:'unverified',auditNotes:note}));
+  const fromEcu=(fn,devPart,pin,wid,loom,sig)=>{const w=eW(fn);if(!w||pin<0)return;wv({p:mateOf(w).id,i:w.b.i},{p:devPart.id,i:pin},wid,sig||fn,w.awg,w.color,loom,sug,true);};
+  // 4 ignition coils + injectors (cylinder assignment TBD)
+  const bI=bn('4 · Ignition branch',1040,-60),bJ=bn('4 · Injector branch',1040,-330);
+  lk(nd(4),bI,'Engine harness trunk · length TBD','DR-25');lk(bI,bJ,'');
+  for(let k=1;k<=8;k++){
+   const c=dev('coil3','Ignition coil '+k+' (cylinder TBD)',1260+((k-1)%4)*210,-110-Math.floor((k-1)/4)*80),j=dev('inj2','Injector '+k+' (cylinder TBD)',1260+((k-1)%4)*210,-380-Math.floor((k-1)/4)*80);
+   lk(bI,nd(c.id),'');lk(bJ,nd(j.id),'');
+   fromEcu('IGN '+k,c,0,'I'+String(k).padStart(2,'0'),15,'IGN '+k);fromEcu('INJ '+k,j,0,'J'+String(k).padStart(2,'0'),16,'INJ '+k);
+  }
+  // 5 engine sensors: dedicated returns, crank/cam
+  const sRet=dev('stud','Sensor GND return junction (ECU-referenced; never chassis or engine GND)',1700,330),tRet=dev('stud','Trigger GND return junction (dedicated)',1700,-600);
+  const bS=bn('5 · Engine sensor branch',1040,-560);lk(nd(4),bS,'');lk(bS,nd(tRet.id),'');
+  const crank=dev('sens3','Crank sensor (type TBD · shield drain at ECU end only)',1260,-640),cam=dev('sens3','Cam sensor (type TBD · shield drain at ECU end only)',1260,-720);
+  lk(bS,nd(crank.id),'');lk(bS,nd(cam.id),'');
+  const gp=d=>d.t==='stud'?0:T[d.t].pins.findIndex(q=>/GND/i.test(q.p+q.l)),sg=d=>T[d.t].pins.findIndex(q=>/SIG/i.test(q.p));
+  fromEcu('TRIGGER',crank,sg(crank),'S01',17,'Crank (TRIGGER)');fromEcu('HOME',cam,sg(cam),'S02',17,'Cam (HOME)');
+  const tg=eW('Trigger GND'),sgw=eW('Sensor GND');
+  if(tg)wv({p:mateOf(tg).id,i:tg.b.i},{p:tRet.id,i:0},'S03','Trigger GND (dedicated return)',tg.awg,tg.color,17,sug,true);
+  wv({p:tRet.id,i:1},{p:crank.id,i:gp(crank)},'S04','Trigger GND to crank sensor',0,'BRN',17,sug,true);wv({p:tRet.id,i:2},{p:cam.id,i:gp(cam)},'S05','Trigger GND to cam sensor',0,'BRN',17,sug,true);
+  if(sgw){wv({p:mateOf(sgw).id,i:sgw.b.i},{p:sRet.id,i:0},'S06','Sensor GND (ECU-referenced return)',sgw.awg,sgw.color,17,sug,true);lk(nd(4),nd(sRet.id),'Sensor return · routing TBD');}
+  let r=1;for(const key of ['clt','iat','oil','ntp','fpr','flex']){const d=devs.get(key);if(!d)continue;const q=gp(d);if(q<0)continue;wv({p:sRet.id,i:r++},{p:d.id,i:q},'S'+String(6+r).padStart(2,'0'),'Sensor GND to '+d.name,22,'BRN',17,sug,true);lk(nd(sRet.id),nd(d.id),'');}
+  // 6 DBW throttle + pedal
+  const bD=bn('6 · DBW + pedal branch',1040,640);lk(g.nodes.find(n=>n.partId===6),bD,'Cabin pedal run · length TBD','DR-25');
+  const etb=dev('etb6','E-throttle 6-pin (engine side)',1260,1420),epd=dev('mxpedal','E-pedal 6-pin (MaxxECU side)',1260,1530),oem=dev('mxpedal','OEM BMW pedal (DBW) · connector TBD',1480,1530);
+  lk(bD,nd(etb.id),'');lk(bD,nd(epd.id),'');lk(nd(epd.id),nd(oem.id),'Pedal pigtail · length TBD');
+  fromEcu('Motor 1+',etb,T.etb6.pins.findIndex(q=>q.p==='B'),'D01',18,'Motor 1+');fromEcu('Motor 1−',etb,T.etb6.pins.findIndex(q=>q.p==='A'),'D02',18,'Motor 1−');
+  fromEcu('AIN 5 (0–5 V)',epd,2,'D03',18,'AIN 5 pedal main');fromEcu('AIN 8 (0–5 V)',epd,5,'D04',18,'AIN 8 pedal backup');
+  [[1,1,'BRN','Pedal ground (maxx pin 1)'],[2,2,'BRN/GRN','Pedal ground (maxx pin 2)'],[3,3,'BLU','Pedal TPS 1 signal (maxx pin 3)'],[4,4,'YEL','Pedal 5V reference (maxx pin 4)'],[5,5,'YEL/GRN','Pedal 5V reference (maxx pin 5)'],[6,6,'WHT/YEL','Pedal TPS 2 signal (maxx pin 6)']].forEach(([a,b,c,sig],k)=>wv({p:epd.id,i:a-1},{p:oem.id,i:b-1},'D'+String(5+k).padStart(2,'0'),sig,0,c,18,own,false));
+  // 7 ZF 8HP (E90 project: pin 2 switched +12V from trunk fuse F3, pins 4/5 CAN to splitter branch 3)
+  const bH=bn('7 · ZF 8HP branch',1040,1700),hp=dev('e908hp','8HP harness (6-position, owner map)',1260,1700),fb=dev('fuse6','Trunk 6-slot fuse box (fuse ratings TBD)',1480,1760),spl=parts.find(q=>q.t==='cansplit');
+  lk(g.nodes.find(n=>n.partId===6),bH,'Transmission run · length TBD','DR-25');lk(bH,nd(hp.id),'');lk(bH,nd(fb.id),'Trunk feed · routing TBD');
+  wv({p:fb.id,i:3},{p:hp.id,i:1},'H01','Switched +12V (F3) to 8HP pin 2',14,'RED',19,own,false);
+  if(spl){lk(nd(spl.id),bH,'CAN branch 3');wv({p:spl.id,i:T.cansplit.pins.findIndex(q=>q.p==='L-OUT3')},{p:hp.id,i:3},'H02','8HP pin 4 CAN Low (verify CAN compatibility)',20,'PUR',19,own,false);wv({p:spl.id,i:T.cansplit.pins.findIndex(q=>q.p==='H-OUT3')},{p:hp.id,i:4},'H03','8HP pin 5 CAN High (verify CAN compatibility)',20,'BLU',19,own,false);}
+  extraLooms.push(...LM.map(([id,name])=>({id,name,cover:'DR-25',color:'#2f4650'})));
+ }
  {const vc=wires.filter(w=>/^V/.test(w.wid||'')&&/^CAN [HL]$/.test(w.sig));if(vc.length===2){const t=next++;vc.forEach(w=>w.tw=t);}}
  const i=T[parts[0].t].pins.findIndex(p=>p.p==='M4');wires.push(mkW({p:1,i},{p:7,i:0},{id:next++,wid:'P01',sig:'ECU fused supply (rating TBD)',awg:16,color:'RED',measuredOnly:true,auditStatus:'unverified',auditNotes:notice}));
- UNDO.length=0;REDO.length=0;syncUndo();Object.assign(S,{parts,wires,looms:[{id:10,name:'Main bulkhead',cover:'DR-25',color:'#343b40'},{id:11,name:'Aux bulkhead',cover:'DR-25',color:'#343b40'},{id:12,name:'Vehicle side · E90 LS',cover:'DR-25',color:'#2f4650'},{id:13,name:'Engine bay power',cover:'DR-25',color:'#7a2b2b'},{id:14,name:'Engine bay ground',cover:'DR-25',color:'#262b2e'}],nid:next,zones:[],circuitBook:[],wfBranches:[],examples:false,pro:null,wfFormboard:g,wfVaultId:null,wfProjectName:name,wfDemoNotice:notice,tab:'formboard'});
+ UNDO.length=0;REDO.length=0;syncUndo();Object.assign(S,{parts,wires,looms:[{id:10,name:'Main bulkhead',cover:'DR-25',color:'#343b40'},{id:11,name:'Aux bulkhead',cover:'DR-25',color:'#343b40'},{id:12,name:'Vehicle side · E90 LS',cover:'DR-25',color:'#2f4650'},{id:13,name:'Engine bay power',cover:'DR-25',color:'#7a2b2b'},{id:14,name:'Engine bay ground',cover:'DR-25',color:'#262b2e'},...extraLooms],nid:next,zones:[],circuitBook:[],wfBranches:[],examples:false,pro:null,wfFormboard:g,wfVaultId:null,wfProjectName:name,wfDemoNotice:notice,tab:'formboard'});
  resetDesignSelection();view.demoFit=true;view.cam=null;view.look='loom';view.page='design';view.advanced=false;save();root.WFPro?.saveNamed({asNew:true,name});render();
 }
 function quickWirePanel(g){

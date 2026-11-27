@@ -21,3 +21,13 @@ Run node tests/hd30-demo.cjs and the touch-emulation browser suite tests/hd30-de
 
 ## v0.30 engine-bay studs
 LS demo adds four placeable `stud` parts: Engine bay +12V large stud (unfused), Engine bay +12V small stud (OEM fused constant 12V), Engine bay chassis ground stud, ECU ground – back of head. Circuits G01-G04 (Engine/Sensor/VR/Shield GND to the head ground), P02/P03 (starter/alternator feeds from the large stud, gauge TBD) and P04 (small stud to F1 input) are SUGGESTED, not verified. The chassis ground stud has no wires because no source circuit is confirmed. Looms 13 (power) and 14 (ground).
+
+## v0.31 LS harness sections and grounding (sources: MaxxECU public pages)
+Grounding follows MaxxECU documentation ([GEN1 pinout](https://www.maxxecu.com/webhelp/wirings-maxxecu_pinout.html), [GM LSx page](https://www.maxxecu.com/webhelp/wirings-terminated_engine_harness-gm_ls.html), [RACE wiring PDF](https://www.maxxecu.com/files/Documentation/Wirings/MaxxECU%20RACE%20(REV9+)%20-%20Wiring-en.pdf)):
+- Engine GND (C1 L4) and Engine Ground 2 (C2 G4, "same spot as connector 1") go to the cylinder head ground (G01, G02).
+- Sensor GND: "NEVER connect to engine GND / chassis ground". It ends on an ECU-referenced sensor return junction only.
+- Trigger GND (C1 H2) ends on a dedicated trigger return junction feeding crank and cam only.
+- Shield GND (C1 E3): "cable shields should only be grounded through the ECU". It is not carried through the bulkhead and has no sensor-end connection. Cable type and drain termination detail remain TBD.
+- Chassis ground stud stays separate and has no wires (no confirmed source circuit).
+
+Sections (looms 12-21): ECU + bulkhead disconnects; power distribution; grounds; 8 coils and 8 injectors (cylinder assignment TBD); engine sensors (crank, cam, CLT, IAT, pressures, flex); DBW throttle + pedal (pedal pin map from E90 project); ZF 8HP (switched +12V from trunk fuse F3, CAN to splitter branch 3, per E90 project); BMW chassis (X60001); cabin/trunk fuse box. Fuse ratings, connector cavities and lengths are TBD. Not yet laid out: CAN keypad, Leash fuel-pump boards, nitrous heater/purge, wideband and EGT sensors.
