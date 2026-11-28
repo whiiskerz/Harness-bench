@@ -118,6 +118,7 @@ function startBlank(){
  selection=null;pending=null;
  save();showTab('draw');saveStatus();showMessage('Blank harness ready. Add a connector to begin.');
 }
+window.WFStartBlank=startBlank;
 async function importFile(file){
  if(!file)return;
  if(file.size>MAX_IMPORT){showMessage('Import too large. Limit: 8 MB.','error');return}

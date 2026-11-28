@@ -17,3 +17,10 @@ Branch: feature/first-five-minutes. Test: tests/first-five-minutes-browser.cjs (
 - Select several wires and bundle only those (Bundle currently routes every unrouted wire).
 - PDF drawing labels can overlap on very short runs.
 - Parts library expansion, splice action, circuit test, Loomwright rename/logo/docs.
+
+## v0.32.0-library (universal dashboard + parts library)
+- `wireforge-library.js` (`WF_LIB`): 12 part categories (`catOf`, `search`), personal library in localStorage key `wfPersonalLib`, cavity text parser (`A=Function` per line or commas), generic templates (parts + cable runs only; no wires/lengths invented).
+- Studio start screen is a dashboard: Blank, Open (vault), Import project, Import CSV, Templates, Demos. Header `Home` button reopens it on any project.
+- Parts panel and start screen both search by text + category. Custom parts (name, category, optional P/N, cavities with functions) can be saved to "My library" and are copied into the project (`S.wfCustom`) when placed.
+- "Wiring and cable" and "Harness protection" categories have no catalog parts yet (wire specs live in the wire editor).
+- Test: `tests/dashboard-library-browser.cjs` (chained in workspace-smoke).

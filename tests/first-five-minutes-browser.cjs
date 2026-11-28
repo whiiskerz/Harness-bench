@@ -18,7 +18,7 @@ module.exports=async function testFirstFive(browser,url){
   const nodeOf=name=>page.evaluate(n=>{const p=S.parts.find(p=>p.name===n);return S.wfFormboard.nodes.find(x=>x.partId===p.id).id},name);
   const tapNode=async name=>{await page.locator('[data-node="'+await nodeOf(name)+'"]').first().tap();};
   // 1 place a connector
-  assert.match(await page.locator('.ds-first').textContent(),/Add your first connector/);
+  assert.match(await page.locator('.ds-first').textContent(),/Start a harness/);
   await page.locator('#dsFirstQ').fill('RACE pigtail');
   assert.ok(await page.locator('.ds-firstres [data-type="mxpig48"]').count());
   await page.locator('.ds-firstres [data-type="mxpig48"]').tap();step('Tap "C1 · RACE pigtail" in the search results');
