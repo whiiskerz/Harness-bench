@@ -366,13 +366,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 :root[data-wf-finish="stealth"]:not([data-theme="light"]) #wf3dProLaunch{background:linear-gradient(130deg,#f4f6f9,#a9bccb);color:#19212b;border-color:#d5e3eb}
 @media(max-width:720px){.wf-finish-choice{width:100%;justify-content:space-between;margin:0}#wfEditorFinish{flex:1;max-width:220px}}
 </style>
-<link rel="stylesheet" href="./wireforge-workspace.css?v=031-sections">
-<link rel="stylesheet" href="./wireforge-blueprint.css?v=031-sections">
-<link rel="stylesheet" href="./wireforge-formboard.css?v=031-sections">
-<link rel="stylesheet" href="./wireforge-premium.css?v=031-sections">
-<link rel="stylesheet" href="./wireforge-dt-visual.css?v=031-sections">
+<link rel="stylesheet" href="./wireforge-workspace.css?v=032-library">
+<link rel="stylesheet" href="./wireforge-blueprint.css?v=032-library">
+<link rel="stylesheet" href="./wireforge-formboard.css?v=032-library">
+<link rel="stylesheet" href="./wireforge-premium.css?v=032-library">
+<link rel="stylesheet" href="./wireforge-dt-visual.css?v=032-library">
 <script>
-const APP_VERSION='0.31.0-sections';
+const APP_VERSION='0.32.0-library';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -387,7 +387,7 @@ const lab=(id,name,labels,fam,sub)=>({id,name,labeled:true,fam,sub:sub||'',pins:
 const mx=(id,name,arr)=>lab(id,name,arr,'mx','MaxxECU LS harness');
 const nodeT=(id,name,fam,note)=>({id,name,node:true,fam,note:note||'',pins:[{p:'1',l:''}]});
 function makeCustom(tid){
-  const u=S.wfCustom?.[tid];if(u&&/^usr/.test(tid)&&!T[tid]){T[tid]={id:tid,name:u.name,labeled:true,fam:'dt',sub:'Housing P/N '+u.pn,pn:u.pn,short:u.short,pins:u.labels.map((l,i)=>({p:String(l),l:''}))};return;}
+  const u=S.wfCustom?.[tid];if(u&&/^usr/.test(tid)&&!T[tid]){T[tid]={id:tid,name:u.name,labeled:true,fam:'dt',sub:u.pn?'Housing P/N '+u.pn:'Custom part',pn:u.pn,short:u.short,cat:u.cat,pins:u.pins?u.pins.map(x=>({p:String(x.p),l:x.l||''})):u.labels.map((l,i)=>({p:String(l),l:''}))};return;}
   const m=/^(cust|bulk)(\d+)$/.exec(tid);if(!m||T[tid])return;
   const n=Math.max(1,Math.min(60,+m[2]));
   T[tid]=m[1]==='bulk'?Object.assign(gen(tid,'Firewall bulkhead '+n+'-pin',n,true,'bulk','Mil-spec bulkhead'),{bulk:true}):gen(tid,n+'-pin connector',n,false,'dt','Custom');
@@ -2640,7 +2640,7 @@ proAttach();
 if(S.tab==='draw'&&!S.view)requestAnimationFrame(fit);
 </script>
 
-<input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import WireForge project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js?v=031-sections" defer></script>
-<script src="./wireforge-export.js?v=031-sections" defer></script><script src="./wireforge-pigtails.js?v=031-sections" defer></script><script src="./wireforge-blueprint.js?v=031-sections" defer></script><script src="./wireforge-formboard-art.js?v=031-sections" defer></script><script src="./wireforge-hd30-demo.js?v=031-sections" defer></script><script src="./wireforge-formboard.js?v=031-sections" defer></script>
-<script type="module" src="./wireforge-dt-assemblies.js?v=031-sections"></script>
+<input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import WireForge project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js?v=032-library" defer></script>
+<script src="./wireforge-library.js?v=032-library" defer></script><script src="./wireforge-export.js?v=032-library" defer></script><script src="./wireforge-pigtails.js?v=032-library" defer></script><script src="./wireforge-blueprint.js?v=032-library" defer></script><script src="./wireforge-formboard-art.js?v=032-library" defer></script><script src="./wireforge-hd30-demo.js?v=032-library" defer></script><script src="./wireforge-formboard.js?v=032-library" defer></script>
+<script type="module" src="./wireforge-dt-assemblies.js?v=032-library"></script>
 </body></html>

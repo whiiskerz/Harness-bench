@@ -251,3 +251,7 @@ body:has(.ds-shell):has(#t-formboard:not([hidden])) {overflow:hidden}
 .ds-quick-pins button:disabled{opacity:.4}
 .ds-quick-pins button[hidden]{display:none}
 @media(max-width:650px){.ds-quick{width:auto;max-height:65%}.ds-quick-pins{max-height:28vh}#dsDemoSelect{max-width:110px}}
+
+.ds-dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}.ds-tile{min-height:64px;text-align:left;padding:10px 12px;border-radius:8px;border:1px solid #3d5058;background:#1d2a30;color:inherit;display:grid;gap:2px}.ds-tile small{opacity:.75}.ds-dash-sec{margin-top:12px}.ds-cats .ds-chip.active{background:#2f6f86}.ds-mylib-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0}.ds-customform select,.ds-customform textarea{min-height:44px;font-size:16px}.ds-check{display:flex;align-items:center;gap:8px}.ds-first{max-height:calc(100vh - 150px);overflow:auto}
+.ds-first .ds-tile{display:grid;align-content:center;min-height:64px;padding:10px 12px;border:1px solid #3d5058;border-radius:8px;background:#1d2a30;color:#eef3f5;text-align:left}.ds-first .ds-tile b{font-size:15px}.ds-first .ds-cats{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px}.ds-first .ds-cats .ds-chip{flex:0 0 auto;white-space:nowrap}.ds-first h3{margin:12px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;opacity:.8}
+.ds-first .ds-tile{border:1px solid #3d5058!important;background:#1d2a30!important;border-radius:8px!important}
