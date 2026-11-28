@@ -277,7 +277,7 @@ function renderScene(g,report){
  const svg=$('wfFormSvg');if(!svg)return;
  if(!view.cam)fit(g,view.page==='design');
  camera(svg);
- svg.querySelector('#fb-scene').innerHTML=scene(g,report);
+ svg.querySelector('#fb-scene').innerHTML=scene(g,report);twDecorate(g);
 }
 function canvas(){
  return '<svg id="wfFormSvg" xmlns="http://www.w3.org/2000/svg" data-mode="'+view.mode+'" tabindex="0" role="group" aria-label="Physical harness canvas" font-family="system-ui,sans-serif">'+art.definitions()+'<rect id="fb-paper" fill="#f6f6f3"/><rect x="-1000000" y="-1000000" width="2000000" height="2000000" fill="url(#fb-grid)"/><g id="fb-scene"></g></svg>';
@@ -1355,6 +1355,53 @@ function loadLSBulkheadDemo(){
  UNDO.length=0;REDO.length=0;syncUndo();Object.assign(S,{parts,wires,looms:[{id:10,name:'Main bulkhead',cover:'DR-25',color:'#343b40'},{id:11,name:'Aux bulkhead',cover:'DR-25',color:'#343b40'},{id:12,name:'Vehicle side · E90 LS',cover:'DR-25',color:'#2f4650'},{id:13,name:'Engine bay power',cover:'DR-25',color:'#7a2b2b'},{id:14,name:'Engine bay ground',cover:'DR-25',color:'#262b2e'},...extraLooms],nid:next,zones:[],circuitBook:[],wfBranches:[],examples:false,pro:null,wfFormboard:g,wfVaultId:null,wfProjectName:name,wfDemoNotice:notice,tab:'formboard'});
  resetDesignSelection();view.demoFit=true;view.cam=null;view.look='loom';view.page='design';view.advanced=false;save();root.WFPro?.saveNamed({asNew:true,name});render();
 }
+/* ---------- Universal tap-to-tap wiring ---------- */
+const SUGGEST=[[/gnd|ground|0 ?v\b|return/i,'BLK',18,'ground'],[/can ?-?h(?:igh)?\b|canh/i,'YEL',22,'CAN high'],[/can ?-?l(?:ow)?\b|canl/i,'GRN',22,'CAN low'],
+ [/\+?5 ?v|vref|sensor supply/i,'ORG',22,'5 V supply'],[/\+?12 ?v|batt|\bpwr\b|power|\bb\+|supply|fused/i,'RED',18,'power'],
+ [/inj|coil|ign|solenoid|pump|heater|motor|output/i,'',18,'output'],[/./,'',22,'signal']];
+function suggestWire(w,p,q){
+ const text=[w.sig,plabel(p,w.a.i),plabel(q,w.b.i)].filter(Boolean).join(' ');
+ const hit=text?SUGGEST.find(r=>r[0].test(text)):null;
+ const hd=root.WFHD30Demo?.suggestedSpec(p.t,T[p.t].pins[w.a.i].p)||root.WFHD30Demo?.suggestedSpec(q.t,T[q.t].pins[w.b.i].p);
+ const spec=hd?{awg:hd.awg,color:hd.color}:hit?{awg:hit[2],color:hit[1]}:null;if(!spec)return;
+ if(!w.awg&&spec.awg)w.awg=spec.awg;if(!w.color&&spec.color)w.color=spec.color;
+ w.wfSuggested=true;w.auditStatus='unverified';w.auditNotes=(hd?root.WFHD30Demo.notice:'Suggested '+(hit?hit[3]+' ':'')+'color/AWG from the cavity function. Not verified; confirm for the real load and length.');
+}
+const twNodes=g=>g.nodes.filter(n=>n.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node);
+function twAssign(g,nid){
+ const tw=view.tw=view.tw||{a:null,b:null,src:null,fa:'L',fb:'R'};
+ if(!twNodes(g).some(n=>n.id===nid))return;
+ if(tw.src&&tw.a&&nid!==tw.a){tw.b=nid;}else if(!tw.src||nid===tw.a){tw.a=nid;if(tw.b===nid)tw.b=null;tw.src=null;}
+ view.tw.msg=tw.src?'Now tap the destination cavity.':tw.a?'Tap a source cavity on '+(part(g.nodes.find(n=>n.id===tw.a).partId).name)+'.':'Tap a connector.';
+ render();
+}
+function twCard(g,side){
+ const tw=view.tw||{},nid=tw[side],n=g.nodes.find(x=>x.id===nid),p=n&&part(n.partId);
+ const title=side==='a'?'Source':'Destination';
+ if(!p)return '<section class="ds-tw-card"><h4>'+title+'</h4><p class="muted">Tap a connector on the canvas.</p></section>';
+ const t=T[p.t],face=t.bulk?(side==='a'?tw.fa:tw.fb)||'L':'';
+ const aOcc=tw.src&&tw.src.nid===nid;
+ return '<section class="ds-tw-card"><h4>'+title+' · '+h(n.label||p.name)+'</h4>'+(t.bulk?'<div class="ds-chips">'+['L','R'].map(x=>'<button type="button" class="ds-chip'+(face===x?' active':'')+'" data-fb="twFace" data-side="'+side+'" data-face="'+x+'">'+h(faceLabel(p,x))+'</button>').join('')+'</div>':'')+
+  (t.pins.length>12?'<input type="search" data-tw-query="'+side+'" placeholder="Find a cavity" value="'+h(tw['q'+side]||'')+'">':'')+
+  '<div class="ds-cavs ds-tw-cavs">'+t.pins.map((pin,i)=>{
+   const txt=(pin.p+' '+(plabel(p,i)||'')).toLowerCase(),qq=String(tw['q'+side]||'').toLowerCase();if(qq&&!txt.includes(qq))return '';
+   const used=cavOcc(p,i,face).length>0,sel=aOcc&&tw.src.i===i&&(tw.src.s||'')===face;
+   const ok=side==='b'&&tw.src&&!used&&nid!==tw.a;
+   return '<button type="button" class="ds-cav'+(used?' used':'')+(sel?' sel':'')+(ok?' ok':'')+'" data-fb="twCav" data-side="'+side+'" data-i="'+i+'" data-s="'+face+'" aria-pressed="'+sel+'" '+(used?'disabled ':'')+'aria-label="Cavity '+h(pin.p)+' '+h(plabel(p,i)||'')+(used?' used':'')+'"><b>'+h(pin.p)+'</b><span>'+h(plabel(p,i)||'—')+'</span><small>'+(used?'In use':sel?'Source':'Open')+'</small></button>';
+  }).join('')+'</div></section>';
+}
+function tapWirePanel(g){
+ const tw=view.tw||{};
+ return '<aside class="ds-panel ds-quick ds-tw"><div class="ds-panelhead"><h3>Tap wire</h3>'+btn('tapWire','Close')+'</div><p role="status" id="dsTwMsg">'+h(tw.msg||'Tap a connector, tap a source cavity, tap a second connector, tap a destination cavity.')+'</p><div class="ds-quick-columns">'+twCard(g,'a')+twCard(g,'b')+'</div><div class="fb-actions">'+btn('twCancel','Clear source')+btn('twSwap','Swap')+btn('twEdit','Edit last wire')+btn('quickWire','Use Quick wire list')+'</div></aside>';
+}
+function twDecorate(g){
+ const scene=document.querySelector('#fb-scene');if(!scene||!view.tap||view.page!=='design')return;const tw=view.tw||{};
+ const at=id=>g.nodes.find(n=>n.id===id);const A=at(tw.a),B=at(tw.b);
+ let s='';
+ for(const [n,c] of [[A,'#4cc2ff'],[B,'#6fe39a']])if(n)s+='<circle cx="'+n.x+'" cy="'+n.y+'" r="64" fill="none" stroke="'+c+'" stroke-width="3" stroke-dasharray="6 5" pointer-events="none"/>';
+ if(A&&B&&tw.src)s+='<line x1="'+A.x+'" y1="'+A.y+'" x2="'+B.x+'" y2="'+B.y+'" stroke="#4cc2ff" stroke-width="3" stroke-dasharray="9 6" pointer-events="none" data-tw-preview="1"/>';
+ scene.insertAdjacentHTML('beforeend','<g class="ds-tw-deco">'+s+'</g>');
+}
 function quickWirePanel(g){
  const ps=g.nodes.filter(n=>n.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node);
  const src=ps.find(n=>n.id===view.quickSource)||ps[0],dst=ps.find(n=>n.id===view.quickDest&&n!==src)||ps.find(n=>n!==src);
@@ -1364,7 +1411,7 @@ function quickWirePanel(g){
  return '<aside class="ds-panel ds-quick"><div class="ds-panelhead"><h3>Quick wire · tap to tap</h3>'+btn('quickWire','Close')+'</div><p role="status">'+h(view.quickMessage||(view.quickStart?'Tap destination cavity':'Tap source cavity, then destination cavity'))+'</p><div class="ds-quick-columns">'+col(src,'Source')+col(dst,'Destination')+'</div><div class="fb-actions">'+btn('quickCancel','Cancel source')+btn('quickEdit','Edit last wire')+'</div></aside>';
 }
 function resetDesignSelection(){
- Object.assign(view,{home:false,chosen:null,origin:null,trace:null,wsel:null,wdraft:null,pick:null,cav:null,run:null,landing:null,placing:null,panel:null,drag:null,mode:'select',multi:[],multiMode:false,quick:false,quickStart:null,quickMessage:'',quickSource:null,quickDest:null,quickLast:null});
+ Object.assign(view,{tap:false,tw:null,home:false,chosen:null,origin:null,trace:null,wsel:null,wdraft:null,pick:null,cav:null,run:null,landing:null,placing:null,panel:null,drag:null,mode:'select',multi:[],multiMode:false,quick:false,quickStart:null,quickMessage:'',quickSource:null,quickDest:null,quickLast:null});
 }
 function deleteDesignSelection(){
  const g=graph(),n=g.nodes.find(n=>n.id===view.chosen?.id),seg=g.segments.find(s=>s.id===view.chosen?.id);
@@ -1401,9 +1448,9 @@ function studioRender(el,g,report){
  const name=h(S.wfProjectName||S.projectName||'E90 LS');
  const toolbar='<div class="ds-modes" aria-label="Workspace views">'+btn('design','Design',page==='design'?'active':'')+btn('studioWiring','Wiring',page==='studioWiring'?'active':'')+btn('orbit','3D',page==='orbit'?'active':'')+btn('studioBom','BOM',page==='studioBom'?'active':'')+btn('studioCuts','Cut list',page==='studioCuts'?'active':'')+btn('studioShop','Export',page==='studioShop'?'active':'')+'</div>';
  const caption=view.run?'Tap the destination connector':view.placing?'Tap the canvas to place '+palette.find(p=>p[0]===view.placing)?.[1]:view.mode==='junction'?'Tap the split location':view.mode==='connect'?'Drag between connector ports':'';
- const tools='<div class="ds-rail">'+studioTool('parts','Parts',view.panel==='parts')+studioTool('select','Select',view.mode==='select')+studioTool('connect','Route',view.mode==='connect')+studioTool('pan','Pan',view.mode==='pan')+studioTool('flying','Wires')+btn('quickWire','Quick wire',view.quick?'active':'')+'</div>';
+ const tools='<div class="ds-rail">'+studioTool('parts','Parts',view.panel==='parts')+studioTool('select','Select',view.mode==='select')+studioTool('connect','Route',view.mode==='connect')+studioTool('pan','Pan',view.mode==='pan')+studioTool('flying','Wires')+btn('tapWire','Tap wire',view.tap?'active':'')+btn('quickWire','Quick wire',view.quick?'active':'')+'</div>';
  const wsel=view.wsel&&S.wires.find(w=>w.id===view.wsel);
- const inspector=view.quick&&page==='design'?quickWirePanel(g):view.multiMode&&page==='design'?'<aside class="ds-panel ds-wirepanel"><h3>Select wires</h3>'+btn('deleteSelected','Delete selected wires')+'<div class="ds-wirelist">'+S.wires.map(w=>'<button type="button" data-fb="multiWire" data-wire="'+w.id+'" aria-pressed="'+!!view.multi?.includes(w.id)+'">'+(view.multi?.includes(w.id)?'✓ ':'')+h(wireName(w))+'<small>'+h(endWho(w.a))+' → '+h(endWho(w.b))+'</small></button>').join('')+'</div></aside>':wsel&&page==='design'?wireEditor(g,wsel):view.pick&&page==='design'?pickPanel(g):view.landing?landingPanel(g):page==='design'&&n?.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node?wirePanel(g,n):page==='design'&&selected?'<aside class="ds-panel ds-inspector"><div class="ds-panelhead"><h3>'+h(n?captionForNode(n):seg.s.label||'Cable run')+'</h3>'+btn('dismiss','Close')+'</div>'+(n?.partId&&['mxrace32','mxrace48'].includes(part(n.partId)?.t)?btn('landStart','Land a wire','fb-primary'):'')+(n?nodeInspector(n):branchInspector(seg))+'</aside>':'';
+ const inspector=view.tap&&page==='design'?tapWirePanel(g):view.quick&&page==='design'?quickWirePanel(g):view.multiMode&&page==='design'?'<aside class="ds-panel ds-wirepanel"><h3>Select wires</h3>'+btn('deleteSelected','Delete selected wires')+'<div class="ds-wirelist">'+S.wires.map(w=>'<button type="button" data-fb="multiWire" data-wire="'+w.id+'" aria-pressed="'+!!view.multi?.includes(w.id)+'">'+(view.multi?.includes(w.id)?'✓ ':'')+h(wireName(w))+'<small>'+h(endWho(w.a))+' → '+h(endWho(w.b))+'</small></button>').join('')+'</div></aside>':wsel&&page==='design'?wireEditor(g,wsel):view.pick&&page==='design'?pickPanel(g):view.landing?landingPanel(g):page==='design'&&n?.partId!=null&&part(n.partId)&&!T[part(n.partId).t]?.node?wirePanel(g,n):page==='design'&&selected?'<aside class="ds-panel ds-inspector"><div class="ds-panelhead"><h3>'+h(n?captionForNode(n):seg.s.label||'Cable run')+'</h3>'+btn('dismiss','Close')+'</div>'+(n?.partId&&['mxrace32','mxrace48'].includes(part(n.partId)?.t)?btn('landStart','Land a wire','fb-primary'):'')+(n?nodeInspector(n):branchInspector(seg))+'</aside>':'';
  const preview=(empty||view.home)&&page==='design'&&!view.placing&&view.mode==='select'?'<div class="ds-start ds-start-first">'+firstCard()+'</div>':'';
  const controls='<div class="ds-look" role="group" aria-label="Harness view">'+btn('lookLoom','Loom',view.look!=='wires'?'active':'')+btn('lookWires','Individual wires',view.look==='wires'?'active':'')+'</div><div class="ds-zoom">'+btn('zoomOut','−')+btn('fit','Fit')+btn('zoomIn','+')+'</div>';
  el.innerHTML='<div class="ds-shell fb-workspace"><div class="ds-head"><strong>Harness Bench</strong>'+btn('home','Home')+'<span class="ds-project">'+name+'</span><div><select id="dsDemoSelect" aria-label="Load demo harness"><option value="">Demo harnesses</option><option value="hd30">MaxxECU / HD30</option><option value="ls">E90 LS / dual HD30</option></select>'+btn('studioShop','Export for manufacturer','fb-primary')+(page==='design'?'<details class="ds-demomenu"><summary>Design actions</summary><div>'+btn('loadHD30Demo','Load Demo Harness → MaxxECU Race / HD30')+btn('loadLSBulkheadDemo','Load E90 LS / dual HD30')+btn('importWireCSV','Import CSV')+btn('multiMode',view.multiMode?'Exit multi-select':'Multi-select')+btn('deleteSelected','Delete selected'+(view.multi?.length?' ('+view.multi.length+')':''))+btn('designUndo','Undo')+btn('designRedo','Redo')+btn('clearDesign','Clear Design')+'</div></details>':'')+btn('advanced','Project tools')+'<button type="button" data-tab="project">Overview</button></div></div>'+
@@ -1504,6 +1551,7 @@ function bindCanvas(g,report){
   const bend=e.target.closest('[data-bend]')?.dataset.bend;
   const xyStart={clientX:e.clientX,clientY:e.clientY,pointerId:e.pointerId};
   const tip=e.target.closest('[data-lead-tip]');
+  if(view.tap&&view.page==='design'&&node&&!tip){e.preventDefault();twAssign(g,node);return;}
   if(!view.advanced&&view.page==='design'&&view.landing&&!view.landing.dst&&node){
    const dst=part(g.nodes.find(n=>n.id===node)?.partId);
    if(dst&&T[dst.t].bulk){view.landing.dst=node;render();}return;
@@ -1731,6 +1779,7 @@ function printPack(g,report){
 }
 
 document.addEventListener('input',e=>{if(e.target.dataset.quickQuery){const side=e.target.dataset.quickQuery,q=e.target.value.toLowerCase();view['quickQuery'+side]=q;for(const b of e.target.parentElement.querySelectorAll('[data-search]'))b.hidden=!b.dataset.search.includes(q);return;}if(e.target.id==='dsCavQ'&&view.cavCtx){view.cavQ=e.target.value;const c=view.cavCtx,tmp=document.createElement('div');tmp.innerHTML=cavityGrid(c.p,c.face,c.run);const g=tmp.querySelector('#dsCavs');if(g&&$('dsCavs'))$('dsCavs').replaceWith(g);}
+ if(e.target.dataset?.twQuery){view.tw['q'+e.target.dataset.twQuery]=e.target.value;const pos=e.target.selectionStart;render();const i=document.querySelector('[data-tw-query="'+e.target.dataset.twQuery+'"]');if(i){i.focus();i.setSelectionRange(pos,pos);}return;}
  if(e.target.id==='dsPartQ'){view.partQ=e.target.value;const r=$('dsPartRes');if(r)r.innerHTML=view.partQ||view.partCat?partChoices(view.partQ,view.partCat).map(partBtn).join('')||'<p class="muted">No match.</p>':palette.map(([id,label,tag])=>'<button class="ds-part" type="button" data-fb="startPlace" data-type="'+id+'"><svg viewBox="-4 -35 122 70" aria-hidden="true">'+art.hardware(T[id].fam,id)+'</svg><span>'+h(label)+'<small>'+h(tag)+'</small></span></button>').join('');}
  if(e.target.id==='dsFirstQ'){view.firstQ=e.target.value;const r=$('dsFirstRes');if(r)r.innerHTML=firstResults();}});
 document.addEventListener('click',e=>{
@@ -1743,7 +1792,21 @@ document.addEventListener('click',e=>{
  const button=e.target.closest('#t-formboard [data-fb]');
  if(!button)return;
  const action=button.dataset.fb;
- if(action==='quickWire'){view.quick=!view.quick;view.quickStart=null;view.quickMessage='';view.wsel=null;view.pick=null;view.panel=null;view.run=null;view.multiMode=false;render();return;}
+ if(action==='quickWire'){view.tap=false;view.quick=!view.quick;view.quickStart=null;view.quickMessage='';view.wsel=null;view.pick=null;view.panel=null;view.run=null;view.multiMode=false;render();return;}
+ if(action==='tapWire'){view.tap=!view.tap;if(view.tap){view.quick=false;view.multiMode=false;view.wsel=null;view.pick=null;view.panel=null;view.run=null;view.placing=null;view.mode='select';view.tw=view.tw||{a:null,b:null,src:null,fa:'L',fb:'R'};}render();return;}
+ if(action==='twFace'){view.tw['f'+button.dataset.side]=button.dataset.face;if(view.tw.src&&view.tw.src.nid===view.tw[button.dataset.side])view.tw.src=null;render();return;}
+ if(action==='twCancel'){view.tw.src=null;view.tw.msg='Source cleared.';render();return;}
+ if(action==='twSwap'){const t=view.tw;[t.a,t.b]=[t.b,t.a];[t.fa,t.fb]=[t.fb,t.fa];t.src=null;render();return;}
+ if(action==='twEdit'){if(!S.wires.some(w=>w.id===view.quickLast))return toast('Create a wire first.');view.tap=false;view.wsel=view.quickLast;view.wdraft=null;render();return;}
+ if(action==='twCav'){
+  const tw=view.tw,side=button.dataset.side,i=Number(button.dataset.i),s=button.dataset.s||'',g=graph();
+  const scrolls=[...document.querySelectorAll('.ds-tw-cavs')].map(x=>x.scrollTop);const repaint=()=>{render();document.querySelectorAll('.ds-tw-cavs').forEach((x,k)=>x.scrollTop=scrolls[k]||0);};
+  if(side==='a'){tw.src={nid:tw.a,i,s};tw.msg=tw.b?'Source selected. Tap the destination cavity.':'Source selected. Tap a second connector.';repaint();return;}
+  if(!tw.src){tw.msg='Tap a source cavity first.';repaint();return;}
+  commit();const w=makeWire(g,tw.src,{nid:tw.b,i,s});
+  if(w){const p=part(w.a.p),q=part(w.b.p);if(!w.sig)w.sig=plabel(p,w.a.i)||plabel(q,w.b.i);suggestWire(w,p,q);view.quickLast=w.id;tw.src=null;tw.msg=w.wid+' created ('+(w.awg?w.awg+' AWG':'AWG TBD')+(w.color?' '+w.color:'')+'). Tap the next source cavity.';save();}
+  repaint();return;
+ }
  if(action==='quickCancel'){view.quickStart=null;view.quickMessage='';render();return;}
  if(action==='quickEdit'){if(!S.wires.some(w=>w.id===view.quickLast))return toast('Create a wire first.');view.quick=false;view.wsel=view.quickLast;view.wdraft=null;render();return;}
  if(action==='quickPin'){
