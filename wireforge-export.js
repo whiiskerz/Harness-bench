@@ -1,4 +1,4 @@
-/* Harness Bench manufacturer export: dependency-free PDF writer (Helvetica, ASCII) + CSV rows.
+/* Loomwright manufacturer export: dependency-free PDF writer (Helvetica, ASCII) + CSV rows.
    Lengths shown are ONLY user-entered measurements. Anything else prints TBD. */
 (function(root){
  const W=792,H=612;
@@ -26,7 +26,7 @@
  const trunc=(s,n)=>{s=String(s??'');return s.length>n?s.slice(0,n-1)+'~':s;};
  function header(p,m,title,n,total){
   p.text(36,34,m.project+' - '+title,15,true);
-  p.text(36,48,'Harness Bench manufacturer package - '+m.date+' - page '+n+' of '+total,8);
+  p.text(36,48,'Loomwright manufacturer package - '+m.date+' - page '+n+' of '+total,8);
   p.line(36,54,W-36,54,1,.3);
  }
  function drawing(p,m){

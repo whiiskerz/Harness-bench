@@ -179,7 +179,7 @@ function renderVault(){
  const root=$('t-vault');if(!root)return;const rows=snapshotList(),name=metaName();
  root.innerHTML='<div class="wf-pro-hero"><div class="wf-eyebrow">WIRE FORGE / PROJECT MANAGEMENT</div><h2>Project Vault</h2><p>Keep multiple harness designs in this browser. Name versions, export portable backups and reopen previous builds without losing your current wiring editor tools.</p>'+
  '<div class="wf-pro-hero-actions"><button class="btn primary" data-wfv="quick">Save active project</button><button class="btn" data-wfv="as">Save a new copy</button><button class="btn" data-wfv="exportCurrent">Download active backup</button></div></div>'+
- '<div class="wf-pro-notice"><b>Where your work lives</b><p>WireForge auto-saves your active work in this browser. The named projects below are separate snapshots and update only when you click Save to Browser. Clearing site data, changing browsers or private mode can remove both. Download JSON backups for long-term storage.</p></div>'+
+ '<div class="wf-pro-notice"><b>Where your work lives</b><p>Loomwright auto-saves your active work in this browser. The named projects below are separate snapshots and update only when you click Save to Browser. Clearing site data, changing browsers or private mode can remove both. Download JSON backups for long-term storage.</p></div>'+
  (oldProjects().length?'<div class="wf-pro-notice"><b>Have older saved designs?</b><p>'+oldProjects().length+' saved design(s) from the earlier Backup tab can be safely copied into Project Vault without deleting the originals. <button class="btn" data-wfv="migrate" style="margin-top:9px">Bring older saves into Vault</button></p></div>':'')+
  '<div class="wf-pro-vault-top"><div><h3>Saved projects <span class="wf-pro-counter">'+rows.length+' / '+MAX_SAVES+'</span></h3><p class="muted">Active project: '+escText(name)+'</p></div><div class="wf-pro-vault-tools"><button class="btn" data-wfv="import">Import JSON</button><button class="btn" data-wfv="blank">New blank project</button></div></div>'+
  '<div class="wf-pro-project-grid">'+(rows.map(projectCard).join('')||'<div class="wf-pro-empty"><b>Your project library is empty</b><p>Use “Save active project” to create a named recovery point. You can come back to it anytime on this device.</p><button class="btn primary" data-wfv="quick">Save your first project</button></div>')+'</div>'+
@@ -234,7 +234,7 @@ function labFindings(){
 }
 const prioritizedFindings=()=>labFindings().sort((a,b)=>({error:0,review:1,unknown:2}[a.severity]??3)-({error:0,review:1,unknown:2}[b.severity]??3));
 let labFilter='all',labQuery='',lastRun=null;
-function labReport(){return {app:'WireForge',version:APP_VERSION,date:new Date().toISOString(),project:metaName(),parts:S.parts.length,wires:S.wires.length,findings:labFindings(),notice:'Schematic consistency review only. Unknown ratings, pinouts, physical mating halves, contact seals, fuse properties and ECU current limits are not automatically verified.'}}
+function labReport(){return {app:'Loomwright',version:APP_VERSION,date:new Date().toISOString(),project:metaName(),parts:S.parts.length,wires:S.wires.length,findings:labFindings(),notice:'Schematic consistency review only. Unknown ratings, pinouts, physical mating halves, contact seals, fuse properties and ECU current limits are not automatically verified.'}}
 function renderLab(){
  const root=$('t-lab');if(!root)return;
  const all=prioritizedFindings(),counts={error:0,review:0,unknown:0};all.forEach(x=>counts[x.severity]++);

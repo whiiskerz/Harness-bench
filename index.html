@@ -42,7 +42,8 @@ header h1{margin:0;letter-spacing:.025em;color:#f2f4f7}header .sub{margin:0;opac
 </style>
 
 </head><body>
-<title>WireForge</title>
+<title>Loomwright · wiring harness design</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e1a20'/%3E%3Cpath d='M5 22c6 0 5-12 11-12s5 12 11 12M5 16c6 0 5-6 11-6s5 6 11 6' fill='none' stroke='%2372d3e6' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -195,9 +196,9 @@ a{color:var(--accent)}
 
 <div class="wrap">
 <header>
-  <h1>Wire<span>Forge</span></h1>
+  <h1>Loom<span>wright</span></h1>
   <p class="sub">Precision wiring CAD · connector assembly · engineering review</p><span class="wf-app-trust" title="Local-first workspace; not electrical certification">LOCAL-FIRST STUDIO</span>
-  <label class="wf-finish-choice">FINISH <select id="wfEditorFinish" aria-label="WireForge interface finish"><option value="ice">Carbon Ice</option><option value="copper">Forged Titanium</option><option value="stealth">Obsidian</option></select></label>
+  <label class="wf-finish-choice">FINISH <select id="wfEditorFinish" aria-label="Loomwright interface finish"><option value="ice">Carbon Ice</option><option value="copper">Forged Titanium</option><option value="stealth">Obsidian</option></select></label>
 <div class="wf-top-actions" aria-label="Project actions"><button class="btn primary" id="wfQuickSave" type="button" title="Create or update the current named browser snapshot">Save to Browser</button><button class="btn" id="wfVaultOpen" type="button">My Projects</button><span id="wfSaveStatus" role="status" aria-live="polite">Autosave on · Checking browser storage…</span></div>
 </header>
 <nav id="tabs"></nav>
@@ -272,7 +273,7 @@ a{color:var(--accent)}
 <section id="t-save" hidden></section>
 </div>
 <div id="toast" class="toast" hidden></div>
-<footer class="app-footer"><span>WireForge <b id="appVersion">v0.27.0-assembly-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
+<footer class="app-footer"><span>Loomwright <b id="appVersion">v0.27.0-assembly-preview</b></span><span>Built by <b>@whiiskerzbuilt</b></span><a href="CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
 
 <style id="wfBlackglassTheme">
 /* Visual-only refresh. Semantic good/warning/error colors stay distinct. */
@@ -366,13 +367,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 :root[data-wf-finish="stealth"]:not([data-theme="light"]) #wf3dProLaunch{background:linear-gradient(130deg,#f4f6f9,#a9bccb);color:#19212b;border-color:#d5e3eb}
 @media(max-width:720px){.wf-finish-choice{width:100%;justify-content:space-between;margin:0}#wfEditorFinish{flex:1;max-width:220px}}
 </style>
-<link rel="stylesheet" href="./wireforge-workspace.css?v=032-library">
-<link rel="stylesheet" href="./wireforge-blueprint.css?v=032-library">
-<link rel="stylesheet" href="./wireforge-formboard.css?v=032-library">
-<link rel="stylesheet" href="./wireforge-premium.css?v=032-library">
-<link rel="stylesheet" href="./wireforge-dt-visual.css?v=032-library">
+<link rel="stylesheet" href="./wireforge-workspace.css?v=033-loomwright">
+<link rel="stylesheet" href="./wireforge-blueprint.css?v=033-loomwright">
+<link rel="stylesheet" href="./wireforge-formboard.css?v=033-loomwright">
+<link rel="stylesheet" href="./wireforge-premium.css?v=033-loomwright">
+<link rel="stylesheet" href="./wireforge-dt-visual.css?v=033-loomwright">
 <script>
-const APP_VERSION='0.32.0-library';
+const APP_VERSION='0.33.0-loomwright';
 const CREATOR_HANDLE='@whiiskerzbuilt';
 document.getElementById('appVersion').textContent='v'+APP_VERSION;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1500,7 +1501,7 @@ function downloadPowerBudget(){
 }
 function downloadProjectReport(){
  const groups={};S.wires.forEach((w,i)=>{const k=String(w.fuse||'').trim()||(+w.fa>0?'Fuse '+w.fa+' A':'Unassigned fuse');const g=groups[k]||(groups[k]={segments:0,enteredCurrentSumA:0,missingCurrent:0,missingFuse:0});g.segments++;g.enteredCurrentSumA+=Math.max(0,+w.amps||0);if(!(+w.amps>0))g.missingCurrent++;if(!(+w.fa>0))g.missingFuse++});
- const report={app:'WireForge',version:APP_VERSION,generatedAt:new Date().toISOString(),project:{partCount:S.parts.length,wireSegmentCount:S.wires.length,zoneCount:(S.zones||[]).length,loomCount:(S.looms||[]).length},readiness:readinessAudit(),selfTests:runProjectSelfTests(),powerBudget:{voltage:Number(S.powerVoltage)||14,groups},circuitBook:S.circuitBook||[],notice:'Documentation and screening only; not electrical safety certification. Wire-segment current sums may double-count the same circuit.'};downloadTextFile('wireforge-project-report.json',JSON.stringify(report,null,2),'application/json;charset=utf-8')
+ const report={app:'Loomwright',version:APP_VERSION,generatedAt:new Date().toISOString(),project:{partCount:S.parts.length,wireSegmentCount:S.wires.length,zoneCount:(S.zones||[]).length,loomCount:(S.looms||[]).length},readiness:readinessAudit(),selfTests:runProjectSelfTests(),powerBudget:{voltage:Number(S.powerVoltage)||14,groups},circuitBook:S.circuitBook||[],notice:'Documentation and screening only; not electrical safety certification. Wire-segment current sums may double-count the same circuit.'};downloadTextFile('wireforge-project-report.json',JSON.stringify(report,null,2),'application/json;charset=utf-8')
 }
 function rCut(){
   const groups={};
@@ -2183,7 +2184,7 @@ function sheetXml(rows,widths,head=true){
 }
 function downloadXlsx(){
   const stamp=new Date().toISOString().slice(0,10);
-  const sheets=[['Summary',[['WireForge project export',''],['Exported',stamp],['App version',APP_VERSION],['Parts',S.parts.length],['Wires',S.wires.length],['Looms',(S.looms||[]).length],['Note','Planning data only. Verify pinouts, wire gauge and fuse sizes against manufacturer specs before building.']],false],
+  const sheets=[['Summary',[['Loomwright project export',''],['Exported',stamp],['App version',APP_VERSION],['Parts',S.parts.length],['Wires',S.wires.length],['Looms',(S.looms||[]).length],['Note','Planning data only. Verify pinouts, wire gauge and fuse sizes against manufacturer specs before building.']],false],
     ['Wire list',parseCsvText(CSVS.wires()),true],['Cut list',parseCsvText(CSVS.cut()),true],['Pinouts',parseCsvText(CSVS.pins()),true],['Parts',parseCsvText(CSVS.bom()),true]];
   const files=[['[Content_Types].xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`],
    ['_rels/.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
@@ -2204,7 +2205,7 @@ function validateBackupObject(o){
 function downloadCsvFile(filename,content){const blob=new Blob(['\uFEFF'+content],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('Downloaded '+filename)}
 function printPinouts(){
  const rows=S.parts.map(p=>{const t=T[p.t],pins=t.node?[0]:t.pins.map((_,i)=>i);return `<section><h2>${esc(p.name)} <small>— ${esc(t.name)}</small></h2><table><thead><tr><th>Pin / cavity</th><th>Function</th><th>Wire / signal</th><th>Gauge</th><th>Color</th><th>Other endpoint</th></tr></thead><tbody>${pins.map(i=>{const ws=usedOn(p.id,i);return (ws.length?ws:[null]).map(w=>{const o=w?((w.a.p===p.id&&w.a.i===i)?w.b:w.a):null;return `<tr><td>${esc(t.pins[i].p)}</td><td>${esc(t.node?'':plabel(p,i))}</td><td>${esc(w?.sig||'—')}</td><td>${esc(w?String(w.awg)+' AWG':'—')}</td><td>${esc(w?.color||'—')}</td><td>${esc(o?endName(o):'—')}</td></tr>`}).join('')}).join('')}</tbody></table></section>`}).join('');
- const w=window.open('','_blank');if(!w){toast('Allow pop-ups to print pinouts');return}w.document.write(`<!doctype html><html><head><title>Harness Bench — Connector Pinout Sheets</title><style>body{font:11px Arial;margin:18px;color:#111}h1{font-size:20px}h2{font-size:14px;margin:20px 0 6px}h2 small{font-weight:normal;color:#555}table{border-collapse:collapse;width:100%;margin-bottom:12px}tr{page-break-inside:avoid}td,th{border:1px solid #999;padding:4px;text-align:left;vertical-align:top}th{background:#eee}section{page-break-after:always}section:last-child{page-break-after:auto}.note{font-size:10px;color:#444}@media print{body{margin:10mm}}</style></head><body><h1>Harness Bench — Connector Pinout Sheets</h1><p class="note">Generated from the current drawing. Verify connector face/orientation, terminal part number, output configuration, wire ratings and protection before fabrication.</p>${rows}</body></html>`);w.document.close();setTimeout(()=>{w.focus();w.print()},300);
+ const w=window.open('','_blank');if(!w){toast('Allow pop-ups to print pinouts');return}w.document.write(`<!doctype html><html><head><title>Loomwright — Connector Pinout Sheets</title><style>body{font:11px Arial;margin:18px;color:#111}h1{font-size:20px}h2{font-size:14px;margin:20px 0 6px}h2 small{font-weight:normal;color:#555}table{border-collapse:collapse;width:100%;margin-bottom:12px}tr{page-break-inside:avoid}td,th{border:1px solid #999;padding:4px;text-align:left;vertical-align:top}th{background:#eee}section{page-break-after:always}section:last-child{page-break-after:auto}.note{font-size:10px;color:#444}@media print{body{margin:10mm}}</style></head><body><h1>Loomwright — Connector Pinout Sheets</h1><p class="note">Generated from the current drawing. Verify connector face/orientation, terminal part number, output configuration, wire ratings and protection before fabrication.</p>${rows}</body></html>`);w.document.close();setTimeout(()=>{w.focus();w.print()},300);
 }
 function exportDiagram(){
  const svg=document.getElementById('cv');if(!svg){toast('Drawing stage not found');return}
@@ -2216,7 +2217,7 @@ function printDiagram(){
  const svg=document.getElementById('cv');if(!svg)return toast('Drawing stage not found');
  const clone=svg.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width','1400');clone.setAttribute('height','900');clone.style.width='100%';clone.style.height='auto';
  const css=document.createElementNS('http://www.w3.org/2000/svg','style');css.textContent=':root{--bg:#fff;--panel:#f5f5f5;--panel2:#eee;--line:#777;--grid:#ddd;--fg:#111;--mute:#444;--accent:#a86900;--good:#13804f;--warn:#a86900;--bad:#c23a2b} text{font-family:Arial,sans-serif}';clone.insertBefore(css,clone.firstChild);
- const w=window.open('','_blank');if(!w){toast('Allow pop-ups to print the diagram');return}w.document.write('<!doctype html><html><head><title>Harness Bench diagram</title><style>body{font:14px Arial;margin:18px}h1{font-size:18px}p{color:#444;font-size:12px}svg{max-width:100%;height:auto}</style></head><body><h1>Harness Bench — Wiring Diagram</h1><p>Design draft. Verify connector orientation, current capacity, fuse protection and all circuit endpoints before fabrication.</p>'+new XMLSerializer().serializeToString(clone)+'</body></html>');w.document.close();setTimeout(()=>{w.focus();w.print()},500);
+ const w=window.open('','_blank');if(!w){toast('Allow pop-ups to print the diagram');return}w.document.write('<!doctype html><html><head><title>Loomwright diagram</title><style>body{font:14px Arial;margin:18px}h1{font-size:18px}p{color:#444;font-size:12px}svg{max-width:100%;height:auto}</style></head><body><h1>Harness Bench — Wiring Diagram</h1><p>Design draft. Verify connector orientation, current capacity, fuse protection and all circuit endpoints before fabrication.</p>'+new XMLSerializer().serializeToString(clone)+'</body></html>');w.document.close();setTimeout(()=>{w.focus();w.print()},500);
 }
 
 /* ---------- events ---------- */
@@ -2601,7 +2602,7 @@ function wf3dBuildSnapshot(){
        len:+w.len>0?+w.len:null,points});
  }
  return{schema:'wireforge.3d.scene.v1',generatedAt:new Date().toISOString(),
-   projectName:String(S.wfProjectName||S.projectName||S.name||'Untitled WireForge Harness'),sourceVersion:APP_VERSION,
+   projectName:String(S.wfProjectName||S.projectName||S.name||'Untitled Harness'),sourceVersion:APP_VERSION,
    parts,wires:out,looms:(S.looms||[]).map(l=>({id:l.id,name:l.name,color:l.color,cover:l.cover})),
    branches:(S.pro?.branches||S.wfBranches||[]).map(b=>({id:b.id,name:b.name,length:b.length,diameter:b.diameter,sleeve:b.sleeve}))};
 }
@@ -2640,7 +2641,7 @@ proAttach();
 if(S.tab==='draw'&&!S.view)requestAnimationFrame(fit);
 </script>
 
-<input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import WireForge project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js?v=032-library" defer></script>
-<script src="./wireforge-library.js?v=032-library" defer></script><script src="./wireforge-export.js?v=032-library" defer></script><script src="./wireforge-pigtails.js?v=032-library" defer></script><script src="./wireforge-blueprint.js?v=032-library" defer></script><script src="./wireforge-formboard-art.js?v=032-library" defer></script><script src="./wireforge-hd30-demo.js?v=032-library" defer></script><script src="./wireforge-formboard.js?v=032-library" defer></script>
-<script type="module" src="./wireforge-dt-assemblies.js?v=032-library"></script>
+<input type="file" id="wfOpenImport" accept=".json,application/json" hidden aria-label="Import Loomwright project JSON"><div id="wfProToast" class="wf-pro-toast" role="status" aria-live="polite" hidden></div><script src="./wireforge-workspace.js?v=033-loomwright" defer></script>
+<script src="./wireforge-library.js?v=033-loomwright" defer></script><script src="./wireforge-export.js?v=033-loomwright" defer></script><script src="./wireforge-pigtails.js?v=033-loomwright" defer></script><script src="./wireforge-blueprint.js?v=033-loomwright" defer></script><script src="./wireforge-formboard-art.js?v=033-loomwright" defer></script><script src="./wireforge-hd30-demo.js?v=033-loomwright" defer></script><script src="./wireforge-formboard.js?v=033-loomwright" defer></script>
+<script type="module" src="./wireforge-dt-assemblies.js?v=033-loomwright"></script>
 </body></html>

@@ -63,6 +63,27 @@
   {id:'sensor-leg',name:'Controller with sensors and actuators',desc:'Controller connector with two sensors, an injector and a coil.',
    parts:[['mol32','Controller',140,300,180],['sens3','Sensor 1',700,120,180],['sens2','Sensor 2',700,260,180],['inj2','Injector',700,400,180],['coil3','Coil',700,540,180]],
    runs:[[0,1],[0,2],[0,3],[0,4]]}];
- root.WF_LIB={CATS,catOf,search,parseCavities,loadPersonal,savePersonal,makePersonal,TEMPLATES,catName:id=>names[id]||''};
+ const MATERIALS=[
+ {id:'txl',name:'TXL wire',cat:'cable',kind:'wire',desc:'SAE J1128 thin-wall cross-linked automotive wire. Ratings: check the maker datasheet.'},
+ {id:'gxl',name:'GXL wire',cat:'cable',kind:'wire',desc:'SAE J1128 general-purpose cross-linked automotive wire. Ratings: check the maker datasheet.'},
+ {id:'sxl',name:'SXL wire',cat:'cable',kind:'wire',desc:'SAE J1128 standard-wall cross-linked automotive wire. Ratings: check the maker datasheet.'},
+ {id:'m22759',name:'M22759 wire',cat:'cable',kind:'wire',desc:'MIL-W-22759 fluoropolymer wire. Slash sheet and rating: TBD, set from your supplier.'},
+ {id:'shielded',name:'Shielded cable',cat:'cable',kind:'wire',desc:'Conductors with an overall shield. Drain and termination: TBD.'},
+ {id:'twisted',name:'Twisted-pair cable',cat:'cable',kind:'wire',desc:'Two twisted conductors, for example a data pair. Twist rate: TBD.'},
+ {id:'battery',name:'Battery cable',cat:'cable',kind:'wire',desc:'Large-gauge power cable. Gauge and rating: TBD.'},
+ {id:'dr25',name:'DR-25',cat:'protect',kind:'cover',desc:'Heat-shrinkable harness sleeving. Size and recovery ratio: TBD.'},
+ {id:'braid',name:'Braided PET',cat:'protect',kind:'cover',desc:'Expandable braided sleeving.'},
+ {id:'split',name:'Split loom',cat:'protect',kind:'cover',desc:'Slit corrugated conduit for easy service.'},
+ {id:'hs',name:'Heat shrink tubing',cat:'protect',kind:'cover',desc:'General heat-shrink tubing.'},
+ {id:'boot',name:'Molded boot',cat:'protect',kind:'boot',desc:'Connector or backshell boot. Straight or angled: TBD.'},
+ {id:'grommet',name:'Grommet',cat:'protect',kind:'count',desc:'Panel or firewall pass-through grommet.'},
+ {id:'ties',name:'Cable ties',cat:'protect',kind:'count',desc:'Cable ties, count per harness.'},
+ {id:'labels',name:'Harness labels',cat:'protect',kind:'count',desc:'Wire or branch labels.'}];
+const MKEY='wfPersonalMats';
+function loadMats(){try{const a=JSON.parse(localStorage.getItem(MKEY)||'[]');return Array.isArray(a)?a.filter(x=>x&&x.id&&x.name):[];}catch(e){return[];}}
+function saveMats(a){try{localStorage.setItem(MKEY,JSON.stringify(a));return true;}catch(e){return false;}}
+function makeMat({name,desc,cat,kind}){name=String(name||'').trim();if(!name)return{error:'Give the material a name.'};return{mat:{id:'um'+Date.now().toString(36),name,cat:cat==='protect'?'protect':'cable',kind:kind||(cat==='protect'?'cover':'wire'),desc:String(desc||'').trim()||'Custom specification',custom:true}};}
+function searchMats(q,cat){const tk=tokens(q);return MATERIALS.concat(loadMats()).filter(m=>(!cat||m.cat===cat)&&(cat||tk.length)).map(m=>{const hay=(m.name+' '+m.desc+' '+m.kind+' '+names[m.cat]).toLowerCase();return{m,score:tk.filter(k=>hay.includes(k)).length};}).filter(r=>!tk.length||r.score>0).sort((a,b)=>b.score-a.score).map(r=>r.m);}
+root.WF_LIB={MATERIALS,loadMats,saveMats,makeMat,searchMats,CATS,catOf,search,parseCavities,loadPersonal,savePersonal,makePersonal,TEMPLATES,catName:id=>names[id]||''};
 })(typeof window!=='undefined'?window:globalThis);
 if(typeof module!=='undefined')module.exports=globalThis.WF_LIB;

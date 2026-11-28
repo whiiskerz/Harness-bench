@@ -1,4 +1,6 @@
-# Harness Bench — E90 LS Example
+# Loomwright — wiring harness design and electrical planning
+
+(Formerly Harness Bench / WireForge. Storage keys and project files are unchanged. The E90 LS and MaxxECU HD30 harnesses are optional demonstration templates.)
 
 **Current version:** v0.4.0 · **Built by:** @whiiskerzbuilt
 
@@ -60,4 +62,4 @@ Formboard edits are undoable and are included in project JSON backups and named 
 
 Inspired by the schematic/physical-layout workflow of [Twisted Builds Harness Designer](https://github.com/twisted-builds-llc/Twisted_Builds_Harness_Designer) (GPLv3-or-later); this browser-native implementation does not incorporate its source code.
 
-See [Wiring Studio’s design documentation](https://wiring.studio/docs/design-view/) for the workflow reference. WireForge uses its own canvas, graphics, and data model.
+See [Wiring Studio’s design documentation](https://wiring.studio/docs/design-view/) for the workflow reference. Loomwright uses its own canvas, graphics, and data model.

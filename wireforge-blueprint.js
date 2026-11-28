@@ -79,7 +79,7 @@ function arrange(){
  showTab('draw');fit();toast('Six-zone E90 reference layout created. Use the Blueprint cards to focus an area.');
 }
 function download(){
- const data={app:'WireForge',project:S.wfProjectName||'E90 reference',version:APP_VERSION,date:new Date().toISOString(),routes:report().lines,questions:questions.map(q=>({...q,answer:S.wfExampleAnswers?.[q.id]||''})),disclaimer:'Modeled path presence does not prove physical wiring, terminal orientation, valid fuse sizing, CAN operation or manufacturer-approved mating compatibility.'};
+ const data={app:'Loomwright',project:S.wfProjectName||'E90 reference',version:APP_VERSION,date:new Date().toISOString(),routes:report().lines,questions:questions.map(q=>({...q,answer:S.wfExampleAnswers?.[q.id]||''})),disclaimer:'Modeled path presence does not prove physical wiring, terminal orientation, valid fuse sizing, CAN operation or manufacturer-approved mating compatibility.'};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download='wireforge-e90-verification-board.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1600);
 }
